@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'app_theme.dart';
 
 class RecipeView extends StatefulWidget {
   final Map<String, dynamic> recipeData;
 
-  const RecipeView({Key? key, required this.recipeData}) : super(key: key);
+  const RecipeView({super.key, required this.recipeData});
 
   @override
   State<RecipeView> createState() => _RecipeViewState();
@@ -22,15 +23,15 @@ class _RecipeViewState extends State<RecipeView>
 
     _controllers = List.generate(
       sectionsCount,
-          (index) => AnimationController(
+      (index) => AnimationController(
         duration: const Duration(milliseconds: 300),
         vsync: this,
       ),
     );
 
     _iconRotations = _controllers
-        .map((controller) => Tween<double>(begin: 0, end: 0.5)
-        .animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut)))
+        .map((controller) => Tween<double>(begin: 0, end: 0.5).animate(
+            CurvedAnimation(parent: controller, curve: Curves.easeInOut)))
         .toList();
 
     _isExpanded = List.filled(sectionsCount, false);
@@ -57,44 +58,56 @@ class _RecipeViewState extends State<RecipeView>
 
   @override
   Widget build(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F3),
+      backgroundColor: AppTheme.creamBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (canPop)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.white,
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusSmall),
+                        boxShadow: AppTheme.softShadow,
+                      ),
+                      child: const Icon(Icons.arrow_back,
+                          color: AppTheme.darkBrown, size: 24),
+                    ),
+                  ),
+                ),
+
               // Header
               Text(
                 widget.recipeData['name'] ?? 'Recipe',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D1B14),
-                  letterSpacing: -0.5,
-                ),
+                style: AppTheme.headingLarge,
               ),
               const SizedBox(height: 24),
 
-              // Recipe Image (if available)
+              // Recipe Image
               if (widget.recipeData['image'] != null)
                 Container(
                   width: double.infinity,
                   height: 220,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF8C42).withOpacity(0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusLarge),
+                    boxShadow: AppTheme.imageShadow,
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusLarge),
                     child: Image.network(
                       widget.recipeData['image'],
                       fit: BoxFit.cover,
@@ -105,8 +118,8 @@ class _RecipeViewState extends State<RecipeView>
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                const Color(0xFFFF8C42).withOpacity(0.3),
-                                const Color(0xFFFFB366).withOpacity(0.3),
+                                AppTheme.primaryOrange.withValues(alpha:0.3),
+                                AppTheme.lightOrange.withValues(alpha:0.3),
                               ],
                             ),
                           ),
@@ -114,7 +127,7 @@ class _RecipeViewState extends State<RecipeView>
                             child: Icon(
                               Icons.image_outlined,
                               size: 60,
-                              color: Color(0xFF8B4513),
+                              color: AppTheme.mediumBrown,
                             ),
                           ),
                         );
@@ -157,7 +170,7 @@ class _RecipeViewState extends State<RecipeView>
               if (widget.recipeData['sections'] != null)
                 ...List.generate(
                   widget.recipeData['sections'].length,
-                      (index) => _buildExpandableSection(
+                  (index) => _buildExpandableSection(
                     widget.recipeData['sections'][index],
                     index,
                   ),
@@ -173,27 +186,22 @@ class _RecipeViewState extends State<RecipeView>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF8C42).withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF8C42).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: AppTheme.primaryOrange.withValues(alpha:0.1),
+              borderRadius:
+                  BorderRadius.circular(AppTheme.radiusXSmall),
             ),
             child: Icon(
               icon,
-              color: const Color(0xFFFF8C42),
+              color: AppTheme.primaryOrange,
               size: 20,
             ),
           ),
@@ -202,22 +210,8 @@ class _RecipeViewState extends State<RecipeView>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF8B4513),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF2D1B14),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(title, style: AppTheme.caption),
+                Text(value, style: AppTheme.valueBold),
               ],
             ),
           ),
@@ -226,26 +220,17 @@ class _RecipeViewState extends State<RecipeView>
     );
   }
 
-  Widget _buildExpandableSection(Map<String, dynamic> section, int index) {
+  Widget _buildExpandableSection(
+      Map<String, dynamic> section, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF8C42).withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+      decoration: AppTheme.cardDecoration,
       child: Column(
         children: [
-          // Header
           InkWell(
             onTap: () => _toggleSection(index),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius:
+                BorderRadius.circular(AppTheme.radiusLarge),
             child: Container(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -253,22 +238,10 @@ class _RecipeViewState extends State<RecipeView>
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFFFF8C42),
-                          const Color(0xFFFFB366),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF8C42).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      gradient: AppTheme.primaryGradient,
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusSmall),
+                      boxShadow: AppTheme.accentShadow,
                     ),
                     child: Icon(
                       _getSectionIcon(section['title']),
@@ -280,21 +253,18 @@ class _RecipeViewState extends State<RecipeView>
                   Expanded(
                     child: Text(
                       section['title'] ?? 'Section',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D1B14),
-                      ),
+                      style: AppTheme.sectionTitle,
                     ),
                   ),
                   AnimatedBuilder(
                     animation: _iconRotations[index],
                     builder: (context, child) {
                       return Transform.rotate(
-                        angle: _iconRotations[index].value * 3.14159,
-                        child: Icon(
+                        angle:
+                            _iconRotations[index].value * 3.14159,
+                        child: const Icon(
                           Icons.keyboard_arrow_down,
-                          color: const Color(0xFFFF8C42),
+                          color: AppTheme.primaryOrange,
                           size: 28,
                         ),
                       );
@@ -304,8 +274,6 @@ class _RecipeViewState extends State<RecipeView>
               ),
             ),
           ),
-
-          // Content
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
             secondChild: Container(
@@ -314,14 +282,14 @@ class _RecipeViewState extends State<RecipeView>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Divider(
-                    color: Color(0xFFFFE4D6),
+                    color: AppTheme.lightPeach,
                     thickness: 1,
                   ),
                   const SizedBox(height: 16),
                   if (section['items'] != null)
                     ...List.generate(
                       section['items'].length,
-                          (itemIndex) => _buildSectionItem(
+                      (itemIndex) => _buildSectionItem(
                         section['items'][itemIndex],
                         itemIndex,
                       ),
@@ -350,8 +318,9 @@ class _RecipeViewState extends State<RecipeView>
             height: 24,
             margin: const EdgeInsets.only(top: 2, right: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF8C42).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(6),
+              color: AppTheme.primaryOrange.withValues(alpha:0.15),
+              borderRadius:
+                  BorderRadius.circular(AppTheme.radiusTiny),
             ),
             child: Center(
               child: Text(
@@ -359,7 +328,7 @@ class _RecipeViewState extends State<RecipeView>
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF8C42),
+                  color: AppTheme.primaryOrange,
                 ),
               ),
             ),
@@ -367,11 +336,7 @@ class _RecipeViewState extends State<RecipeView>
           Expanded(
             child: Text(
               item.toString(),
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF4A3429),
-                height: 1.5,
-              ),
+              style: AppTheme.bodyText,
             ),
           ),
         ],
@@ -385,9 +350,16 @@ class _RecipeViewState extends State<RecipeView>
     final titleLower = title.toLowerCase();
     if (titleLower.contains('ingredient')) return Icons.shopping_basket;
     if (titleLower.contains('mix')) return Icons.blender;
-    if (titleLower.contains('fridge') || titleLower.contains('cold')) return Icons.ac_unit;
-    if (titleLower.contains('bake') || titleLower.contains('oven')) return Icons.local_fire_department;
-    if (titleLower.contains('preparation') || titleLower.contains('prep')) return Icons.timer;
+    if (titleLower.contains('fridge') || titleLower.contains('cold')) {
+      return Icons.ac_unit;
+    }
+    if (titleLower.contains('bake') || titleLower.contains('oven')) {
+      return Icons.local_fire_department;
+    }
+    if (titleLower.contains('preparation') ||
+        titleLower.contains('prep')) {
+      return Icons.timer;
+    }
 
     return Icons.list_alt;
   }

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/todo.dart';
+import '../models/todo_category.dart';
 import '../services/supabase_service.dart';
+import 'edit_categories_screen.dart';
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -13,22 +15,28 @@ class TodoScreen extends StatefulWidget {
 
 class _TodoScreenState extends State<TodoScreen> {
   List<Todo> _todos = [];
+  List<TodoCategory> _categories = [];
   bool _isLoading = true;
   bool _isAdding = false;
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
   StreamSubscription? _authSubscription;
 
+  // Categorize overlay state
+  Todo? _categorizingTodo;
+  int? _highlightedIndex;
+  List<GlobalKey> _squircleKeys = [];
+
   @override
   void initState() {
     super.initState();
-    _loadTodos();
+    _loadAll();
 
     _authSubscription =
         SupabaseService.authStateChanges.listen((data) {
       if (mounted) {
         setState(() {});
-        _loadTodos();
+        _loadAll();
       }
     });
   }
@@ -43,11 +51,12 @@ class _TodoScreenState extends State<TodoScreen> {
 
   bool get _isAuthenticated => SupabaseService.currentUser != null;
 
-  Future<void> _loadTodos() async {
+  Future<void> _loadAll() async {
     if (!_isAuthenticated) {
       if (mounted) {
         setState(() {
           _todos = [];
+          _categories = [];
           _isLoading = false;
         });
       }
@@ -55,10 +64,15 @@ class _TodoScreenState extends State<TodoScreen> {
     }
     try {
       if (mounted) setState(() => _isLoading = true);
-      final todos = await SupabaseService.getTodos();
+      final results = await Future.wait([
+        SupabaseService.getTodos(),
+        SupabaseService.getCategories(),
+      ]);
       if (mounted) {
         setState(() {
-          _todos = todos;
+          _todos = results[0] as List<Todo>;
+          _categories = results[1] as List<TodoCategory>;
+          _updateSquircleKeys();
           _isLoading = false;
         });
       }
@@ -67,23 +81,39 @@ class _TodoScreenState extends State<TodoScreen> {
     }
   }
 
+  void _updateSquircleKeys() {
+    // +1 for "No category" option
+    _squircleKeys = List.generate(
+      _categories.length + 1,
+      (_) => GlobalKey(),
+    );
+  }
+
   Future<void> _addTodo() async {
     final title = _textController.text.trim();
     if (title.isEmpty) return;
-
     _textController.clear();
     await SupabaseService.addTodo(title);
-    _loadTodos();
+    _loadAll();
   }
 
   Future<void> _toggleTodo(Todo todo) async {
     await SupabaseService.toggleTodo(todo.id, !todo.isCompleted);
-    _loadTodos();
+    _loadAll();
   }
 
   Future<void> _deleteTodo(Todo todo) async {
     await SupabaseService.deleteTodo(todo.id);
-    _loadTodos();
+    _loadAll();
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex--;
+      final item = _todos.removeAt(oldIndex);
+      _todos.insert(newIndex, item);
+    });
+    SupabaseService.reorderTodos(_todos.map((t) => t.id).toList());
   }
 
   void _startAdding() {
@@ -95,39 +125,110 @@ class _TodoScreenState extends State<TodoScreen> {
 
   void _saveAndStopAdding() {
     final title = _textController.text.trim();
-    if (title.isNotEmpty) {
-      _addTodo();
-    }
+    if (title.isNotEmpty) _addTodo();
     _textController.clear();
     setState(() => _isAdding = false);
   }
+
+  // --- Categorize overlay ---
+
+  void _startCategorize(Todo todo) {
+    if (_categories.isEmpty) return;
+    setState(() => _categorizingTodo = todo);
+  }
+
+  void _onCategorizeDragUpdate(Offset globalPos) {
+    setState(() {
+      _highlightedIndex = _hitTestSquircles(globalPos);
+    });
+  }
+
+  void _onCategorizeDragEnd(Offset globalPos) {
+    final idx = _hitTestSquircles(globalPos);
+    if (idx != null) {
+      _assignCategory(idx);
+    } else {
+      _dismissCategorize();
+    }
+  }
+
+  int? _hitTestSquircles(Offset globalPos) {
+    for (int i = 0; i < _squircleKeys.length; i++) {
+      final box = _squircleKeys[i].currentContext?.findRenderObject()
+          as RenderBox?;
+      if (box != null && box.attached) {
+        final local = box.globalToLocal(globalPos);
+        if (box.paintBounds.contains(local)) return i;
+      }
+    }
+    return null;
+  }
+
+  void _assignCategory(int index) {
+    final todo = _categorizingTodo;
+    if (todo == null) return;
+
+    String? categoryId;
+    if (index < _categories.length) {
+      categoryId = _categories[index].id;
+    }
+    // index == _categories.length means "No category"
+
+    SupabaseService.updateTodoCategory(todo.id, categoryId);
+    setState(() {
+      _categorizingTodo = null;
+      _highlightedIndex = null;
+    });
+    _loadAll();
+  }
+
+  void _dismissCategorize() {
+    setState(() {
+      _categorizingTodo = null;
+      _highlightedIndex = null;
+    });
+  }
+
+  void _openEditCategories() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (_) => const EditCategoriesScreen()),
+    );
+    _loadAll();
+  }
+
+  TodoCategory? _categoryForTodo(Todo todo) {
+    if (todo.categoryId == null) return null;
+    try {
+      return _categories.firstWhere((c) => c.id == todo.categoryId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // --- Build ---
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
-              child: Text('To-Do', style: AppTheme.headingLarge),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                Expanded(child: _buildContent()),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: Text(
-                'Keep track of your tasks',
-                style: AppTheme.bodyText
-                    .copyWith(color: AppTheme.mediumBrown),
-              ),
-            ),
-            Expanded(child: _buildContent()),
+            if (_categorizingTodo != null) _buildCategorizeOverlay(),
           ],
         ),
       ),
       floatingActionButton:
-          _isAuthenticated && !_isAdding
+          _isAuthenticated && !_isAdding && _categorizingTodo == null
               ? FloatingActionButton(
                   onPressed: _startAdding,
                   child: const Icon(Icons.add),
@@ -136,26 +237,66 @@ class _TodoScreenState extends State<TodoScreen> {
     );
   }
 
-  Widget _buildContent() {
-    if (!_isAuthenticated) {
-      return _buildSignInPrompt();
-    }
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 8, 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('To-Do', style: AppTheme.headingLarge),
+                const SizedBox(height: 4),
+                Text(
+                  'Keep track of your tasks',
+                  style: AppTheme.bodyText
+                      .copyWith(color: AppTheme.mediumBrown),
+                ),
+              ],
+            ),
+          ),
+          if (_isAuthenticated)
+            PopupMenuButton<String>(
+              icon:
+                  const Icon(Icons.more_vert, color: AppTheme.darkBrown),
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(AppTheme.radiusSmall),
+              ),
+              color: AppTheme.white,
+              onSelected: (value) {
+                if (value == 'categories') _openEditCategories();
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'categories',
+                  child: Row(
+                    children: [
+                      Icon(Icons.category_outlined,
+                          color: AppTheme.primaryOrange, size: 20),
+                      SizedBox(width: 12),
+                      Text('Edit Categories'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildContent() {
+    if (!_isAuthenticated) return _buildSignInPrompt();
     if (_isLoading) {
       return const Center(
         child:
             CircularProgressIndicator(color: AppTheme.primaryOrange),
       );
     }
-
-    if (_isAdding) {
-      return _buildAddingView();
-    }
-
-    if (_todos.isEmpty) {
-      return _buildEmptyState();
-    }
-
+    if (_isAdding) return _buildAddingView();
+    if (_todos.isEmpty) return _buildEmptyState();
     return _buildTodoList();
   }
 
@@ -264,86 +405,438 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Widget _buildTodoList() {
-    return RefreshIndicator(
-      onRefresh: _loadTodos,
-      color: AppTheme.primaryOrange,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _todos.length,
-        itemBuilder: (context, index) =>
-            _buildTodoItem(_todos[index]),
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      buildDefaultDragHandles: false,
+      proxyDecorator: (child, index, animation) {
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (_, child) => Material(
+            color: Colors.transparent,
+            elevation: 6,
+            borderRadius:
+                BorderRadius.circular(AppTheme.radiusMedium),
+            child: child,
+          ),
+          child: child,
+        );
+      },
+      onReorder: _onReorder,
+      itemCount: _todos.length,
+      itemBuilder: (context, index) {
+        final todo = _todos[index];
+        final cat = _categoryForTodo(todo);
+        return _SwipeableTodoItem(
+          key: ValueKey(todo.id),
+          todo: todo,
+          index: index,
+          category: cat,
+          hasCategories: _categories.isNotEmpty,
+          onToggle: () => _toggleTodo(todo),
+          onDelete: () => _deleteTodo(todo),
+          onCategorizeStart: () => _startCategorize(todo),
+          onCategorizeDragUpdate: _onCategorizeDragUpdate,
+          onCategorizeDragEnd: _onCategorizeDragEnd,
+          isCategorizing: _categorizingTodo?.id == todo.id,
+        );
+      },
+    );
+  }
+
+  // --- Categorize overlay ---
+
+  Widget _buildCategorizeOverlay() {
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: _dismissCategorize,
+        child: AnimatedOpacity(
+          opacity: 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: Container(
+            color: AppTheme.darkBrown.withValues(alpha: 0.7),
+            child: SafeArea(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Drag to a category',
+                    style: AppTheme.headingMedium
+                        .copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _categorizingTodo?.title ?? '',
+                    style: AppTheme.bodyText
+                        .copyWith(color: Colors.white70),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 32),
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24),
+                    child: Wrap(
+                      spacing: 16,
+                      runSpacing: 20,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        for (int i = 0; i < _categories.length; i++)
+                          _buildSquircle(
+                            key: _squircleKeys[i],
+                            color: _categories[i].color,
+                            label: _categories[i].name,
+                            highlighted: _highlightedIndex == i,
+                            onTap: () => _assignCategory(i),
+                          ),
+                        _buildSquircle(
+                          key: _squircleKeys.last,
+                          color: AppTheme.mediumBrown
+                              .withValues(alpha: 0.4),
+                          label: 'None',
+                          icon: Icons.close,
+                          highlighted: _highlightedIndex ==
+                              _categories.length,
+                          onTap: () =>
+                              _assignCategory(_categories.length),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  Text(
+                    'Release to cancel',
+                    style: AppTheme.caption
+                        .copyWith(color: Colors.white54),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildTodoItem(Todo todo) {
-    return Dismissible(
-      key: Key(todo.id),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) => _deleteTodo(todo),
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.red.shade400,
-          borderRadius:
-              BorderRadius.circular(AppTheme.radiusMedium),
+  Widget _buildSquircle({
+    required GlobalKey key,
+    required Color color,
+    required String label,
+    bool highlighted = false,
+    IconData? icon,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedScale(
+        scale: highlighted ? 1.2 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              key: key,
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(20),
+                border: highlighted
+                    ? Border.all(color: Colors.white, width: 3)
+                    : null,
+                boxShadow: highlighted
+                    ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.6),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                        )
+                      ]
+                    : null,
+              ),
+              child: Center(
+                child: icon != null
+                    ? Icon(icon, color: Colors.white, size: 28)
+                    : Text(
+                        label.isNotEmpty
+                            ? label[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: 72,
+              child: Text(
+                label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child:
-            const Icon(Icons.delete_outline, color: Colors.white),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Swipeable todo item with drag handle, left-delete, right-categorize
+// ---------------------------------------------------------------------------
+
+class _SwipeableTodoItem extends StatefulWidget {
+  final Todo todo;
+  final int index;
+  final TodoCategory? category;
+  final bool hasCategories;
+  final VoidCallback onToggle;
+  final VoidCallback onDelete;
+  final VoidCallback onCategorizeStart;
+  final ValueChanged<Offset> onCategorizeDragUpdate;
+  final ValueChanged<Offset> onCategorizeDragEnd;
+  final bool isCategorizing;
+
+  const _SwipeableTodoItem({
+    super.key,
+    required this.todo,
+    required this.index,
+    required this.category,
+    required this.hasCategories,
+    required this.onToggle,
+    required this.onDelete,
+    required this.onCategorizeStart,
+    required this.onCategorizeDragUpdate,
+    required this.onCategorizeDragEnd,
+    required this.isCategorizing,
+  });
+
+  @override
+  State<_SwipeableTodoItem> createState() => _SwipeableTodoItemState();
+}
+
+class _SwipeableTodoItemState extends State<_SwipeableTodoItem>
+    with SingleTickerProviderStateMixin {
+  double _dragOffset = 0;
+  bool _categorizeTriggered = false;
+  Offset _lastGlobalPos = Offset.zero;
+  late AnimationController _springController;
+  late Animation<double> _springAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _springController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _springAnim = _springController.drive(Tween(begin: 0.0, end: 0.0));
+    _springController.addListener(() {
+      setState(() => _dragOffset = _springAnim.value);
+    });
+  }
+
+  @override
+  void dispose() {
+    _springController.dispose();
+    super.dispose();
+  }
+
+  void _springBack() {
+    _springAnim = Tween(begin: _dragOffset, end: 0.0).animate(
+      CurvedAnimation(
+          parent: _springController, curve: Curves.easeOut),
+    );
+    _springController.forward(from: 0);
+  }
+
+  void _onDragStart(DragStartDetails d) {
+    _springController.stop();
+    _categorizeTriggered = false;
+    _dragOffset = 0;
+  }
+
+  void _onDragUpdate(DragUpdateDetails d) {
+    _lastGlobalPos = d.globalPosition;
+
+    if (_categorizeTriggered) {
+      widget.onCategorizeDragUpdate(d.globalPosition);
+      return;
+    }
+
+    setState(() {
+      _dragOffset += d.delta.dx;
+      _dragOffset = _dragOffset.clamp(-160.0, 160.0);
+    });
+
+    if (_dragOffset > 80 && !_categorizeTriggered && widget.hasCategories) {
+      _categorizeTriggered = true;
+      _springBack();
+      widget.onCategorizeStart();
+    }
+  }
+
+  void _onDragEnd(DragEndDetails d) {
+    if (_categorizeTriggered) {
+      widget.onCategorizeDragEnd(_lastGlobalPos);
+      _categorizeTriggered = false;
+      return;
+    }
+
+    if (_dragOffset < -100) {
+      widget.onDelete();
+    }
+    _springBack();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Stack(
+        children: [
+          // Delete background (right swipe → left side)
+          if (_dragOffset < 0)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.red.shade400,
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusMedium),
+                ),
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                child: const Icon(Icons.delete_outline,
+                    color: Colors.white, size: 24),
+              ),
+            ),
+          // Categorize hint background (left swipe → right side)
+          if (_dragOffset > 0 && widget.hasCategories)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryOrange
+                      .withValues(alpha: 0.15),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusMedium),
+                ),
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                child: const Icon(Icons.category_outlined,
+                    color: AppTheme.primaryOrange, size: 24),
+              ),
+            ),
+          // Card
+          Transform.translate(
+            offset: Offset(_dragOffset, 0),
+            child: GestureDetector(
+              onHorizontalDragStart: _onDragStart,
+              onHorizontalDragUpdate: _onDragUpdate,
+              onHorizontalDragEnd: _onDragEnd,
+              child: _buildCard(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard() {
+    final todo = widget.todo;
+    final cat = widget.category;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: AppTheme.white,
           borderRadius:
               BorderRadius.circular(AppTheme.radiusMedium),
           boxShadow: AppTheme.softShadow,
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 4),
-          leading: GestureDetector(
-            onTap: () => _toggleTodo(todo),
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: todo.isCompleted
-                    ? AppTheme.primaryOrange
-                    : AppTheme.primaryOrange
-                        .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: todo.isCompleted
-                    ? null
-                    : Border.all(
-                        color: AppTheme.primaryOrange
-                            .withValues(alpha: 0.3),
-                        width: 2),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              if (cat != null)
+                Container(width: 4, color: cat.color),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 12),
+                  child: Row(
+                    children: [
+                      // Checkbox
+                      GestureDetector(
+                        onTap: widget.onToggle,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: todo.isCompleted
+                                ? AppTheme.primaryOrange
+                                : AppTheme.primaryOrange
+                                    .withValues(alpha: 0.1),
+                            borderRadius:
+                                BorderRadius.circular(8),
+                            border: todo.isCompleted
+                                ? null
+                                : Border.all(
+                                    color: AppTheme.primaryOrange
+                                        .withValues(alpha: 0.3),
+                                    width: 2),
+                          ),
+                          child: todo.isCompleted
+                              ? const Icon(Icons.check,
+                                  size: 18, color: Colors.white)
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Title
+                      Expanded(
+                        child: Text(
+                          todo.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: todo.isCompleted
+                                ? AppTheme.mediumBrown
+                                : AppTheme.darkBrown,
+                            decoration: todo.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      // Drag handle
+                      ReorderableDragStartListener(
+                        index: widget.index,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 8),
+                          child: Icon(
+                            Icons.drag_indicator,
+                            color: AppTheme.mediumBrown
+                                .withValues(alpha: 0.3),
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: todo.isCompleted
-                  ? const Icon(Icons.check,
-                      size: 18, color: Colors.white)
-                  : null,
-            ),
-          ),
-          title: Text(
-            todo.title,
-            style: TextStyle(
-              fontSize: 16,
-              color: todo.isCompleted
-                  ? AppTheme.mediumBrown
-                  : AppTheme.darkBrown,
-              decoration: todo.isCompleted
-                  ? TextDecoration.lineThrough
-                  : null,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(AppTheme.radiusMedium),
+            ],
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/recipe.dart';
 import '../models/todo.dart';
+import '../models/todo_category.dart';
 
 class SupabaseService {
   static SupabaseClient get _client => Supabase.instance.client;
@@ -38,6 +39,7 @@ class SupabaseService {
     final data = await _client
         .from('todos')
         .select()
+        .order('sort_order')
         .order('created_at', ascending: false);
     return data.map<Todo>((json) => Todo.fromJson(json)).toList();
   }
@@ -57,6 +59,55 @@ class SupabaseService {
 
   static Future<void> deleteTodo(String id) async {
     await _client.from('todos').delete().eq('id', id);
+  }
+
+  static Future<void> updateTodoCategory(
+      String todoId, String? categoryId) async {
+    await _client
+        .from('todos')
+        .update({'category_id': categoryId}).eq('id', todoId);
+  }
+
+  static Future<void> reorderTodos(List<String> todoIds) async {
+    await Future.wait(
+      todoIds.asMap().entries.map((entry) => _client
+          .from('todos')
+          .update({'sort_order': entry.key}).eq('id', entry.value)),
+    );
+  }
+
+  // Categories
+  static Future<List<TodoCategory>> getCategories() async {
+    final data = await _client
+        .from('todo_categories')
+        .select()
+        .order('created_at');
+    return data
+        .map<TodoCategory>((json) => TodoCategory.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> addCategory(String name, int colorValue) async {
+    await _client.from('todo_categories').insert({
+      'user_id': currentUser!.id,
+      'name': name,
+      'color_value': colorValue,
+    });
+  }
+
+  static Future<void> updateCategory(String id,
+      {String? name, int? colorValue}) async {
+    final updates = <String, dynamic>{};
+    if (name != null) updates['name'] = name;
+    if (colorValue != null) updates['color_value'] = colorValue;
+    await _client
+        .from('todo_categories')
+        .update(updates)
+        .eq('id', id);
+  }
+
+  static Future<void> deleteCategory(String id) async {
+    await _client.from('todo_categories').delete().eq('id', id);
   }
 
   // Profile

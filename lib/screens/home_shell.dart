@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import 'purchases_screen.dart';
 import 'recipes_screen.dart';
 import 'todo_screen.dart';
 import 'profile_screen.dart';
@@ -15,7 +16,7 @@ class HomeShell extends StatefulWidget {
 }
 
 class HomeShellState extends State<HomeShell> {
-  int _currentIndex = 1;
+  int _currentIndex = 2;
 
   // Banner state
   String? _bannerTitle;
@@ -29,6 +30,7 @@ class HomeShellState extends State<HomeShell> {
 
   final List<Widget> _screens = const [
     TodoScreen(),
+    PurchasesScreen(),
     RecipesScreen(),
     ProfileScreen(),
   ];
@@ -99,6 +101,11 @@ class HomeShellState extends State<HomeShell> {
               icon: Icon(Icons.check_circle_outline),
               activeIcon: Icon(Icons.check_circle),
               label: 'Afazeres',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag_outlined),
+              activeIcon: Icon(Icons.shopping_bag),
+              label: 'Compras',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.restaurant_menu_outlined),

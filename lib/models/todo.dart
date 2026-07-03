@@ -30,4 +30,28 @@ class Todo {
           : null,
     );
   }
+
+  Map<String, dynamic> toDb() => {
+        'id': id,
+        'user_id': userId,
+        'title': title,
+        'is_completed': isCompleted ? 1 : 0,
+        'category_id': categoryId,
+        'sort_order': sortOrder,
+        'created_at': createdAt?.toIso8601String(),
+      };
+
+  factory Todo.fromDb(Map<String, dynamic> row) {
+    return Todo(
+      id: row['id'],
+      userId: row['user_id'],
+      title: row['title'],
+      isCompleted: (row['is_completed'] ?? 0) != 0,
+      categoryId: row['category_id'],
+      sortOrder: row['sort_order'] ?? 0,
+      createdAt: row['created_at'] != null
+          ? DateTime.tryParse(row['created_at'])
+          : null,
+    );
+  }
 }

@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/purchase.dart';
+import '../models/purchase_category.dart';
+import '../models/receipt_job.dart';
 import '../models/recipe.dart';
-import '../models/todo.dart';
-import '../models/todo_category.dart';
 
 class SupabaseService {
   static SupabaseClient get _client => Supabase.instance.client;
@@ -34,80 +37,127 @@ class SupabaseService {
     return data.map<Recipe>((json) => Recipe.fromJson(json)).toList();
   }
 
-  // Todos
-  static Future<List<Todo>> getTodos() async {
+  // Purchases
+  static Future<List<Purchase>> getPurchases() async {
     final data = await _client
-        .from('todos')
+        .from('purchases')
         .select()
-        .order('sort_order')
+        .order('purchase_date', ascending: false)
         .order('created_at', ascending: false);
-    return data.map<Todo>((json) => Todo.fromJson(json)).toList();
+    return data.map<Purchase>((json) => Purchase.fromJson(json)).toList();
   }
 
-  static Future<void> addTodo(String title) async {
-    await _client.from('todos').insert({
+  static Future<void> addPurchase({
+    required String purchaseDate,
+    required String item,
+    required double valor,
+    String? local,
+    String? categoryId,
+  }) async {
+    await _client.from('purchases').insert({
       'user_id': currentUser!.id,
-      'title': title,
+      'purchase_date': purchaseDate,
+      'item': item,
+      'valor': valor,
+      'local': local,
+      'category_id': categoryId,
     });
   }
 
-  static Future<void> toggleTodo(String id, bool isCompleted) async {
-    await _client
-        .from('todos')
-        .update({'is_completed': isCompleted}).eq('id', id);
+  static Future<void> insertPurchases(
+      List<Map<String, dynamic>> rows) async {
+    if (rows.isEmpty) return;
+    await _client.from('purchases').insert(rows);
   }
 
-  static Future<void> deleteTodo(String id) async {
-    await _client.from('todos').delete().eq('id', id);
+  static Future<void> updatePurchase(
+      String id, Map<String, dynamic> fields) async {
+    await _client.from('purchases').update(fields).eq('id', id);
   }
 
-  static Future<void> updateTodoCategory(
-      String todoId, String? categoryId) async {
-    await _client
-        .from('todos')
-        .update({'category_id': categoryId}).eq('id', todoId);
+  static Future<void> deletePurchase(String id) async {
+    await _client.from('purchases').delete().eq('id', id);
   }
 
-  static Future<void> reorderTodos(List<String> todoIds) async {
-    await Future.wait(
-      todoIds.asMap().entries.map((entry) => _client
-          .from('todos')
-          .update({'sort_order': entry.key}).eq('id', entry.value)),
-    );
-  }
-
-  // Categories
-  static Future<List<TodoCategory>> getCategories() async {
+  // Purchase categories ("Importância")
+  static Future<List<PurchaseCategory>> getPurchaseCategories() async {
     final data = await _client
-        .from('todo_categories')
+        .from('purchase_categories')
         .select()
         .order('created_at');
     return data
-        .map<TodoCategory>((json) => TodoCategory.fromJson(json))
+        .map<PurchaseCategory>((json) => PurchaseCategory.fromJson(json))
         .toList();
   }
 
-  static Future<void> addCategory(String name, int colorValue) async {
-    await _client.from('todo_categories').insert({
+  static Future<void> addPurchaseCategory(String name, int colorValue) async {
+    await _client.from('purchase_categories').insert({
       'user_id': currentUser!.id,
       'name': name,
       'color_value': colorValue,
     });
   }
 
-  static Future<void> updateCategory(String id,
+  static Future<void> updatePurchaseCategory(String id,
       {String? name, int? colorValue}) async {
     final updates = <String, dynamic>{};
     if (name != null) updates['name'] = name;
     if (colorValue != null) updates['color_value'] = colorValue;
-    await _client
-        .from('todo_categories')
-        .update(updates)
-        .eq('id', id);
+    await _client.from('purchase_categories').update(updates).eq('id', id);
   }
 
-  static Future<void> deleteCategory(String id) async {
-    await _client.from('todo_categories').delete().eq('id', id);
+  static Future<void> deletePurchaseCategory(String id) async {
+    await _client.from('purchase_categories').delete().eq('id', id);
+  }
+
+  // Receipt jobs (queue of receipt photos waiting for the local LLM)
+  static Future<List<ReceiptJob>> getReceiptJobs() async {
+    final data = await _client
+        .from('receipt_jobs')
+        .select()
+        .order('created_at', ascending: false);
+    return data.map<ReceiptJob>((json) => ReceiptJob.fromJson(json)).toList();
+  }
+
+  static Future<void> createReceiptJob(String id, String imagePath) async {
+    await _client.from('receipt_jobs').insert({
+      'id': id,
+      'user_id': currentUser!.id,
+      'image_path': imagePath,
+    });
+  }
+
+  static Future<void> updateReceiptJob(
+    String id, {
+    ReceiptJobStatus? status,
+    String? errorMessage,
+    int? itemsCount,
+  }) async {
+    await _client.from('receipt_jobs').update({
+      if (status != null) 'status': status.name,
+      'error_message': errorMessage,
+      if (itemsCount != null) 'items_count': itemsCount,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
+  }
+
+  static Future<void> deleteReceiptJob(ReceiptJob job) async {
+    await _client.storage.from('receipts').remove([job.imagePath]);
+    await _client.from('receipt_jobs').delete().eq('id', job.id);
+  }
+
+  // Receipt images (Supabase storage bucket)
+  static Future<void> uploadReceiptImage(
+      String path, Uint8List bytes) async {
+    await _client.storage.from('receipts').uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(contentType: 'image/jpeg'),
+        );
+  }
+
+  static Future<Uint8List> downloadReceiptImage(String path) async {
+    return await _client.storage.from('receipts').download(path);
   }
 
   // Profile

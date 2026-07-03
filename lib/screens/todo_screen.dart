@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/todo.dart';
 import '../models/todo_category.dart';
+import '../services/category_store.dart';
 import '../services/supabase_service.dart';
+import '../services/todo_repository.dart';
+import '../widgets/sync_indicator.dart';
 import 'edit_categories_screen.dart';
 
 class TodoScreen extends StatefulWidget {
@@ -27,10 +30,16 @@ class _TodoScreenState extends State<TodoScreen> {
   int? _highlightedIndex;
   List<GlobalKey> _squircleKeys = [];
 
+  TodoRepository get _repo => TodoRepository.instance;
+
   @override
   void initState() {
     super.initState();
     _loadAll();
+
+    // Reload whenever the local cache changes (own writes or background
+    // sync pulling fresh data from the server).
+    _repo.onChange.addListener(_loadAll);
 
     _authSubscription =
         SupabaseService.authStateChanges.listen((data) {
@@ -43,6 +52,7 @@ class _TodoScreenState extends State<TodoScreen> {
 
   @override
   void dispose() {
+    _repo.onChange.removeListener(_loadAll);
     _authSubscription?.cancel();
     _textController.dispose();
     _focusNode.dispose();
@@ -63,10 +73,9 @@ class _TodoScreenState extends State<TodoScreen> {
       return;
     }
     try {
-      if (mounted) setState(() => _isLoading = true);
       final results = await Future.wait([
-        SupabaseService.getTodos(),
-        SupabaseService.getCategories(),
+        _repo.getTodos(),
+        _repo.getCategories(),
       ]);
       if (mounted) {
         setState(() {
@@ -93,18 +102,15 @@ class _TodoScreenState extends State<TodoScreen> {
     final title = _textController.text.trim();
     if (title.isEmpty) return;
     _textController.clear();
-    await SupabaseService.addTodo(title);
-    _loadAll();
+    await _repo.addTodo(title);
   }
 
   Future<void> _toggleTodo(Todo todo) async {
-    await SupabaseService.toggleTodo(todo.id, !todo.isCompleted);
-    _loadAll();
+    await _repo.toggleTodo(todo.id, !todo.isCompleted);
   }
 
   Future<void> _deleteTodo(Todo todo) async {
-    await SupabaseService.deleteTodo(todo.id);
-    _loadAll();
+    await _repo.deleteTodo(todo.id);
   }
 
   void _onReorder(int oldIndex, int newIndex) {
@@ -113,7 +119,7 @@ class _TodoScreenState extends State<TodoScreen> {
       final item = _todos.removeAt(oldIndex);
       _todos.insert(newIndex, item);
     });
-    SupabaseService.reorderTodos(_todos.map((t) => t.id).toList());
+    _repo.reorderTodos(_todos.map((t) => t.id).toList());
   }
 
   void _startAdding() {
@@ -174,12 +180,11 @@ class _TodoScreenState extends State<TodoScreen> {
     }
     // index == _categories.length means "No category"
 
-    SupabaseService.updateTodoCategory(todo.id, categoryId);
+    _repo.updateTodoCategory(todo.id, categoryId);
     setState(() {
       _categorizingTodo = null;
       _highlightedIndex = null;
     });
-    _loadAll();
   }
 
   void _dismissCategorize() {
@@ -193,7 +198,8 @@ class _TodoScreenState extends State<TodoScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (_) => const EditCategoriesScreen()),
+          builder: (_) =>
+              EditCategoriesScreen(store: TodoCategoryStore())),
     );
     _loadAll();
   }
@@ -256,6 +262,10 @@ class _TodoScreenState extends State<TodoScreen> {
               ],
             ),
           ),
+          if (_isAuthenticated) ...[
+            const SyncIndicator(),
+            const SizedBox(width: 4),
+          ],
           if (_isAuthenticated)
             PopupMenuButton<String>(
               icon:

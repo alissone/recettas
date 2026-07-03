@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
-import '../models/todo_category.dart';
-import '../services/supabase_service.dart';
+import '../models/category_base.dart';
+import '../services/category_store.dart';
 
 class EditCategoriesScreen extends StatefulWidget {
-  const EditCategoriesScreen({super.key});
+  final CategoryStore store;
+
+  const EditCategoriesScreen({super.key, required this.store});
 
   @override
   State<EditCategoriesScreen> createState() =>
@@ -12,8 +14,10 @@ class EditCategoriesScreen extends StatefulWidget {
 }
 
 class _EditCategoriesScreenState extends State<EditCategoriesScreen> {
-  List<TodoCategory> _categories = [];
+  List<CategoryBase> _categories = [];
   bool _isLoading = true;
+
+  CategoryStore get _store => widget.store;
 
   @override
   void initState() {
@@ -23,139 +27,33 @@ class _EditCategoriesScreenState extends State<EditCategoriesScreen> {
 
   Future<void> _load() async {
     setState(() => _isLoading = true);
-    final cats = await SupabaseService.getCategories();
+    final cats = await _store.getAll();
+    if (!mounted) return;
     setState(() {
       _categories = cats;
       _isLoading = false;
     });
   }
 
-  Future<void> _showCategoryDialog({TodoCategory? existing}) async {
-    final nameController =
-        TextEditingController(text: existing?.name ?? '');
-    int selectedColor =
-        existing?.colorValue ?? TodoCategory.presetColors.first;
-
-    final result = await showDialog<bool>(
+  Future<void> _showCategoryDialog({CategoryBase? existing}) async {
+    final result = await showDialog<(String, int)>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.creamBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(AppTheme.radiusLarge),
-          ),
-          title: Text(
-            existing != null ? 'Edit Category' : 'New Category',
-            style: AppTheme.headingMedium,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: nameController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Category name',
-                  hintStyle: TextStyle(
-                      color: AppTheme.mediumBrown
-                          .withValues(alpha: 0.5)),
-                  filled: true,
-                  fillColor: AppTheme.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                        AppTheme.radiusSmall),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                        AppTheme.radiusSmall),
-                    borderSide: const BorderSide(
-                        color: AppTheme.primaryOrange, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text('Color',
-                  style: AppTheme.caption
-                      .copyWith(fontSize: 14)),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: TodoCategory.presetColors
-                    .map((c) => GestureDetector(
-                          onTap: () =>
-                              setDialogState(() => selectedColor = c),
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: Color(c),
-                              borderRadius:
-                                  BorderRadius.circular(10),
-                              border: selectedColor == c
-                                  ? Border.all(
-                                      color: AppTheme.darkBrown,
-                                      width: 3)
-                                  : null,
-                              boxShadow: selectedColor == c
-                                  ? [
-                                      BoxShadow(
-                                        color: Color(c)
-                                            .withValues(alpha: 0.4),
-                                        blurRadius: 8,
-                                      )
-                                    ]
-                                  : null,
-                            ),
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Cancel',
-                  style: TextStyle(color: AppTheme.mediumBrown)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryOrange,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                      AppTheme.radiusXSmall),
-                ),
-              ),
-              child: Text(existing != null ? 'Save' : 'Add'),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => _CategoryDialog(existing: existing),
     );
 
-    if (result == true && nameController.text.trim().isNotEmpty) {
+    if (result != null) {
+      final (name, colorValue) = result;
       if (existing != null) {
-        await SupabaseService.updateCategory(existing.id,
-            name: nameController.text.trim(),
-            colorValue: selectedColor);
+        await _store.update(existing.id,
+            name: name, colorValue: colorValue);
       } else {
-        await SupabaseService.addCategory(
-            nameController.text.trim(), selectedColor);
+        await _store.add(name, colorValue);
       }
       _load();
     }
-    nameController.dispose();
   }
 
-  Future<void> _deleteCategory(TodoCategory cat) async {
+  Future<void> _deleteCategory(CategoryBase cat) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -167,7 +65,7 @@ class _EditCategoriesScreenState extends State<EditCategoriesScreen> {
         title: const Text('Delete Category',
             style: AppTheme.sectionTitle),
         content: Text(
-          'Delete "${cat.name}"? Tasks using this category will become uncategorized.',
+          'Delete "${cat.name}"? ${_store.deleteNote}',
           style: AppTheme.bodyText,
         ),
         actions: [
@@ -193,7 +91,7 @@ class _EditCategoriesScreenState extends State<EditCategoriesScreen> {
     );
 
     if (confirm == true) {
-      await SupabaseService.deleteCategory(cat.id);
+      await _store.delete(cat.id);
       _load();
     }
   }
@@ -203,7 +101,7 @@ class _EditCategoriesScreenState extends State<EditCategoriesScreen> {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       appBar: AppBar(
-        title: const Text('Edit Categories'),
+        title: Text(_store.title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -248,7 +146,7 @@ class _EditCategoriesScreenState extends State<EditCategoriesScreen> {
     );
   }
 
-  Widget _buildCategoryTile(TodoCategory cat) {
+  Widget _buildCategoryTile(CategoryBase cat) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -302,6 +200,151 @@ class _EditCategoriesScreenState extends State<EditCategoriesScreen> {
               BorderRadius.circular(AppTheme.radiusMedium),
         ),
       ),
+    );
+  }
+}
+
+/// Owns the name controller so it is only disposed once the dialog's
+/// route (including the close animation) is fully gone; pops
+/// (name, colorValue) on save.
+class _CategoryDialog extends StatefulWidget {
+  final CategoryBase? existing;
+
+  const _CategoryDialog({this.existing});
+
+  @override
+  State<_CategoryDialog> createState() => _CategoryDialogState();
+}
+
+class _CategoryDialogState extends State<_CategoryDialog> {
+  late final TextEditingController _nameController;
+  late int _selectedColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController =
+        TextEditingController(text: widget.existing?.name ?? '');
+    _selectedColor =
+        widget.existing?.colorValue ?? CategoryBase.presetColors.first;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pop(context, (name, _selectedColor));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final existing = widget.existing;
+    return AlertDialog(
+      backgroundColor: AppTheme.creamBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(AppTheme.radiusLarge),
+      ),
+      title: Text(
+        existing != null ? 'Edit Category' : 'New Category',
+        style: AppTheme.headingMedium,
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Category name',
+              hintStyle: TextStyle(
+                  color: AppTheme.mediumBrown
+                      .withValues(alpha: 0.5)),
+              filled: true,
+              fillColor: AppTheme.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                    AppTheme.radiusSmall),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                    AppTheme.radiusSmall),
+                borderSide: const BorderSide(
+                    color: AppTheme.primaryOrange, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text('Color',
+              style: AppTheme.caption
+                  .copyWith(fontSize: 14)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: CategoryBase.presetColors
+                .map((c) => GestureDetector(
+                      onTap: () =>
+                          setState(() => _selectedColor = c),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Color(c),
+                          borderRadius:
+                              BorderRadius.circular(10),
+                          border: _selectedColor == c
+                              ? Border.all(
+                                  color: AppTheme.darkBrown,
+                                  width: 3)
+                              : null,
+                          boxShadow: _selectedColor == c
+                              ? [
+                                  BoxShadow(
+                                    color: Color(c)
+                                        .withValues(alpha: 0.4),
+                                    blurRadius: 8,
+                                  )
+                                ]
+                              : null,
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel',
+              style: TextStyle(color: AppTheme.mediumBrown)),
+        ),
+        ElevatedButton(
+          onPressed: _save,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryOrange,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(
+                  AppTheme.radiusXSmall),
+            ),
+          ),
+          child: Text(existing != null ? 'Save' : 'Add'),
+        ),
+      ],
     );
   }
 }

@@ -207,6 +207,9 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
       ),
       floatingActionButton: _isAuthenticated
           ? FloatingActionButton(
+              // Unique tag: the Afazeres FAB coexists in the
+              // IndexedStack and default hero tags would clash.
+              heroTag: 'purchases_fab',
               onPressed: () => _showPurchaseSheet(),
               child: const Icon(Icons.add),
             )

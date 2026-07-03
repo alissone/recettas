@@ -120,6 +120,7 @@ class _EditCategoriesScreenState extends State<EditCategoriesScreen> {
                       _buildCategoryTile(_categories[i]),
                 ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'categories_fab',
         onPressed: () => _showCategoryDialog(),
         child: const Icon(Icons.add),
       ),

@@ -236,6 +236,9 @@ class _TodoScreenState extends State<TodoScreen> {
       floatingActionButton:
           _isAuthenticated && !_isAdding && _categorizingTodo == null
               ? FloatingActionButton(
+                  // Unique tag: the Compras FAB coexists in the
+                  // IndexedStack and default hero tags would clash.
+                  heroTag: 'todo_fab',
                   onPressed: _startAdding,
                   child: const Icon(Icons.add),
                 )

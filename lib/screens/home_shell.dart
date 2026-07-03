@@ -98,17 +98,17 @@ class HomeShellState extends State<HomeShell> {
             BottomNavigationBarItem(
               icon: Icon(Icons.check_circle_outline),
               activeIcon: Icon(Icons.check_circle),
-              label: 'To-Do',
+              label: 'Afazeres',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.restaurant_menu_outlined),
               activeIcon: Icon(Icons.restaurant_menu),
-              label: 'Recipes',
+              label: 'Receitas',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
-              label: 'Profile',
+              label: 'Perfil',
             ),
           ],
         ),

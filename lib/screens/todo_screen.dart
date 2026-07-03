@@ -246,10 +246,10 @@ class _TodoScreenState extends State<TodoScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('To-Do', style: AppTheme.headingLarge),
+                const Text('Afazeres', style: AppTheme.headingLarge),
                 const SizedBox(height: 4),
                 Text(
-                  'Keep track of your tasks',
+                  'Monitore suas tarefas',
                   style: AppTheme.bodyText
                       .copyWith(color: AppTheme.mediumBrown),
                 ),

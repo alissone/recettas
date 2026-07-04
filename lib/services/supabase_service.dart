@@ -38,10 +38,18 @@ class SupabaseService {
   }
 
   // Purchases
-  static Future<List<Purchase>> getPurchases() async {
-    final data = await _client
-        .from('purchases')
-        .select()
+  /// Newest first; [fromDate] inclusive and [toDateExclusive] exclusive,
+  /// both YYYY-MM-DD, filter server-side (used for the month view).
+  static Future<List<Purchase>> getPurchases(
+      {String? fromDate, String? toDateExclusive}) async {
+    var query = _client.from('purchases').select();
+    if (fromDate != null) {
+      query = query.gte('purchase_date', fromDate);
+    }
+    if (toDateExclusive != null) {
+      query = query.lt('purchase_date', toDateExclusive);
+    }
+    final data = await query
         .order('purchase_date', ascending: false)
         .order('created_at', ascending: false);
     return data.map<Purchase>((json) => Purchase.fromJson(json)).toList();

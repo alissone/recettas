@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,11 +22,45 @@ class PurchasesScreen extends StatefulWidget {
 }
 
 class _PurchasesScreenState extends State<PurchasesScreen> {
+  static const _monthNames = [
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
+  ];
+
   List<Purchase> _purchases = [];
   List<PurchaseCategory> _categories = [];
   bool _isLoading = true;
   bool _uploadingReceipt = false;
   StreamSubscription? _authSubscription;
+
+  /// First day of the month being displayed.
+  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+
+  String get _monthLabel =>
+      '${_monthNames[_month.month - 1]} ${_month.year}';
+
+  static String _dateString(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  void _changeMonth(int delta) {
+    setState(() {
+      _month = DateTime(_month.year, _month.month + delta);
+      _isLoading = true;
+    });
+    _loadAll();
+  }
 
   @override
   void initState() {
@@ -64,7 +97,11 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     }
     try {
       final results = await Future.wait([
-        SupabaseService.getPurchases(),
+        SupabaseService.getPurchases(
+          fromDate: _dateString(_month),
+          toDateExclusive:
+              _dateString(DateTime(_month.year, _month.month + 1)),
+        ),
         SupabaseService.getPurchaseCategories(),
       ]);
       if (mounted) {
@@ -108,13 +145,12 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
 
   // --- Receipt capture ---
 
-  Future<void> _captureReceipt() async {
+  Future<void> _captureReceipt(ImageSource source) async {
     final picker = ImagePicker();
-    final useCamera = Platform.isAndroid || Platform.isIOS;
     XFile? file;
     try {
       file = await picker.pickImage(
-        source: useCamera ? ImageSource.camera : ImageSource.gallery,
+        source: source,
         maxWidth: 1600,
         imageQuality: 85,
       );
@@ -152,7 +188,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   // --- Manual add / edit ---
 
   Future<void> _showPurchaseSheet({Purchase? existing}) async {
-    final result = await showModalBottomSheet<_PurchaseFormResult>(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppTheme.creamBackground,
@@ -160,29 +196,33 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
         borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppTheme.radiusLarge)),
       ),
-      builder: (_) =>
-          _PurchaseSheet(existing: existing, categories: _categories),
+      builder: (_) => _PurchaseSheet(
+        existing: existing,
+        categories: _categories,
+        onSubmit: (result) async {
+          if (existing != null) {
+            await SupabaseService.updatePurchase(existing.id, {
+              'item': result.item,
+              'valor': result.valor,
+              'purchase_date': result.date,
+              'local': result.local,
+              'category_id': result.categoryId,
+            });
+          } else {
+            await SupabaseService.addPurchase(
+              purchaseDate: result.date,
+              item: result.item,
+              valor: result.valor,
+              local: result.local,
+              categoryId: result.categoryId,
+            );
+          }
+          // Refresh the list behind the sheet after every save; in add
+          // mode the sheet stays open for the next entry.
+          _loadAll();
+        },
+      ),
     );
-
-    if (result == null) return;
-    if (existing != null) {
-      await SupabaseService.updatePurchase(existing.id, {
-        'item': result.item,
-        'valor': result.valor,
-        'purchase_date': result.date,
-        'local': result.local,
-        'category_id': result.categoryId,
-      });
-    } else {
-      await SupabaseService.addPurchase(
-        purchaseDate: result.date,
-        item: result.item,
-        valor: result.valor,
-        local: result.local,
-        categoryId: result.categoryId,
-      );
-    }
-    _loadAll();
   }
 
   Future<void> _deletePurchase(Purchase p) async {
@@ -201,6 +241,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
+            if (_isAuthenticated) _buildMonthBar(),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -253,11 +294,24 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                       ),
                     ),
                   )
-                : IconButton(
-                    tooltip: 'Fotografar cupom',
-                    icon: const Icon(Icons.photo_camera_outlined,
-                        color: AppTheme.darkBrown),
-                    onPressed: _captureReceipt,
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Fotografar cupom',
+                        icon: const Icon(Icons.photo_camera_outlined,
+                            color: AppTheme.darkBrown),
+                        onPressed: () =>
+                            _captureReceipt(ImageSource.camera),
+                      ),
+                      IconButton(
+                        tooltip: 'Escolher da galeria',
+                        icon: const Icon(Icons.photo_library_outlined,
+                            color: AppTheme.darkBrown),
+                        onPressed: () =>
+                            _captureReceipt(ImageSource.gallery),
+                      ),
+                    ],
                   ),
             IconButton(
               tooltip: 'Fila de cupons',
@@ -292,6 +346,42 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildMonthBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.white,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              tooltip: 'Mês anterior',
+              icon: const Icon(Icons.chevron_left,
+                  color: AppTheme.mediumBrown),
+              onPressed: () => _changeMonth(-1),
+            ),
+            Expanded(
+              child: Text(
+                _monthLabel,
+                textAlign: TextAlign.center,
+                style: AppTheme.valueBold,
+              ),
+            ),
+            IconButton(
+              tooltip: 'Próximo mês',
+              icon: const Icon(Icons.chevron_right,
+                  color: AppTheme.mediumBrown),
+              onPressed: () => _changeMonth(1),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -361,7 +451,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               color:
                   AppTheme.primaryOrange.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          const Text('Nenhuma compra ainda',
+          Text('Nenhuma compra em $_monthLabel',
               style: AppTheme.sectionTitle),
           const SizedBox(height: 8),
           const Text('Toque em + ou fotografe um cupom',
@@ -486,13 +576,21 @@ class _PurchaseFormResult {
 }
 
 /// Owns its text controllers so they are only disposed once the sheet's
-/// route (including the close animation) is fully gone; results come
-/// back through Navigator.pop.
+/// route (including the close animation) is fully gone.
+///
+/// Edit mode saves and closes; add mode saves and stays open, clearing
+/// Item and Valor but keeping Data, Local and Importância so several
+/// items from the same receipt can be typed in a row.
 class _PurchaseSheet extends StatefulWidget {
   final Purchase? existing;
   final List<PurchaseCategory> categories;
+  final Future<void> Function(_PurchaseFormResult result) onSubmit;
 
-  const _PurchaseSheet({this.existing, required this.categories});
+  const _PurchaseSheet({
+    this.existing,
+    required this.categories,
+    required this.onSubmit,
+  });
 
   @override
   State<_PurchaseSheet> createState() => _PurchaseSheetState();
@@ -502,8 +600,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   late final TextEditingController _itemController;
   late final TextEditingController _valorController;
   late final TextEditingController _localController;
+  final _itemFocus = FocusNode();
   late String _date;
   String? _categoryId;
+  bool _saving = false;
+  int _addedCount = 0;
 
   @override
   void initState() {
@@ -525,26 +626,47 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     _itemController.dispose();
     _valorController.dispose();
     _localController.dispose();
+    _itemFocus.dispose();
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     final item = _itemController.text.trim();
-    if (item.isEmpty) {
+    if (item.isEmpty || _saving) return;
+    final local = _localController.text.trim();
+    final result = _PurchaseFormResult(
+      item: item,
+      valor: parseBrlInput(_valorController.text) ?? 0,
+      date: _date,
+      local: local.isEmpty ? null : local,
+      categoryId: _categoryId,
+    );
+
+    setState(() => _saving = true);
+    try {
+      await widget.onSubmit(result);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+
+    if (widget.existing != null) {
       Navigator.pop(context);
       return;
     }
-    final local = _localController.text.trim();
-    Navigator.pop(
-      context,
-      _PurchaseFormResult(
-        item: item,
-        valor: parseBrlInput(_valorController.text) ?? 0,
-        date: _date,
-        local: local.isEmpty ? null : local,
-        categoryId: _categoryId,
-      ),
-    );
+    setState(() {
+      _saving = false;
+      _addedCount++;
+      _itemController.clear();
+      _valorController.clear();
+    });
+    _itemFocus.requestFocus();
   }
 
   @override
@@ -564,8 +686,10 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           const SizedBox(height: 16),
           TextField(
             controller: _itemController,
+            focusNode: _itemFocus,
             autofocus: existing == null,
             decoration: _fieldDecoration('Item'),
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 12),
           Row(
@@ -641,7 +765,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _save,
+              onPressed: _saving ? null : _save,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryOrange,
                 foregroundColor: Colors.white,
@@ -651,9 +775,27 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                       BorderRadius.circular(AppTheme.radiusSmall),
                 ),
               ),
-              child: Text(existing != null ? 'Salvar' : 'Adicionar'),
+              child: _saving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(existing != null ? 'Salvar' : 'Adicionar'),
             ),
           ),
+          if (existing == null && _addedCount > 0) ...[
+            const SizedBox(height: 10),
+            Center(
+              child: Text(
+                '✓ $_addedCount '
+                '${_addedCount == 1 ? 'compra adicionada' : 'compras adicionadas'}',
+                style: AppTheme.caption
+                    .copyWith(color: Colors.green.shade700),
+              ),
+            ),
+          ],
         ],
       ),
     );

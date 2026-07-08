@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import 'purchases_screen.dart';
 import 'recipes_screen.dart';
+import 'shopping_screen.dart';
 import 'todo_screen.dart';
 import 'more_screen.dart';
 
@@ -30,6 +31,7 @@ class HomeShellState extends State<HomeShell> {
 
   final List<Widget> _screens = const [
     TodoScreen(),
+    ShoppingScreen(),
     PurchasesScreen(),
     RecipesScreen(),
     MoreScreen(),
@@ -103,9 +105,14 @@ class HomeShellState extends State<HomeShell> {
               label: 'Afazeres',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_bag_outlined),
-              activeIcon: Icon(Icons.shopping_bag),
+              icon: Icon(Icons.shopping_cart_outlined),
+              activeIcon: Icon(Icons.shopping_cart),
               label: 'Compras',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.payments_outlined),
+              activeIcon: Icon(Icons.payments),
+              label: 'Gastos',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.restaurant_menu_outlined),

@@ -248,7 +248,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
       ),
       floatingActionButton: _isAuthenticated
           ? FloatingActionButton(
-              // Unique tag: the Afazeres FAB coexists in the
+              // Unique tag: the other tabs' FABs coexist in the
               // IndexedStack and default hero tags would clash.
               heroTag: 'purchases_fab',
               onPressed: () => _showPurchaseSheet(),
@@ -269,11 +269,11 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Compras', style: AppTheme.headingLarge),
+                const Text('Gastos', style: AppTheme.headingLarge),
                 const SizedBox(height: 4),
                 Text(
                   _purchases.isEmpty
-                      ? 'Registre suas compras'
+                      ? 'Registre seus gastos'
                       : '${_purchases.length} itens • ${formatBrl(total)}',
                   style: AppTheme.bodyText
                       .copyWith(color: AppTheme.mediumBrown),
@@ -451,7 +451,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               color:
                   AppTheme.primaryOrange.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          Text('Nenhuma compra em $_monthLabel',
+          Text('Nenhum gasto em $_monthLabel',
               style: AppTheme.sectionTitle),
           const SizedBox(height: 8),
           const Text('Toque em + ou fotografe um cupom',
@@ -680,7 +680,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            existing != null ? 'Editar Compra' : 'Nova Compra',
+            existing != null ? 'Editar Gasto' : 'Novo Gasto',
             style: AppTheme.headingMedium,
           ),
           const SizedBox(height: 16),
@@ -790,7 +790,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             Center(
               child: Text(
                 '✓ $_addedCount '
-                '${_addedCount == 1 ? 'compra adicionada' : 'compras adicionadas'}',
+                '${_addedCount == 1 ? 'gasto adicionado' : 'gastos adicionados'}',
                 style: AppTheme.caption
                     .copyWith(color: Colors.green.shade700),
               ),

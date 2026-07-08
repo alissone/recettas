@@ -5,6 +5,7 @@ import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../models/receipt_job.dart';
 import '../models/recipe.dart';
+import '../models/shopping_item.dart';
 import '../models/sleep_event.dart';
 
 class SupabaseService {
@@ -56,21 +57,27 @@ class SupabaseService {
     return data.map<Purchase>((json) => Purchase.fromJson(json)).toList();
   }
 
-  static Future<void> addPurchase({
+  /// Returns the id of the created purchase.
+  static Future<String> addPurchase({
     required String purchaseDate,
     required String item,
     required double valor,
     String? local,
     String? categoryId,
   }) async {
-    await _client.from('purchases').insert({
-      'user_id': currentUser!.id,
-      'purchase_date': purchaseDate,
-      'item': item,
-      'valor': valor,
-      'local': local,
-      'category_id': categoryId,
-    });
+    final data = await _client
+        .from('purchases')
+        .insert({
+          'user_id': currentUser!.id,
+          'purchase_date': purchaseDate,
+          'item': item,
+          'valor': valor,
+          'local': local,
+          'category_id': categoryId,
+        })
+        .select('id')
+        .single();
+    return data['id'] as String;
   }
 
   static Future<void> insertPurchases(
@@ -86,6 +93,34 @@ class SupabaseService {
 
   static Future<void> deletePurchase(String id) async {
     await _client.from('purchases').delete().eq('id', id);
+  }
+
+  // Shopping list ("Compras": reminders of stuff to buy)
+  static Future<List<ShoppingItem>> getShoppingItems() async {
+    final data = await _client
+        .from('shopping_items')
+        .select()
+        .order('is_purchased', ascending: true)
+        .order('created_at', ascending: false);
+    return data
+        .map<ShoppingItem>((json) => ShoppingItem.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> addShoppingItem(String item) async {
+    await _client.from('shopping_items').insert({
+      'user_id': currentUser!.id,
+      'item': item,
+    });
+  }
+
+  static Future<void> updateShoppingItem(
+      String id, Map<String, dynamic> fields) async {
+    await _client.from('shopping_items').update(fields).eq('id', id);
+  }
+
+  static Future<void> deleteShoppingItem(String id) async {
+    await _client.from('shopping_items').delete().eq('id', id);
   }
 
   // Purchase categories ("Importância")

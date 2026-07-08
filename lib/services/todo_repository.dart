@@ -78,7 +78,8 @@ class TodoRepository {
       'todos',
       where: 'user_id = ? AND is_archived = 0',
       whereArgs: [uid],
-      orderBy: 'sort_order ASC, created_at DESC',
+      // Completed items sink to the bottom of the list.
+      orderBy: 'is_completed ASC, sort_order ASC, created_at DESC',
     );
     return rows.map(Todo.fromDb).toList();
   }

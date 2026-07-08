@@ -7,6 +7,7 @@ import '../models/purchase_category.dart';
 import '../models/shopping_item.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
+import '../widgets/local_field.dart';
 import 'home_shell.dart' show homeShellKey;
 
 /// Shopping list ("Compras"): reminders of stuff to buy. Checking an
@@ -455,6 +456,7 @@ class _CompletePurchaseSheetState extends State<_CompletePurchaseSheet> {
   final _valorController = TextEditingController();
   final _localController = TextEditingController();
   late String _date;
+  String? _localPreset;
   String? _categoryId;
   bool _saving = false;
 
@@ -473,11 +475,13 @@ class _CompletePurchaseSheetState extends State<_CompletePurchaseSheet> {
 
   Future<void> _save() async {
     if (_saving) return;
-    final local = _localController.text.trim();
+    final typedLocal = _localController.text.trim();
+    final local =
+        _localPreset ?? (typedLocal.isEmpty ? null : typedLocal);
     final result = _CompletePurchaseResult(
       valor: parseBrlInput(_valorController.text) ?? 0,
       date: _date,
-      local: local.isEmpty ? null : local,
+      local: local,
       categoryId: _categoryId,
     );
 
@@ -552,9 +556,11 @@ class _CompletePurchaseSheetState extends State<_CompletePurchaseSheet> {
             ],
           ),
           const SizedBox(height: 12),
-          TextField(
+          LocalField(
+            preset: _localPreset,
+            onPresetChanged: (v) => setState(() => _localPreset = v),
             controller: _localController,
-            decoration: _fieldDecoration('Local'),
+            decorationBuilder: _fieldDecoration,
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String?>(

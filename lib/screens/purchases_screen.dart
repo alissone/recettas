@@ -10,6 +10,7 @@ import '../models/purchase_category.dart';
 import '../services/category_store.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
+import '../widgets/local_field.dart';
 import 'edit_categories_screen.dart';
 import 'home_shell.dart' show homeShellKey;
 import 'receipt_queue_screen.dart';
@@ -602,6 +603,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   late final TextEditingController _localController;
   final _itemFocus = FocusNode();
   late String _date;
+  String? _localPreset;
   String? _categoryId;
   bool _saving = false;
   int _addedCount = 0;
@@ -615,7 +617,15 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
         text: existing != null
             ? existing.valor.toStringAsFixed(2).replaceAll('.', ',')
             : '');
-    _localController = TextEditingController(text: existing?.local ?? '');
+    // A saved local that matches a frequent place lands in the dropdown;
+    // anything else goes to the free-text side.
+    final existingLocal = existing?.local;
+    if (existingLocal != null && kFrequentLocals.contains(existingLocal)) {
+      _localPreset = existingLocal;
+      _localController = TextEditingController();
+    } else {
+      _localController = TextEditingController(text: existingLocal ?? '');
+    }
     _date = existing?.purchaseDate ??
         DateTime.now().toIso8601String().substring(0, 10);
     _categoryId = existing?.categoryId;
@@ -633,12 +643,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   Future<void> _save() async {
     final item = _itemController.text.trim();
     if (item.isEmpty || _saving) return;
-    final local = _localController.text.trim();
+    final typedLocal = _localController.text.trim();
+    final local =
+        _localPreset ?? (typedLocal.isEmpty ? null : typedLocal);
     final result = _PurchaseFormResult(
       item: item,
       valor: parseBrlInput(_valorController.text) ?? 0,
       date: _date,
-      local: local.isEmpty ? null : local,
+      local: local,
       categoryId: _categoryId,
     );
 
@@ -727,9 +739,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             ],
           ),
           const SizedBox(height: 12),
-          TextField(
+          LocalField(
+            preset: _localPreset,
+            onPresetChanged: (v) => setState(() => _localPreset = v),
             controller: _localController,
-            decoration: _fieldDecoration('Local'),
+            decorationBuilder: _fieldDecoration,
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String?>(

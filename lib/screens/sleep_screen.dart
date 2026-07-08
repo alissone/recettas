@@ -1,27 +1,18 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/sleep_event.dart';
+import '../models/sleep_interval.dart';
 import '../services/supabase_service.dart';
+import 'sleep_history_screen.dart';
 
 /// Sleep log: two buttons record "went to sleep" / "woke up" moments
 /// (long-press to pick a custom time), and a chart shows one bar per
-/// night on a noon-to-noon axis for the last week or month.
+/// night on a noon-to-noon axis, one week or month at a time.
 class SleepScreen extends StatefulWidget {
   const SleepScreen({super.key});
 
   @override
   State<SleepScreen> createState() => _SleepScreenState();
-}
-
-/// A closed sleep interval, assigned to the night that ends on [day]
-/// (i.e. the noon-to-noon window from [day]-1 12:00 to [day] 12:00).
-class _SleepInterval {
-  final DateTime day;
-  final double startHour; // hours since the window start (0..24)
-  final double endHour;
-  final Duration duration;
-
-  _SleepInterval(this.day, this.startHour, this.endHour, this.duration);
 }
 
 class _SleepScreenState extends State<SleepScreen> {
@@ -30,11 +21,22 @@ class _SleepScreenState extends State<SleepScreen> {
   bool _isSaving = false;
   List<SleepEvent> _events = [];
 
+  /// Last day of the visible range; today unless the user paged back.
+  DateTime _anchorDay = _today();
+  int _loadSeq = 0;
+
   static const _weekdaysShort = [
     'seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom',
   ];
 
   int get _rangeDays => _weekView ? 7 : 30;
+
+  static DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  bool get _isAtToday => !_anchorDay.isBefore(_today());
 
   @override
   void initState() {
@@ -47,20 +49,32 @@ class _SleepScreenState extends State<SleepScreen> {
       setState(() => _isLoading = false);
       return;
     }
+    final seq = ++_loadSeq;
     try {
       // One day beyond the month view so a night that started before
       // the range still has its sleep event available for pairing.
-      final from = DateTime.now().subtract(const Duration(days: 31));
-      final events = await SupabaseService.getSleepEvents(from: from);
-      if (mounted) {
+      final from = _anchorDay.subtract(const Duration(days: 31));
+      final to = _anchorDay.add(const Duration(days: 1));
+      final events = await SupabaseService.getSleepEvents(from: from, to: to);
+      if (mounted && seq == _loadSeq) {
         setState(() {
           _events = events;
           _isLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && seq == _loadSeq) setState(() => _isLoading = false);
     }
+  }
+
+  /// Moves the visible range back/forward by one week or month.
+  void _page(int direction) {
+    var next = _anchorDay.add(Duration(days: direction * _rangeDays));
+    final today = _today();
+    if (next.isAfter(today)) next = today;
+    if (next == _anchorDay) return;
+    setState(() => _anchorDay = next);
+    _load();
   }
 
   Future<void> _record(String type, DateTime occurredAt) async {
@@ -72,6 +86,11 @@ class _SleepScreenState extends State<SleepScreen> {
     setState(() => _isSaving = true);
     try {
       await SupabaseService.addSleepEvent(type, occurredAt);
+      // Recording something newer than the visible range: jump back
+      // to today so the new event is actually shown.
+      if (occurredAt.isAfter(_anchorDay.add(const Duration(days: 1)))) {
+        _anchorDay = _today();
+      }
       await _load();
     } catch (e) {
       if (mounted) {
@@ -116,51 +135,16 @@ class _SleepScreenState extends State<SleepScreen> {
     }
   }
 
-  // --- Interval pairing ---
-
-  /// Pairs each sleep event with the next wake event and assigns the
-  /// interval to the day the window ends on (sleep time + 12h).
-  List<_SleepInterval> _buildIntervals() {
-    final sorted = List<SleepEvent>.of(_events)
-      ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
-
-    final intervals = <_SleepInterval>[];
-    DateTime? pendingSleep;
-    for (final event in sorted) {
-      if (event.isSleep) {
-        // Consecutive sleep events: keep the most recent one.
-        pendingSleep = event.occurredAt;
-      } else if (pendingSleep != null) {
-        final sleep = pendingSleep;
-        final wake = event.occurredAt;
-        pendingSleep = null;
-        final duration = wake.difference(sleep);
-        if (duration <= Duration.zero ||
-            duration > const Duration(hours: 24)) {
-          continue; // bad pair (clock issues / forgotten log)
-        }
-        final bucket = sleep.add(const Duration(hours: 12));
-        final day = DateTime(bucket.year, bucket.month, bucket.day);
-        final windowStart =
-            day.subtract(const Duration(hours: 12)); // D-1 12:00
-        final start =
-            sleep.difference(windowStart).inMinutes / 60.0;
-        final end = (wake.difference(windowStart).inMinutes / 60.0)
-            .clamp(0.0, 24.0);
-        intervals.add(_SleepInterval(
-            day, start.clamp(0.0, 24.0), end, duration));
-      }
-    }
-    return intervals;
-  }
-
   List<DateTime> _rangeDaysList() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     return [
       for (var i = _rangeDays - 1; i >= 0; i--)
-        today.subtract(Duration(days: i)),
+        _anchorDay.subtract(Duration(days: i)),
     ];
+  }
+
+  String _formatDayMonth(DateTime d) {
+    return '${d.day.toString().padLeft(2, '0')}/'
+        '${d.month.toString().padLeft(2, '0')}';
   }
 
   String _formatDuration(Duration d) {
@@ -183,7 +167,20 @@ class _SleepScreenState extends State<SleepScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
-      appBar: AppBar(title: const Text('Sono')),
+      appBar: AppBar(
+        title: const Text('Sono'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Histórico',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const SleepHistoryScreen()),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: _isLoading
             ? const Center(
@@ -272,9 +269,10 @@ class _SleepScreenState extends State<SleepScreen> {
 
   Widget _buildChartCard() {
     final days = _rangeDaysList();
-    final intervals = _buildIntervals();
+    final intervals = buildSleepIntervals(_events);
     final inRange = intervals
-        .where((i) => !i.day.isBefore(days.first))
+        .where((i) =>
+            !i.day.isBefore(days.first) && !i.day.isAfter(days.last))
         .toList();
 
     final totalMinutes = inRange.fold<int>(
@@ -318,7 +316,36 @@ class _SleepScreenState extends State<SleepScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => _page(-1),
+                icon: const Icon(Icons.chevron_left),
+                color: AppTheme.mediumBrown,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Período anterior',
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${_formatDayMonth(days.first)} – '
+                    '${_formatDayMonth(days.last)}',
+                    style: AppTheme.caption
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: _isAtToday ? null : () => _page(1),
+                icon: const Icon(Icons.chevron_right),
+                color: AppTheme.mediumBrown,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Próximo período',
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
           Row(
             children: [
               _buildStat('Média por noite',
@@ -445,7 +472,7 @@ class _SleepScreenState extends State<SleepScreen> {
 
 class _SleepChartPainter extends CustomPainter {
   final List<DateTime> days;
-  final List<_SleepInterval> intervals;
+  final List<SleepInterval> intervals;
   final bool weekView;
   final List<String> weekdaysShort;
   final String Function(Duration) formatDuration;
@@ -493,7 +520,7 @@ class _SleepChartPainter extends CustomPainter {
       );
     }
 
-    final byDay = <DateTime, List<_SleepInterval>>{};
+    final byDay = <DateTime, List<SleepInterval>>{};
     for (final interval in intervals) {
       byDay.putIfAbsent(interval.day, () => []).add(interval);
     }

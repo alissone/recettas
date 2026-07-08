@@ -219,15 +219,37 @@ class SupabaseService {
 
   // Sleep events
   static Future<List<SleepEvent>> getSleepEvents(
-      {required DateTime from}) async {
-    final data = await _client
+      {required DateTime from, DateTime? to}) async {
+    var query = _client
         .from('sleep_events')
         .select()
-        .gte('occurred_at', from.toUtc().toIso8601String())
-        .order('occurred_at', ascending: true);
+        .gte('occurred_at', from.toUtc().toIso8601String());
+    if (to != null) {
+      query = query.lt('occurred_at', to.toUtc().toIso8601String());
+    }
+    final data = await query.order('occurred_at', ascending: true);
     return data
         .map<SleepEvent>((json) => SleepEvent.fromJson(json))
         .toList();
+  }
+
+  /// All sleep events for the user, oldest first. Paginates past the
+  /// PostgREST 1000-row response cap.
+  static Future<List<SleepEvent>> getAllSleepEvents() async {
+    const pageSize = 1000;
+    final events = <SleepEvent>[];
+    var offset = 0;
+    while (true) {
+      final data = await _client
+          .from('sleep_events')
+          .select()
+          .order('occurred_at', ascending: true)
+          .range(offset, offset + pageSize - 1);
+      events.addAll(data.map<SleepEvent>((json) => SleepEvent.fromJson(json)));
+      if (data.length < pageSize) break;
+      offset += pageSize;
+    }
+    return events;
   }
 
   static Future<void> addSleepEvent(

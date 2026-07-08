@@ -76,7 +76,7 @@ class TodoRepository {
     final db = await LocalDb.instance;
     final rows = await db.query(
       'todos',
-      where: 'user_id = ?',
+      where: 'user_id = ? AND is_archived = 0',
       whereArgs: [uid],
       orderBy: 'sort_order ASC, created_at DESC',
     );
@@ -130,10 +130,20 @@ class TodoRepository {
     });
   }
 
-  Future<void> deleteTodo(String id) async {
+  /// "Deleting" from the UI only archives: the row stays in the database
+  /// (local and server) but disappears from the list.
+  Future<void> archiveTodo(String id) async {
     final db = await LocalDb.instance;
-    await db.delete('todos', where: 'id = ?', whereArgs: [id]);
-    await _enqueue('todo_delete', {'id': id});
+    await db.update(
+      'todos',
+      {'is_archived': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await _enqueue('todo_update', {
+      'id': id,
+      'fields': {'is_archived': true},
+    });
   }
 
   Future<void> updateTodoCategory(String todoId, String? categoryId) async {

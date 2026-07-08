@@ -4,7 +4,7 @@ import '../app_theme.dart';
 import 'purchases_screen.dart';
 import 'recipes_screen.dart';
 import 'todo_screen.dart';
-import 'profile_screen.dart';
+import 'more_screen.dart';
 
 final homeShellKey = GlobalKey<HomeShellState>();
 
@@ -16,7 +16,7 @@ class HomeShell extends StatefulWidget {
 }
 
 class HomeShellState extends State<HomeShell> {
-  int _currentIndex = 2;
+  int _currentIndex = 0;
 
   // Banner state
   String? _bannerTitle;
@@ -32,7 +32,7 @@ class HomeShellState extends State<HomeShell> {
     TodoScreen(),
     PurchasesScreen(),
     RecipesScreen(),
-    ProfileScreen(),
+    MoreScreen(),
   ];
 
   void showBanner({
@@ -113,9 +113,9 @@ class HomeShellState extends State<HomeShell> {
               label: 'Receitas',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Perfil',
+              icon: Icon(Icons.grid_view),
+              activeIcon: Icon(Icons.grid_view_rounded),
+              label: 'Mais',
             ),
           ],
         ),

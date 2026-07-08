@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show Random;
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/todo.dart';
@@ -110,7 +111,8 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Future<void> _deleteTodo(Todo todo) async {
-    await _repo.deleteTodo(todo.id);
+    // Archive instead of delete: the row is kept in the database.
+    await _repo.archiveTodo(todo.id);
   }
 
   void _onReorder(int oldIndex, int newIndex) {
@@ -247,6 +249,58 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Widget _buildHeader() {
+    const List<String> surpriseDescriptions = [
+      'Monitore suas tarefas',
+      'O que vamos conquistar hoje?',
+      'Pequenos passos, grandes resultados.',
+      'Tudo em ordem, uma tarefa de cada vez.',
+      'Seu dia começa aqui.',
+      'Hora de fazer acontecer.',
+      'Organize. Execute. Repita.',
+      'Nada escapa da sua lista.',
+      'Mais foco, menos preocupação.',
+      'Transforme planos em conquistas.',
+      'Seu futuro agradece.',
+      'Missão do dia: avançar.',
+      'Cada tarefa concluída conta.',
+      'Produtividade sem complicação.',
+      'Seu segundo cérebro.',
+      'A próxima vitória está na lista.',
+      'Comece por qualquer lugar.',
+      'Só falta dar o primeiro passo.',
+      'Um check de cada vez.',
+      'Menos bagunça, mais progresso.',
+      'Respire. Priorize. Faça.',
+      'Hoje é um bom dia para terminar pendências.',
+      'Tudo pronto para um dia produtivo?',
+      'Vamos riscar alguns itens?',
+      'Seu plano está esperando.',
+      'Não deixe para depois.',
+      'O impossível começa com uma tarefa.',
+      'Mais ação, menos procrastinação.',
+      'Qual será a próxima conquista?',
+      'Seu tempo vale ouro.',
+      'Você está no controle.',
+      'Uma lista organizada, uma mente tranquila.',
+      'Foco no que realmente importa.',
+      'Cada tarefa é um passo à frente.',
+      'A consistência vence.',
+      'Organização é liberdade.',
+      'Faça do hoje um bom dia.',
+      'Sua produtividade mora aqui.',
+      'Pronto para marcar alguns ✓?',
+      'Vamos deixar essa lista menor?',
+      'Uma tarefa a menos, um sorriso a mais.',
+      'Seu eu do futuro vai agradecer.',
+      'Não pare agora.',
+      'A próxima tarefa é a mais importante.',
+      'O progresso acontece aos poucos.',
+      'Tudo fica mais fácil quando está organizado.',
+      'Seu painel de missões.',
+      'Que comece a produtividade.',
+      'Nada como um bom checklist.',
+      'Vamos fazer acontecer.',
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 8, 16),
       child: Row(
@@ -258,7 +312,8 @@ class _TodoScreenState extends State<TodoScreen> {
                 const Text('Afazeres', style: AppTheme.headingLarge),
                 const SizedBox(height: 4),
                 Text(
-                  'Monitore suas tarefas',
+                  surpriseDescriptions[
+                      Random().nextInt(surpriseDescriptions.length)],
                   style: AppTheme.bodyText
                       .copyWith(color: AppTheme.mediumBrown),
                 ),
@@ -289,7 +344,7 @@ class _TodoScreenState extends State<TodoScreen> {
                       Icon(Icons.category_outlined,
                           color: AppTheme.primaryOrange, size: 20),
                       SizedBox(width: 12),
-                      Text('Edit Categories'),
+                      Text('Editar Categorias'),
                     ],
                   ),
                 ),
@@ -331,12 +386,12 @@ class _TodoScreenState extends State<TodoScreen> {
                   size: 48, color: AppTheme.primaryOrange),
             ),
             const SizedBox(height: 24),
-            const Text('Sign in to manage tasks',
+            const Text('Faça login para ver seus afazeres',
                 style: AppTheme.headingMedium,
                 textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(
-              'Go to the Profile tab to sign in or create an account',
+              'Vá para a aba Perfil para fazer login ou criar uma conta',
               style: AppTheme.bodyText
                   .copyWith(color: AppTheme.mediumBrown),
               textAlign: TextAlign.center,
@@ -472,7 +527,7 @@ class _TodoScreenState extends State<TodoScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Drag to a category',
+                    'Arraste pra uma categoria',
                     style: AppTheme.headingMedium
                         .copyWith(color: Colors.white),
                   ),
@@ -506,7 +561,7 @@ class _TodoScreenState extends State<TodoScreen> {
                           key: _squircleKeys.last,
                           color: AppTheme.mediumBrown
                               .withValues(alpha: 0.4),
-                          label: 'None',
+                          label: 'Nenhuma',
                           icon: Icons.close,
                           highlighted: _highlightedIndex ==
                               _categories.length,
@@ -518,7 +573,7 @@ class _TodoScreenState extends State<TodoScreen> {
                   ),
                   const SizedBox(height: 40),
                   Text(
-                    'Release to cancel',
+                    'Solte para cancelar',
                     style: AppTheme.caption
                         .copyWith(color: Colors.white54),
                   ),

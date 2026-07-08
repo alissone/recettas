@@ -5,6 +5,7 @@ class Todo {
   final bool isCompleted;
   final String? categoryId;
   final int sortOrder;
+  final bool isArchived;
   final DateTime? createdAt;
 
   Todo({
@@ -14,6 +15,7 @@ class Todo {
     this.isCompleted = false,
     this.categoryId,
     this.sortOrder = 0,
+    this.isArchived = false,
     this.createdAt,
   });
 
@@ -25,6 +27,7 @@ class Todo {
       isCompleted: json['is_completed'] ?? false,
       categoryId: json['category_id'],
       sortOrder: json['sort_order'] ?? 0,
+      isArchived: json['is_archived'] ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
           : null,
@@ -38,6 +41,7 @@ class Todo {
         'is_completed': isCompleted ? 1 : 0,
         'category_id': categoryId,
         'sort_order': sortOrder,
+        'is_archived': isArchived ? 1 : 0,
         'created_at': createdAt?.toIso8601String(),
       };
 
@@ -49,6 +53,7 @@ class Todo {
       isCompleted: (row['is_completed'] ?? 0) != 0,
       categoryId: row['category_id'],
       sortOrder: row['sort_order'] ?? 0,
+      isArchived: (row['is_archived'] ?? 0) != 0,
       createdAt: row['created_at'] != null
           ? DateTime.tryParse(row['created_at'])
           : null,

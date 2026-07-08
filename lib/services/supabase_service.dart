@@ -5,6 +5,7 @@ import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../models/receipt_job.dart';
 import '../models/recipe.dart';
+import '../models/sleep_event.dart';
 
 class SupabaseService {
   static SupabaseClient get _client => Supabase.instance.client;
@@ -166,6 +167,45 @@ class SupabaseService {
 
   static Future<Uint8List> downloadReceiptImage(String path) async {
     return await _client.storage.from('receipts').download(path);
+  }
+
+  // Accelerometer recordings (bursts of [t_ms, x, y, z] vectors)
+  static Future<void> insertAccelRecording({
+    required DateTime recordedAt,
+    required List<List<double>> samples,
+  }) async {
+    await _client.from('accel_recordings').insert({
+      'user_id': currentUser!.id,
+      'recorded_at': recordedAt.toUtc().toIso8601String(),
+      'sample_count': samples.length,
+      'samples': samples,
+    });
+  }
+
+  // Sleep events
+  static Future<List<SleepEvent>> getSleepEvents(
+      {required DateTime from}) async {
+    final data = await _client
+        .from('sleep_events')
+        .select()
+        .gte('occurred_at', from.toUtc().toIso8601String())
+        .order('occurred_at', ascending: true);
+    return data
+        .map<SleepEvent>((json) => SleepEvent.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> addSleepEvent(
+      String eventType, DateTime occurredAt) async {
+    await _client.from('sleep_events').insert({
+      'user_id': currentUser!.id,
+      'event_type': eventType,
+      'occurred_at': occurredAt.toUtc().toIso8601String(),
+    });
+  }
+
+  static Future<void> deleteSleepEvent(String id) async {
+    await _client.from('sleep_events').delete().eq('id', id);
   }
 
   // Profile

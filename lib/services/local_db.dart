@@ -27,7 +27,7 @@ class LocalDb {
     final dir = await getDatabasesPath();
     _db = await openDatabase(
       p.join(dir, 'recettas_cache.db'),
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE todos (
@@ -37,6 +37,7 @@ class LocalDb {
             is_completed INTEGER NOT NULL DEFAULT 0,
             category_id TEXT,
             sort_order INTEGER NOT NULL DEFAULT 0,
+            is_archived INTEGER NOT NULL DEFAULT 0,
             created_at TEXT
           )
         ''');
@@ -57,6 +58,12 @@ class LocalDb {
             created_at TEXT NOT NULL
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+              'ALTER TABLE todos ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0');
+        }
       },
     );
     return _db!;

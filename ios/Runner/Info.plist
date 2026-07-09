@@ -47,6 +47,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Tirar foto de cupons fiscais para registrar compras</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Sugerir o local da compra quando você estiver em um lugar conhecido</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Selecionar fotos de cupons fiscais para registrar compras</string>
 	<key>NSAppTransportSecurity</key>

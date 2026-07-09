@@ -150,9 +150,8 @@ class _CurrencyConverterScreenState
                           .withValues(alpha: 0.08),
                       borderRadius:
                           BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(
-                          color: AppTheme.primaryOrange
-                              .withValues(alpha: 0.25)),
+                      border:
+                          Border.all(color: AppTheme.borderOrange),
                     ),
                     child: Column(
                       children: [

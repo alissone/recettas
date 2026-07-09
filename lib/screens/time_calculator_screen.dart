@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../app_theme.dart';
 
-/// Adds or subtracts two hh:mm:ss durations.
+/// Adds or subtracts two hh:mm:ss times, wrapping the result to a time
+/// of day; crossing midnight is shown as a ±N dia(s) indicator.
+/// Minutes and seconds may exceed 59 (e.g. 14:15 + 0:180:00).
 class TimeCalculatorScreen extends StatefulWidget {
   const TimeCalculatorScreen({super.key});
 
@@ -34,16 +36,25 @@ class _TimeCalculatorScreenState extends State<TimeCalculatorScreen> {
     return h * 3600 + m * 60 + s;
   }
 
-  String get _result {
+  static const _daySeconds = 24 * 3600;
+
+  int get _totalSeconds {
     final a = _rowSeconds(0);
     final b = _rowSeconds(1);
-    final total = _isAddition ? a + b : a - b;
-    final sign = total < 0 ? '−' : '';
-    final abs = total.abs();
-    final h = abs ~/ 3600;
-    final m = (abs % 3600) ~/ 60;
-    final s = abs % 60;
-    return '$sign${h.toString().padLeft(2, '0')}:'
+    return _isAddition ? a + b : a - b;
+  }
+
+  /// Days crossed when the raw total falls outside 00:00–24:00.
+  int get _dayOffset => (_totalSeconds / _daySeconds).floor();
+
+  String get _result {
+    // Dart's % is never negative for a positive divisor, so 02:00 −
+    // 05:00 wraps to 21:00 (with _dayOffset −1) rather than −03:00.
+    final wrapped = _totalSeconds % _daySeconds;
+    final h = wrapped ~/ 3600;
+    final m = (wrapped % 3600) ~/ 60;
+    final s = wrapped % 60;
+    return '${h.toString().padLeft(2, '0')}:'
         '${m.toString().padLeft(2, '0')}:'
         '${s.toString().padLeft(2, '0')}';
   }
@@ -81,6 +92,7 @@ class _TimeCalculatorScreenState extends State<TimeCalculatorScreen> {
                       selectedBackgroundColor: AppTheme.primaryOrange
                           .withValues(alpha: 0.15),
                       selectedForegroundColor: AppTheme.primaryOrange,
+                      side: BorderSide(color: AppTheme.borderOrange),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -94,9 +106,8 @@ class _TimeCalculatorScreenState extends State<TimeCalculatorScreen> {
                           .withValues(alpha: 0.08),
                       borderRadius:
                           BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(
-                          color: AppTheme.primaryOrange
-                              .withValues(alpha: 0.25)),
+                      border:
+                          Border.all(color: AppTheme.borderOrange),
                     ),
                     child: Column(
                       children: [
@@ -109,6 +120,16 @@ class _TimeCalculatorScreenState extends State<TimeCalculatorScreen> {
                             FontFeature.tabularFigures()
                           ]),
                         ),
+                        if (_dayOffset != 0) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_dayOffset > 0 ? '+' : '−'}'
+                            '${_dayOffset.abs()} '
+                            'dia${_dayOffset.abs() == 1 ? '' : 's'}',
+                            style: AppTheme.caption.copyWith(
+                                color: AppTheme.primaryOrange),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -146,7 +167,8 @@ class _TimeCalculatorScreenState extends State<TimeCalculatorScreen> {
         keyboardType: TextInputType.number,
         inputFormatters: [
           FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(field == 0 ? 4 : 2),
+          // Minutes and seconds may go past 59 (e.g. +180 minutes).
+          LengthLimitingTextInputFormatter(4),
         ],
         textAlign: TextAlign.center,
         style: AppTheme.valueBold.copyWith(fontSize: 20),

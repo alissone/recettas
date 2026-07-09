@@ -2,23 +2,34 @@ import 'package:flutter/material.dart';
 
 import '../app_theme.dart';
 
+
+/// Most used places offered in the Local dropdown, mapped to their
+/// "lat, lng" coordinates (parsed at runtime by LocalGuesser). A place
+/// is suggested automatically when the phone is within
+/// [kLocalSuggestionRadiusMeters] of it.
+const Map<String, String> kFrequentLocalCoords = {
+  'CTFalcao': "-5.816143323810006, -46.13594036343797",
+  'Camino': "-5.828665627844275, -46.17171831046831",
+  'Farmacia Pague Menos': "-5.820053795256173, -46.15830968792096",
+  'Farmacia Ultra Popular': "-5.815835982103011, -46.13467805580731",
+  'Goncalves Construcoes': "-5.815672296961361, -46.13344080325571",
+  'Hiper+': "-5.816553391764024, -46.13664354359778",
+  'Lanche Vitoria': "-5.815251211305602, -46.13470422817626",
+  'Larissa Construcoes': "-5.815361427838658, -46.13393902358022",
+  "Mello" : "-5.8150207341679945, -46.134444273686086",
+  'Peixoto': "-5.815019069929221, -46.13210085123408",
+  'Pix Carol': "",
+  'Queiroz': '-5.816108668781542, -46.1304306899312',
+  'Torres Construcoes': "-5.815773649672106, -46.13380438598688",
+  'Unigrande': "-5.817420811842902, -46.15689816223729",
+  'Vivo': "",
+};
+
+const double kLocalSuggestionRadiusMeters = 50;
+
 /// Most used places offered in the Local dropdown.
-const List<String> kFrequentLocals = [
-  'Queiroz',
-  'Peixoto',
-  'Camino',
-  'Farmacia Ultra Popular',
-  'Hiper+',
-  'CTFalcao',
-  'Torres Construcoes',
-  'Larissa Construcoes',
-  'Goncalves Construcoes',
-  'Lanche Vitoria',
-  'Farmacia Pague Menos',
-  'Pix Carol',
-  'Vivo',
-  'Unigrande',
-];
+List<String> get kFrequentLocals =>
+    kFrequentLocalCoords.keys.toList(growable: false);
 
 /// Split "Local" input: a dropdown of most-used places on the left and
 /// the usual free-text field on the right. Picking a place clears the

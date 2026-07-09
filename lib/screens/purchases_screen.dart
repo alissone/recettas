@@ -8,6 +8,7 @@ import '../app_theme.dart';
 import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../services/category_store.dart';
+import '../services/local_guesser.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
 import '../widgets/local_field.dart';
@@ -43,6 +44,9 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   bool _isLoading = true;
   bool _uploadingReceipt = false;
   StreamSubscription? _authSubscription;
+
+  bool _searchVisible = false;
+  final _searchController = TextEditingController();
 
   /// First day of the month being displayed.
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
@@ -80,6 +84,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -115,6 +120,26 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// Purchases shown in the list: everything, or the search matches
+  /// (by item, local or category name) while the search bar is open.
+  List<Purchase> get _visiblePurchases {
+    final query = _searchController.text.trim().toLowerCase();
+    if (!_searchVisible || query.isEmpty) return _purchases;
+    return _purchases.where((p) {
+      final cat = _categoryFor(p);
+      return p.item.toLowerCase().contains(query) ||
+          (p.local?.toLowerCase().contains(query) ?? false) ||
+          (cat?.name.toLowerCase().contains(query) ?? false);
+    }).toList();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _searchVisible = !_searchVisible;
+      if (!_searchVisible) _searchController.clear();
+    });
   }
 
   PurchaseCategory? _categoryFor(Purchase p) {
@@ -242,6 +267,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
+            if (_isAuthenticated && _searchVisible) _buildSearchBar(),
             if (_isAuthenticated) _buildMonthBar(),
             Expanded(child: _buildContent()),
           ],
@@ -260,8 +286,9 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   }
 
   Widget _buildHeader() {
+    final visible = _visiblePurchases;
     final total =
-        _purchases.fold<double>(0, (sum, p) => sum + p.valor);
+        visible.fold<double>(0, (sum, p) => sum + p.valor);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 8, 16),
       child: Row(
@@ -275,7 +302,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                 Text(
                   _purchases.isEmpty
                       ? 'Registre seus gastos'
-                      : '${_purchases.length} itens • ${formatBrl(total)}',
+                      : '${visible.length} itens • ${formatBrl(total)}',
                   style: AppTheme.bodyText
                       .copyWith(color: AppTheme.mediumBrown),
                 ),
@@ -283,6 +310,16 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
             ),
           ),
           if (_isAuthenticated) ...[
+            IconButton(
+              tooltip: 'Buscar',
+              icon: Icon(
+                Icons.search,
+                color: _searchVisible
+                    ? AppTheme.primaryOrange
+                    : AppTheme.darkBrown,
+              ),
+              onPressed: _toggleSearch,
+            ),
             _uploadingReceipt
                 ? const Padding(
                     padding: EdgeInsets.all(12),
@@ -351,6 +388,44 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     );
   }
 
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.white,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: TextField(
+          controller: _searchController,
+          autofocus: true,
+          style: AppTheme.bodyText,
+          decoration: InputDecoration(
+            hintText: 'Buscar por item, local ou importância',
+            hintStyle: TextStyle(
+                color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
+            prefixIcon: const Icon(Icons.search,
+                color: AppTheme.mediumBrown),
+            suffixIcon: _searchController.text.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Limpar',
+                    icon: const Icon(Icons.close,
+                        color: AppTheme.mediumBrown),
+                    onPressed: () =>
+                        setState(_searchController.clear),
+                  ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMonthBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -396,14 +471,36 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
       );
     }
     if (_purchases.isEmpty) return _buildEmptyState();
+    final visible = _visiblePurchases;
+    if (visible.isEmpty) return _buildNoSearchResults();
     return RefreshIndicator(
       color: AppTheme.primaryOrange,
       onRefresh: _loadAll,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _purchases.length,
+        itemCount: visible.length,
         itemBuilder: (context, index) =>
-            _buildPurchaseCard(_purchases[index]),
+            _buildPurchaseCard(visible[index]),
+      ),
+    );
+  }
+
+  Widget _buildNoSearchResults() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off,
+              size: 64,
+              color:
+                  AppTheme.primaryOrange.withValues(alpha: 0.3)),
+          const SizedBox(height: 16),
+          const Text('Nenhum gasto encontrado',
+              style: AppTheme.sectionTitle),
+          const SizedBox(height: 8),
+          const Text('Tente outro termo de busca',
+              style: AppTheme.caption),
+        ],
       ),
     );
   }
@@ -629,6 +726,17 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     _date = existing?.purchaseDate ??
         DateTime.now().toIso8601String().substring(0, 10);
     _categoryId = existing?.categoryId;
+    // New purchases start with the place guessed from where the phone
+    // is; edits keep whatever local was saved.
+    if (existing == null) _guessLocal();
+  }
+
+  Future<void> _guessLocal() async {
+    final guess = await LocalGuesser.guess();
+    if (!mounted || guess == null) return;
+    // The user picked or typed a place while the GPS was working.
+    if (_localPreset != null || _localController.text.isNotEmpty) return;
+    setState(() => _localPreset = guess);
   }
 
   @override

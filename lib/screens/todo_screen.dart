@@ -858,8 +858,7 @@ class _SwipeableTodoItemState extends State<_SwipeableTodoItem>
                             border: todo.isCompleted
                                 ? null
                                 : Border.all(
-                                    color: AppTheme.primaryOrange
-                                        .withValues(alpha: 0.3),
+                                    color: AppTheme.borderOrange,
                                     width: 2),
                           ),
                           child: todo.isCompleted

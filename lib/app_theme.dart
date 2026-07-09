@@ -20,6 +20,12 @@ class AppTheme {
     colors: [primaryOrange, lightOrange],
   );
 
+  // Borders — every decorative border in the app uses one of these two.
+  // (State borders — focus rings, error banners, selection highlights —
+  // keep their own semantic colors.)
+  static Color get borderOrange => primaryOrange.withValues(alpha: 0.25);
+  static Color get borderBrown => mediumBrown.withValues(alpha: 0.3);
+
   // Shadows
   static List<BoxShadow> get cardShadow => [
         BoxShadow(

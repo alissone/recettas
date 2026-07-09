@@ -167,6 +167,7 @@ class _DateCalculatorScreenState extends State<DateCalculatorScreen> {
                 selectedBackgroundColor:
                     AppTheme.primaryOrange.withValues(alpha: 0.15),
                 selectedForegroundColor: AppTheme.primaryOrange,
+                side: BorderSide(color: AppTheme.borderOrange),
               ),
             ),
             const SizedBox(width: 12),
@@ -248,8 +249,7 @@ class _DateCalculatorScreenState extends State<DateCalculatorScreen> {
             label: Text(_formatDate(value)),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.darkBrown,
-              side: BorderSide(
-                  color: AppTheme.mediumBrown.withValues(alpha: 0.3)),
+              side: BorderSide(color: AppTheme.borderBrown),
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(
                   horizontal: 12, vertical: 14),
@@ -271,8 +271,7 @@ class _DateCalculatorScreenState extends State<DateCalculatorScreen> {
       decoration: BoxDecoration(
         color: AppTheme.primaryOrange.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        border: Border.all(
-            color: AppTheme.primaryOrange.withValues(alpha: 0.25)),
+        border: Border.all(color: AppTheme.borderOrange),
       ),
       child: Text(
         text,

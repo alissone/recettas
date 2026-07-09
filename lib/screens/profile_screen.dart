@@ -175,7 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label: const Text('Sign Out'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.primaryOrange,
-              side: const BorderSide(color: AppTheme.primaryOrange),
+              side: BorderSide(color: AppTheme.borderOrange),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius:

@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Location: suggest the purchase place from nearby known spots -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <!-- usesCleartextTraffic: the receipt OCR server (llama-server over
          Tailscale) is plain http -->
     <application

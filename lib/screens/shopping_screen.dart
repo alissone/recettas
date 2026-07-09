@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/purchase_category.dart';
 import '../models/shopping_item.dart';
+import '../services/local_guesser.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
 import '../widgets/local_field.dart';
@@ -383,8 +384,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
                       border: item.isPurchased
                           ? null
                           : Border.all(
-                              color: AppTheme.primaryOrange
-                                  .withValues(alpha: 0.3),
+                              color: AppTheme.borderOrange,
                               width: 2),
                     ),
                     child: item.isPurchased
@@ -464,6 +464,15 @@ class _CompletePurchaseSheetState extends State<_CompletePurchaseSheet> {
   void initState() {
     super.initState();
     _date = DateTime.now().toIso8601String().substring(0, 10);
+    _guessLocal();
+  }
+
+  Future<void> _guessLocal() async {
+    final guess = await LocalGuesser.guess();
+    if (!mounted || guess == null) return;
+    // The user picked or typed a place while the GPS was working.
+    if (_localPreset != null || _localController.text.isNotEmpty) return;
+    setState(() => _localPreset = guess);
   }
 
   @override

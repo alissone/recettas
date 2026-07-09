@@ -312,6 +312,7 @@ class _SleepScreenState extends State<SleepScreen> {
                       AppTheme.primaryOrange.withValues(alpha: 0.15),
                   selectedForegroundColor: AppTheme.primaryOrange,
                   visualDensity: VisualDensity.compact,
+                  side: BorderSide(color: AppTheme.borderOrange),
                 ),
               ),
             ],

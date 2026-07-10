@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' show Random;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../models/todo.dart';
 import '../models/todo_category.dart';
@@ -76,6 +77,14 @@ class _TodoScreenState extends State<TodoScreen> {
   List<TodoCategory> _categories = [];
   bool _isLoading = true;
   bool _isAdding = false;
+  // UI-only grouping: never touches the stored order. The flag and the
+  // group order live in SharedPreferences; collapse state is per-session.
+  static const String _uncategorizedKey = '__uncategorized__';
+  static const String _prefGroupByCategory = 'todo_group_by_category';
+  static const String _prefGroupOrder = 'todo_group_order';
+  bool _groupByCategory = false;
+  List<String> _groupOrder = [];
+  final Set<String> _collapsedGroups = {};
   String _surpriseDescription = _surpriseDescriptions[
       Random().nextInt(_surpriseDescriptions.length)];
   final _textController = TextEditingController();
@@ -93,6 +102,7 @@ class _TodoScreenState extends State<TodoScreen> {
   void initState() {
     super.initState();
     _loadAll();
+    _loadGroupPrefs();
 
     // New surprise description whenever the user switches tabs. The screen
     // stays alive in the IndexedStack, so initState alone isn't enough.
@@ -166,6 +176,56 @@ class _TodoScreenState extends State<TodoScreen> {
       _categories.length + 1,
       (_) => GlobalKey(),
     );
+  }
+
+  // --- Grouping preferences ---
+
+  Future<void> _loadGroupPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _groupByCategory =
+          prefs.getBool(_prefGroupByCategory) ?? false;
+      _groupOrder = prefs.getStringList(_prefGroupOrder) ?? [];
+    });
+  }
+
+  Future<void> _toggleGroupByCategory() async {
+    setState(() => _groupByCategory = !_groupByCategory);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefGroupByCategory, _groupByCategory);
+  }
+
+  Future<void> _saveGroupOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_prefGroupOrder, _groupOrder);
+  }
+
+  /// Saved order pruned to existing categories, with new categories
+  /// appended and "Sem categoria" defaulting to the bottom.
+  List<String> _effectiveGroupOrder() {
+    final known = <String>{
+      for (final c in _categories) c.id,
+      _uncategorizedKey,
+    };
+    final order = _groupOrder.where(known.contains).toList();
+    for (final c in _categories) {
+      if (!order.contains(c.id)) order.add(c.id);
+    }
+    if (!order.contains(_uncategorizedKey)) {
+      order.add(_uncategorizedKey);
+    }
+    return order;
+  }
+
+  void _toggleGroupCollapsed(String key) {
+    setState(() {
+      if (_collapsedGroups.contains(key)) {
+        _collapsedGroups.remove(key);
+      } else {
+        _collapsedGroups.add(key);
+      }
+    });
   }
 
   Future<void> _addTodo() async {
@@ -350,9 +410,42 @@ class _TodoScreenState extends State<TodoScreen> {
               ),
               color: AppTheme.white,
               onSelected: (value) {
+                if (value == 'group') _toggleGroupByCategory();
+                if (value == 'group_order') _openGroupOrderSheet();
                 if (value == 'categories') _openEditCategories();
               },
               itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'group',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _groupByCategory
+                            ? Icons.layers_clear_outlined
+                            : Icons.layers_outlined,
+                        color: AppTheme.primaryOrange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(_groupByCategory
+                          ? 'Desagrupar'
+                          : 'Agrupar por categoria'),
+                    ],
+                  ),
+                ),
+                if (_groupByCategory)
+                  const PopupMenuItem(
+                    value: 'group_order',
+                    child: Row(
+                      children: [
+                        Icon(Icons.swap_vert,
+                            color: AppTheme.primaryOrange,
+                            size: 20),
+                        SizedBox(width: 12),
+                        Text('Ordenar grupos'),
+                      ],
+                    ),
+                  ),
                 const PopupMenuItem(
                   value: 'categories',
                   child: Row(
@@ -381,6 +474,7 @@ class _TodoScreenState extends State<TodoScreen> {
     }
     if (_isAdding) return _buildAddingView();
     if (_todos.isEmpty) return _buildEmptyState();
+    if (_groupByCategory) return _buildGroupedList();
     return _buildTodoList();
   }
 
@@ -453,7 +547,7 @@ class _TodoScreenState extends State<TodoScreen> {
               controller: _textController,
               focusNode: _focusNode,
               decoration: InputDecoration(
-                hintText: 'What needs to be done?',
+                hintText: 'O que precisa fazer?',
                 hintStyle: TextStyle(
                     color: AppTheme.mediumBrown
                         .withValues(alpha: 0.5)),
@@ -524,6 +618,232 @@ class _TodoScreenState extends State<TodoScreen> {
           isCategorizing: _categorizingTodo?.id == todo.id,
         );
       },
+    );
+  }
+
+  // --- Grouped view (visual only; stored order is untouched) ---
+
+  Widget _buildGroupedList() {
+    final byCategory = <String, List<Todo>>{};
+    final uncategorized = <Todo>[];
+    for (final todo in _todos) {
+      if (todo.categoryId != null &&
+          _categories.any((c) => c.id == todo.categoryId)) {
+        byCategory.putIfAbsent(todo.categoryId!, () => []).add(todo);
+      } else {
+        uncategorized.add(todo);
+      }
+    }
+
+    final children = <Widget>[];
+    for (final key in _effectiveGroupOrder()) {
+      if (key == _uncategorizedKey) {
+        if (uncategorized.isNotEmpty) {
+          children.add(_buildCategoryGroup(null, uncategorized));
+        }
+      } else if (byCategory.containsKey(key)) {
+        children.add(_buildCategoryGroup(
+          _categories.firstWhere((c) => c.id == key),
+          byCategory[key]!,
+        ));
+      }
+    }
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      children: children,
+    );
+  }
+
+  /// [cat] is null for the "Sem categoria" group.
+  Widget _buildCategoryGroup(TodoCategory? cat, List<Todo> items) {
+    final key = cat?.id ?? _uncategorizedKey;
+    final color = cat?.color ?? AppTheme.mediumBrown;
+    final collapsed = _collapsedGroups.contains(key);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: cat == null ? 0.05 : 0.08),
+          borderRadius:
+              BorderRadius.circular(AppTheme.radiusLarge),
+          border: Border.all(
+              color:
+                  color.withValues(alpha: cat == null ? 0.2 : 0.35)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _toggleGroupCollapsed(key),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 2, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: cat?.color ??
+                            AppTheme.mediumBrown
+                                .withValues(alpha: 0.4),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        cat?.name ?? 'Sem categoria',
+                        style: AppTheme.caption.copyWith(
+                            fontSize: 13,
+                            color: AppTheme.darkBrown),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (collapsed) ...[
+                      Text('${items.length}',
+                          style: AppTheme.caption),
+                      const SizedBox(width: 4),
+                    ],
+                    AnimatedRotation(
+                      turns: collapsed ? -0.25 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.expand_more,
+                        size: 20,
+                        color: AppTheme.mediumBrown
+                            .withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: collapsed
+                  ? const SizedBox(width: double.infinity)
+                  : Column(
+                      children: [
+                        // The tinted card already shows the category,
+                        // so items skip their color stripe here.
+                        for (final todo in items)
+                          _buildGroupedItem(todo, inGroup: true),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openGroupOrderSheet() {
+    final order = _effectiveGroupOrder();
+
+    String nameFor(String key) => key == _uncategorizedKey
+        ? 'Sem categoria'
+        : _categories.firstWhere((c) => c.id == key).name;
+    Color colorFor(String key) => key == _uncategorizedKey
+        ? AppTheme.mediumBrown.withValues(alpha: 0.4)
+        : _categories.firstWhere((c) => c.id == key).color;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusLarge)),
+      ),
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 20, 8, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Ordem dos grupos',
+                      style: AppTheme.sectionTitle),
+                  const SizedBox(height: 4),
+                  const Text('Arraste para reordenar',
+                      style: AppTheme.caption),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ReorderableListView(
+                      shrinkWrap: true,
+                      buildDefaultDragHandles: false,
+                      onReorder: (oldIndex, newIndex) {
+                        if (newIndex > oldIndex) newIndex--;
+                        final item = order.removeAt(oldIndex);
+                        order.insert(newIndex, item);
+                        setSheetState(() {});
+                        // Rebuilds the list behind the sheet too.
+                        setState(
+                            () => _groupOrder = List.of(order));
+                        _saveGroupOrder();
+                      },
+                      children: [
+                        for (int i = 0; i < order.length; i++)
+                          ListTile(
+                            key: ValueKey(order[i]),
+                            dense: true,
+                            leading: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: colorFor(order[i]),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            title: Text(
+                              nameFor(order[i]),
+                              style: const TextStyle(
+                                color: AppTheme.darkBrown,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            trailing: ReorderableDragStartListener(
+                              index: i,
+                              child: Icon(
+                                Icons.drag_indicator,
+                                color: AppTheme.mediumBrown
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildGroupedItem(Todo todo, {bool inGroup = false}) {
+    return _SwipeableTodoItem(
+      key: ValueKey(todo.id),
+      todo: todo,
+      index: 0,
+      category: inGroup ? null : _categoryForTodo(todo),
+      hasCategories: _categories.isNotEmpty,
+      canReorder: false,
+      onToggle: () => _toggleTodo(todo),
+      onDelete: () => _deleteTodo(todo),
+      onCategorizeStart: () => _startCategorize(todo),
+      onCategorizeDragUpdate: _onCategorizeDragUpdate,
+      onCategorizeDragEnd: _onCategorizeDragEnd,
+      isCategorizing: _categorizingTodo?.id == todo.id,
     );
   }
 
@@ -689,6 +1009,7 @@ class _SwipeableTodoItem extends StatefulWidget {
   final ValueChanged<Offset> onCategorizeDragUpdate;
   final ValueChanged<Offset> onCategorizeDragEnd;
   final bool isCategorizing;
+  final bool canReorder;
 
   const _SwipeableTodoItem({
     super.key,
@@ -702,6 +1023,7 @@ class _SwipeableTodoItem extends StatefulWidget {
     required this.onCategorizeDragUpdate,
     required this.onCategorizeDragEnd,
     required this.isCategorizing,
+    this.canReorder = true,
   });
 
   @override
@@ -901,20 +1223,22 @@ class _SwipeableTodoItemState extends State<_SwipeableTodoItem>
                         ),
                       ),
                       const SizedBox(width: 4),
-                      // Drag handle
-                      ReorderableDragStartListener(
-                        index: widget.index,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 8),
-                          child: Icon(
-                            Icons.drag_indicator,
-                            color: AppTheme.mediumBrown
-                                .withValues(alpha: 0.3),
-                            size: 22,
+                      // Drag handle (manual order only applies to the
+                      // ungrouped list)
+                      if (widget.canReorder)
+                        ReorderableDragStartListener(
+                          index: widget.index,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 8),
+                            child: Icon(
+                              Icons.drag_indicator,
+                              color: AppTheme.mediumBrown
+                                  .withValues(alpha: 0.3),
+                              size: 22,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),

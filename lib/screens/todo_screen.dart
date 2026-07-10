@@ -9,6 +9,7 @@ import '../services/supabase_service.dart';
 import '../services/todo_repository.dart';
 import '../widgets/sync_indicator.dart';
 import 'edit_categories_screen.dart';
+import 'home_shell.dart';
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -18,10 +19,65 @@ class TodoScreen extends StatefulWidget {
 }
 
 class _TodoScreenState extends State<TodoScreen> {
+  static const List<String> _surpriseDescriptions = [
+    'Monitore suas tarefas',
+    'O que vamos conquistar hoje?',
+    'Pequenos passos, grandes resultados.',
+    'Tudo em ordem, uma tarefa de cada vez.',
+    'Seu dia começa aqui.',
+    'Hora de fazer acontecer.',
+    'Organize. Execute. Repita.',
+    'Nada escapa da sua lista.',
+    'Mais foco, menos preocupação.',
+    'Transforme planos em conquistas.',
+    'Seu futuro agradece.',
+    'Missão do dia: avançar.',
+    'Cada tarefa concluída conta.',
+    'Produtividade sem complicação.',
+    'Seu segundo cérebro.',
+    'A próxima vitória está na lista.',
+    'Comece por qualquer lugar.',
+    'Só falta dar o primeiro passo.',
+    'Um check de cada vez.',
+    'Menos bagunça, mais progresso.',
+    'Respire. Priorize. Faça.',
+    'Hoje é um bom dia para terminar pendências.',
+    'Tudo pronto para um dia produtivo?',
+    'Vamos riscar alguns itens?',
+    'Seu plano está esperando.',
+    'Não deixe para depois.',
+    'O impossível começa com uma tarefa.',
+    'Mais ação, menos procrastinação.',
+    'Qual será a próxima conquista?',
+    'Seu tempo vale ouro.',
+    'Você está no controle.',
+    'Uma lista organizada, uma mente tranquila.',
+    'Foco no que realmente importa.',
+    'Cada tarefa é um passo à frente.',
+    'A consistência vence.',
+    'Organização é liberdade.',
+    'Faça do hoje um bom dia.',
+    'Sua produtividade mora aqui.',
+    'Pronto para marcar alguns ✓?',
+    'Vamos deixar essa lista menor?',
+    'Uma tarefa a menos, um sorriso a mais.',
+    'Seu eu do futuro vai agradecer.',
+    'Não pare agora.',
+    'A próxima tarefa é a mais importante.',
+    'O progresso acontece aos poucos.',
+    'Tudo fica mais fácil quando está organizado.',
+    'Seu painel de missões.',
+    'Que comece a produtividade.',
+    'Nada como um bom checklist.',
+    'Vamos fazer acontecer.',
+  ];
+
   List<Todo> _todos = [];
   List<TodoCategory> _categories = [];
   bool _isLoading = true;
   bool _isAdding = false;
+  String _surpriseDescription = _surpriseDescriptions[
+      Random().nextInt(_surpriseDescriptions.length)];
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
   StreamSubscription? _authSubscription;
@@ -38,6 +94,10 @@ class _TodoScreenState extends State<TodoScreen> {
     super.initState();
     _loadAll();
 
+    // New surprise description whenever the user switches tabs. The screen
+    // stays alive in the IndexedStack, so initState alone isn't enough.
+    homeTabIndex.addListener(_pickSurpriseDescription);
+
     // Reload whenever the local cache changes (own writes or background
     // sync pulling fresh data from the server).
     _repo.onChange.addListener(_loadAll);
@@ -53,11 +113,20 @@ class _TodoScreenState extends State<TodoScreen> {
 
   @override
   void dispose() {
+    homeTabIndex.removeListener(_pickSurpriseDescription);
     _repo.onChange.removeListener(_loadAll);
     _authSubscription?.cancel();
     _textController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _pickSurpriseDescription() {
+    if (!mounted) return;
+    setState(() {
+      _surpriseDescription = _surpriseDescriptions[
+          Random().nextInt(_surpriseDescriptions.length)];
+    });
   }
 
   bool get _isAuthenticated => SupabaseService.currentUser != null;
@@ -249,58 +318,6 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Widget _buildHeader() {
-    const List<String> surpriseDescriptions = [
-      'Monitore suas tarefas',
-      'O que vamos conquistar hoje?',
-      'Pequenos passos, grandes resultados.',
-      'Tudo em ordem, uma tarefa de cada vez.',
-      'Seu dia começa aqui.',
-      'Hora de fazer acontecer.',
-      'Organize. Execute. Repita.',
-      'Nada escapa da sua lista.',
-      'Mais foco, menos preocupação.',
-      'Transforme planos em conquistas.',
-      'Seu futuro agradece.',
-      'Missão do dia: avançar.',
-      'Cada tarefa concluída conta.',
-      'Produtividade sem complicação.',
-      'Seu segundo cérebro.',
-      'A próxima vitória está na lista.',
-      'Comece por qualquer lugar.',
-      'Só falta dar o primeiro passo.',
-      'Um check de cada vez.',
-      'Menos bagunça, mais progresso.',
-      'Respire. Priorize. Faça.',
-      'Hoje é um bom dia para terminar pendências.',
-      'Tudo pronto para um dia produtivo?',
-      'Vamos riscar alguns itens?',
-      'Seu plano está esperando.',
-      'Não deixe para depois.',
-      'O impossível começa com uma tarefa.',
-      'Mais ação, menos procrastinação.',
-      'Qual será a próxima conquista?',
-      'Seu tempo vale ouro.',
-      'Você está no controle.',
-      'Uma lista organizada, uma mente tranquila.',
-      'Foco no que realmente importa.',
-      'Cada tarefa é um passo à frente.',
-      'A consistência vence.',
-      'Organização é liberdade.',
-      'Faça do hoje um bom dia.',
-      'Sua produtividade mora aqui.',
-      'Pronto para marcar alguns ✓?',
-      'Vamos deixar essa lista menor?',
-      'Uma tarefa a menos, um sorriso a mais.',
-      'Seu eu do futuro vai agradecer.',
-      'Não pare agora.',
-      'A próxima tarefa é a mais importante.',
-      'O progresso acontece aos poucos.',
-      'Tudo fica mais fácil quando está organizado.',
-      'Seu painel de missões.',
-      'Que comece a produtividade.',
-      'Nada como um bom checklist.',
-      'Vamos fazer acontecer.',
-    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 8, 16),
       child: Row(
@@ -312,8 +329,7 @@ class _TodoScreenState extends State<TodoScreen> {
                 const Text('Afazeres', style: AppTheme.headingLarge),
                 const SizedBox(height: 4),
                 Text(
-                  surpriseDescriptions[
-                      Random().nextInt(surpriseDescriptions.length)],
+                  _surpriseDescription,
                   style: AppTheme.bodyText
                       .copyWith(color: AppTheme.mediumBrown),
                 ),

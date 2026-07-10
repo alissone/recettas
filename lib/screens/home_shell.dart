@@ -9,6 +9,10 @@ import 'more_screen.dart';
 
 final homeShellKey = GlobalKey<HomeShellState>();
 
+/// Current bottom-nav tab. Screens kept alive in the IndexedStack can
+/// listen to this to react when the user switches tabs.
+final ValueNotifier<int> homeTabIndex = ValueNotifier(0);
+
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -97,7 +101,10 @@ class HomeShellState extends State<HomeShell> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: (index) {
+            setState(() => _currentIndex = index);
+            homeTabIndex.value = index;
+          },
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.check_circle_outline),

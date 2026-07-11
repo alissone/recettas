@@ -6,6 +6,7 @@ import '../services/supabase_service.dart';
 import 'accelerometer_screen.dart';
 import 'currency_converter_screen.dart';
 import 'date_calculator_screen.dart';
+import 'harpa_screen.dart';
 import 'profile_screen.dart';
 import 'sleep_screen.dart';
 import 'time_calculator_screen.dart';
@@ -111,6 +112,12 @@ class _MoreScreenState extends State<MoreScreen> {
               title: 'Sono',
               subtitle: 'Registrar e visualizar seu sono',
               screen: const SleepScreen(),
+            ),
+            _buildUtilityTile(
+              icon: Icons.library_music_outlined,
+              title: 'Harpa Cristã',
+              subtitle: '640 hinos para ler e pesquisar',
+              screen: const HarpaScreen(),
             ),
           ],
         ),

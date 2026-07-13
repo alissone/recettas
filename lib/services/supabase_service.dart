@@ -208,12 +208,14 @@ class SupabaseService {
   static Future<void> insertAccelRecording({
     required DateTime recordedAt,
     required List<List<double>> samples,
+    required String category,
   }) async {
     await _client.from('accel_recordings').insert({
       'user_id': currentUser!.id,
       'recorded_at': recordedAt.toUtc().toIso8601String(),
       'sample_count': samples.length,
       'samples': samples,
+      'category': category,
     });
   }
 

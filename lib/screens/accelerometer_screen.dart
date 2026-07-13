@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import '../app_theme.dart';
@@ -16,10 +17,22 @@ class AccelerometerScreen extends StatefulWidget {
 
 enum _RecState { idle, recording, uploading }
 
+enum RecordingCategory {
+  noFall('no_fall', 'Sem queda'),
+  phoneFall('phone_fall', 'Queda do celular'),
+  userFall('user_fall', 'Queda do usuário');
+
+  const RecordingCategory(this.dbValue, this.label);
+
+  final String dbValue;
+  final String label;
+}
+
 class _AccelerometerScreenState extends State<AccelerometerScreen> {
   static const _targetSamples = 200;
 
   _RecState _state = _RecState.idle;
+  RecordingCategory _category = RecordingCategory.noFall;
   final List<List<double>> _samples = [];
   AccelerometerEvent? _lastEvent;
   String? _message;
@@ -91,6 +104,7 @@ class _AccelerometerScreenState extends State<AccelerometerScreen> {
       await SupabaseService.insertAccelRecording(
         recordedAt: recordedAt,
         samples: List.of(_samples),
+        category: _category.dbValue,
       );
       if (mounted) {
         setState(() {
@@ -125,6 +139,8 @@ class _AccelerometerScreenState extends State<AccelerometerScreen> {
               const SizedBox(height: 20),
               if (_message != null) _buildMessage(),
               const Spacer(),
+              _buildCategoryPicker(),
+              const SizedBox(height: 16),
               _buildRecordButton(),
               const SizedBox(height: 8),
               Text(
@@ -237,6 +253,52 @@ class _AccelerometerScreenState extends State<AccelerometerScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCategoryPicker() {
+    final busy = _state != _RecState.idle;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Categoria', style: AppTheme.caption),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: IgnorePointer(
+            ignoring: busy,
+            child: Opacity(
+              opacity: busy ? 0.5 : 1,
+              child: CupertinoSlidingSegmentedControl<RecordingCategory>(
+                groupValue: _category,
+                backgroundColor: AppTheme.lightPeach,
+                thumbColor: AppTheme.primaryOrange,
+                onValueChanged: (value) {
+                  if (value != null) setState(() => _category = value);
+                },
+                children: {
+                  for (final category in RecordingCategory.values)
+                    category: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 8),
+                      child: Text(
+                        category.label,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _category == category
+                              ? Colors.white
+                              : AppTheme.darkBrown,
+                        ),
+                      ),
+                    ),
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

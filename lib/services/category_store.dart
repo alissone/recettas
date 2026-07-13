@@ -44,10 +44,10 @@ class TodoCategoryStore extends CategoryStore {
       TodoRepository.instance.deleteCategory(id);
 }
 
-/// Purchase categories ("Importância"), straight from Supabase.
+/// Purchase categories ("Categoria"), straight from Supabase.
 class PurchaseCategoryStore extends CategoryStore {
   @override
-  String get title => 'Editar Importâncias';
+  String get title => 'Editar Categoria';
 
   @override
   String get deleteNote =>

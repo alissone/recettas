@@ -13,6 +13,17 @@ final homeShellKey = GlobalKey<HomeShellState>();
 /// listen to this to react when the user switches tabs.
 final ValueNotifier<int> homeTabIndex = ValueNotifier(0);
 
+/// Shown by screens when a background auth token refresh fails because
+/// the device has no internet connection (see SupabaseService.isNetworkError).
+void showNoInternetBanner() {
+  homeShellKey.currentState?.showBanner(
+    title: 'Sem conexão com a internet',
+    body: 'Não foi possível renovar sua sessão. Verifique sua rede.',
+    icon: Icons.wifi_off,
+    iconColor: Colors.red,
+  );
+}
+
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 

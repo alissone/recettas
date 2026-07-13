@@ -8,8 +8,11 @@ import '../app_theme.dart';
 /// is suggested automatically when the phone is within
 /// [kLocalSuggestionRadiusMeters] of it.
 const Map<String, String> kFrequentLocalCoords = {
-  'CTFalcao': "-5.816143323810006, -46.13594036343797",
+  'Acai Rodoviaria': "-5.815421926258684, -46.134338212538665",
+  'Agroterra': "-5.815824375282179, -46.13096305900309",
+  'Chaves Construcoes': "-5.816605345886306, -46.131785551841496",
   'Camino': "-5.828665627844275, -46.17171831046831",
+  'CTFalcao': "-5.816143323810006, -46.13594036343797",
   'Farmacia Pague Menos': "-5.820053795256173, -46.15830968792096",
   'Farmacia Ultra Popular': "-5.815835982103011, -46.13467805580731",
   'Goncalves Construcoes': "-5.815672296961361, -46.13344080325571",
@@ -17,6 +20,8 @@ const Map<String, String> kFrequentLocalCoords = {
   'Lanche Vitoria': "-5.815251211305602, -46.13470422817626",
   'Larissa Construcoes': "-5.815361427838658, -46.13393902358022",
   "Mello" : "-5.8150207341679945, -46.134444273686086",
+  'Oficina Mangueira': "-5.814445938634001, -46.13356861590817",
+  'Padaria Doce Mana': "-5.828665627844275, -46.17171831046831",
   'Peixoto': "-5.815019069929221, -46.13210085123408",
   'Pix Carol': "",
   'Queiroz': '-5.816108668781542, -46.1304306899312',

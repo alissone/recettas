@@ -9,7 +9,7 @@ import '../services/local_guesser.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
 import '../widgets/local_field.dart';
-import 'home_shell.dart' show homeShellKey;
+import 'home_shell.dart' show homeShellKey, showNoInternetBanner;
 
 /// Shopping list ("Compras"): reminders of stuff to buy. Checking an
 /// item asks for the price and registers the purchase in Gastos.
@@ -34,12 +34,13 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
     super.initState();
     _loadAll();
 
-    _authSubscription =
-        SupabaseService.authStateChanges.listen((data) {
+    _authSubscription = SupabaseService.authStateChanges.listen((data) {
       if (mounted) {
         setState(() {});
         _loadAll();
       }
+    }, onError: (error) {
+      if (SupabaseService.isNetworkError(error)) showNoInternetBanner();
     });
   }
 

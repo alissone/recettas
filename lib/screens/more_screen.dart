@@ -7,7 +7,9 @@ import 'accelerometer_screen.dart';
 import 'currency_converter_screen.dart';
 import 'date_calculator_screen.dart';
 import 'harpa_screen.dart';
+import 'home_shell.dart' show showNoInternetBanner;
 import 'profile_screen.dart';
+import 'report_screen.dart';
 import 'sleep_screen.dart';
 import 'time_calculator_screen.dart';
 import 'timezone_screen.dart';
@@ -36,6 +38,8 @@ class _MoreScreenState extends State<MoreScreen> {
         });
         if (data.session != null) _loadProfile();
       }
+    }, onError: (error) {
+      if (SupabaseService.isNetworkError(error)) showNoInternetBanner();
     });
   }
 
@@ -77,6 +81,12 @@ class _MoreScreenState extends State<MoreScreen> {
             const SizedBox(height: 20),
             _buildProfileCard(),
             const SizedBox(height: 24),
+            _buildUtilityTile(
+              icon: Icons.insert_chart_outlined,
+              title: 'Relatório de gastos',
+              subtitle: 'Gráficos mensais das compras',
+              screen: const ReportScreen(),
+            ),
             _buildUtilityTile(
               icon: Icons.calendar_month_outlined,
               title: 'Calculadora de datas',

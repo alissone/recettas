@@ -13,7 +13,7 @@ import '../services/supabase_service.dart';
 import '../utils/brl.dart';
 import '../widgets/local_field.dart';
 import 'edit_categories_screen.dart';
-import 'home_shell.dart' show homeShellKey;
+import 'home_shell.dart' show homeShellKey, showNoInternetBanner;
 import 'receipt_queue_screen.dart';
 
 class PurchasesScreen extends StatefulWidget {
@@ -72,12 +72,13 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     super.initState();
     _loadAll();
 
-    _authSubscription =
-        SupabaseService.authStateChanges.listen((data) {
+    _authSubscription = SupabaseService.authStateChanges.listen((data) {
       if (mounted) {
         setState(() {});
         _loadAll();
       }
+    }, onError: (error) {
+      if (SupabaseService.isNetworkError(error)) showNoInternetBanner();
     });
   }
 

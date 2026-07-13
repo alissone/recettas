@@ -43,6 +43,7 @@ dependencies:
   sensors_plus: ^7.1.0
   timezone: ^0.11.1
   geolocator: ^14.0.3
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +69,7 @@ flutter:
 
   assets:
     - assets/harpa_crista.json
+    - assets/chart.min.js
 
   fonts:
     - family: Niconne

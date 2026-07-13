@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_theme.dart';
 import '../services/supabase_service.dart';
-import 'home_shell.dart' show homeShellKey;
+import 'home_shell.dart' show homeShellKey, showNoInternetBanner;
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -28,12 +28,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     if (_isAuthenticated) _loadProfile();
 
-    _authSubscription =
-        SupabaseService.authStateChanges.listen((data) {
+    _authSubscription = SupabaseService.authStateChanges.listen((data) {
       if (mounted) {
         setState(() {});
         if (data.session != null) _loadProfile();
       }
+    }, onError: (error) {
+      if (SupabaseService.isNetworkError(error)) showNoInternetBanner();
     });
   }
 

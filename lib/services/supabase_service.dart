@@ -16,6 +16,13 @@ class SupabaseService {
   static Stream<AuthState> get authStateChanges =>
       _client.auth.onAuthStateChange;
 
+  /// True for auth errors caused by connectivity issues (background token
+  /// refresh failing because there's no internet), as opposed to a real
+  /// auth failure. [authStateChanges] listeners must handle these or they
+  /// surface as unhandled exceptions and crash the log.
+  static bool isNetworkError(Object error) =>
+      error is AuthRetryableFetchException;
+
   static Future<AuthResponse> signUp(
       String email, String password, String displayName) async {
     return await _client.auth.signUp(

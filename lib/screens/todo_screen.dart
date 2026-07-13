@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' show Random;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../models/todo.dart';
@@ -89,6 +90,9 @@ class _TodoScreenState extends State<TodoScreen> {
       Random().nextInt(_surpriseDescriptions.length)];
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
+  // Focused whenever this tab is active and the add/categorize field isn't,
+  // so Space can be used to bring up the "add" field from the keyboard.
+  final _screenFocusNode = FocusNode();
   StreamSubscription? _authSubscription;
 
   // Categorize overlay state
@@ -103,31 +107,38 @@ class _TodoScreenState extends State<TodoScreen> {
     super.initState();
     _loadAll();
     _loadGroupPrefs();
+    _focusNode.onKeyEvent = _handleAddFieldKeyEvent;
 
     // New surprise description whenever the user switches tabs. The screen
     // stays alive in the IndexedStack, so initState alone isn't enough.
     homeTabIndex.addListener(_pickSurpriseDescription);
+    // Reclaim keyboard focus when the user tabs back to this screen, so the
+    // Space shortcut keeps working after visiting another tab.
+    homeTabIndex.addListener(_onTabChanged);
 
     // Reload whenever the local cache changes (own writes or background
     // sync pulling fresh data from the server).
     _repo.onChange.addListener(_loadAll);
 
-    _authSubscription =
-        SupabaseService.authStateChanges.listen((data) {
+    _authSubscription = SupabaseService.authStateChanges.listen((data) {
       if (mounted) {
         setState(() {});
         _loadAll();
       }
+    }, onError: (error) {
+      if (SupabaseService.isNetworkError(error)) showNoInternetBanner();
     });
   }
 
   @override
   void dispose() {
     homeTabIndex.removeListener(_pickSurpriseDescription);
+    homeTabIndex.removeListener(_onTabChanged);
     _repo.onChange.removeListener(_loadAll);
     _authSubscription?.cancel();
     _textController.dispose();
     _focusNode.dispose();
+    _screenFocusNode.dispose();
     super.dispose();
   }
 
@@ -137,6 +148,37 @@ class _TodoScreenState extends State<TodoScreen> {
       _surpriseDescription = _surpriseDescriptions[
           Random().nextInt(_surpriseDescriptions.length)];
     });
+  }
+
+  void _onTabChanged() {
+    if (homeTabIndex.value == 0 && !_isAdding) {
+      _screenFocusNode.requestFocus();
+    }
+  }
+
+  // --- Keyboard shortcuts (Windows) ---
+
+  /// Space brings up the add-todo field, mirroring the FAB.
+  KeyEventResult _handleScreenKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey == LogicalKeyboardKey.space &&
+        _isAuthenticated &&
+        !_isAdding &&
+        _categorizingTodo == null) {
+      _startAdding();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// Escape dismisses the add-todo field, same as tapping outside of it.
+  KeyEventResult _handleAddFieldKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
+      _saveAndStopAdding();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   bool get _isAuthenticated => SupabaseService.currentUser != null;
@@ -265,6 +307,7 @@ class _TodoScreenState extends State<TodoScreen> {
     if (title.isNotEmpty) _addTodo();
     _textController.clear();
     setState(() => _isAdding = false);
+    _screenFocusNode.requestFocus();
   }
 
   // --- Categorize overlay ---
@@ -333,6 +376,7 @@ class _TodoScreenState extends State<TodoScreen> {
               EditCategoriesScreen(store: TodoCategoryStore())),
     );
     _loadAll();
+    _screenFocusNode.requestFocus();
   }
 
   TodoCategory? _categoryForTodo(Todo todo) {
@@ -350,18 +394,23 @@ class _TodoScreenState extends State<TodoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                Expanded(child: _buildContent()),
-              ],
-            ),
-            if (_categorizingTodo != null) _buildCategorizeOverlay(),
-          ],
+      body: Focus(
+        focusNode: _screenFocusNode,
+        autofocus: true,
+        onKeyEvent: _handleScreenKeyEvent,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  Expanded(child: _buildContent()),
+                ],
+              ),
+              if (_categorizingTodo != null) _buildCategorizeOverlay(),
+            ],
+          ),
         ),
       ),
       floatingActionButton:

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_theme.dart';
 import '../services/supabase_service.dart';
 import 'accelerometer_screen.dart';
+import 'bible_screen.dart';
 import 'currency_converter_screen.dart';
 import 'date_calculator_screen.dart';
 import 'gps_tracker_screen.dart';
@@ -135,6 +136,12 @@ class _MoreScreenState extends State<MoreScreen> {
               title: 'Harpa Cristã',
               subtitle: '640 hinos para ler e pesquisar',
               screen: const HarpaScreen(),
+            ),
+            _buildUtilityTile(
+              icon: Icons.menu_book_outlined,
+              title: 'Bíblia',
+              subtitle: 'NVI - 66 livros para ler e pesquisar',
+              screen: const BibleScreen(),
             ),
           ],
         ),

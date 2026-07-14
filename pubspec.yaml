@@ -47,6 +47,7 @@ dependencies:
   wakelock_plus: ^1.6.1
   path_provider: ^2.1.6
   share_plus: ^13.2.0
+  xml: ^6.5.0
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +74,7 @@ flutter:
   assets:
     - assets/harpa_crista.json
     - assets/chart.min.js
+    - assets/NVI.xml
 
   fonts:
     - family: Niconne

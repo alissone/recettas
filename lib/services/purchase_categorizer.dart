@@ -13,7 +13,7 @@ class PurchaseCategorizer {
   /// Default colors when auto-creating a missing category
   /// (same as CAT_COLORS in generate.py).
   static const categoryColors = <String, int>{
-    'Alimentacao': 0xFF10B981,
+    'Comida': 0xFF10B981,
     'Casa': 0xFFF59E0B,
     'Construcao': 0xFF06B6D4,
     'Farmacia': 0xFF3B82F6,
@@ -265,9 +265,10 @@ class PurchaseCategorizer {
     (_kw(['tela pintura']), 'Papelaria'),
     (_kw(['tecido quadriculado']), 'Papelaria'),
 
-    // Veiculos / carro e moto
-    (_kw(['carro', 'moto']), 'Veiculos'),
-    (_kw(['pneu', 'forca', 'força']), 'Veiculos'),
+    // Veiculos / carro e moto (whole words only — bare substrings
+    // misfire: "carro" is inside "macarronada")
+    (_rx(r'\bcarros?\b|\bmotos?\b'), 'Veiculos'),
+    (_rx(r'\bpneus?\b|\bfor[cç]as?\b'), 'Veiculos'),
 
     // Pessoal / presentes
     (_rx(r'presente m[aã]e'), 'Pessoal'),

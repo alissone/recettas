@@ -147,6 +147,20 @@ class TodoRepository {
     });
   }
 
+  Future<void> updateTodoTitle(String id, String title) async {
+    final db = await LocalDb.instance;
+    await db.update(
+      'todos',
+      {'title': title},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await _enqueue('todo_update', {
+      'id': id,
+      'fields': {'title': title},
+    });
+  }
+
   Future<void> updateTodoCategory(String todoId, String? categoryId) async {
     final db = await LocalDb.instance;
     await db.update(

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../app_theme.dart';
+import '../models/category_base.dart';
 import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../services/category_store.dart';
@@ -12,7 +13,9 @@ import '../services/local_guesser.dart';
 import '../services/purchase_categorizer.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
+import '../widgets/categorize_overlay.dart';
 import '../widgets/local_field.dart';
+import '../widgets/swipe_action_card.dart';
 import 'edit_categories_screen.dart';
 import 'home_shell.dart' show homeShellKey, showNoInternetBanner;
 import 'receipt_queue_screen.dart';
@@ -48,6 +51,10 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
 
   bool _searchVisible = false;
   final _searchController = TextEditingController();
+
+  // Categorize overlay state
+  Purchase? _categorizingPurchase;
+  final _overlayKey = GlobalKey<CategorizeOverlayState>();
 
   /// First day of the month being displayed.
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
@@ -386,6 +393,45 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     _loadAll();
   }
 
+  // --- Swipe to categorize ---
+
+  void _startCategorize(Purchase p) {
+    if (_categories.isEmpty) return;
+    setState(() => _categorizingPurchase = p);
+  }
+
+  void _dismissCategorize() {
+    setState(() => _categorizingPurchase = null);
+  }
+
+  Future<void> _assignCategory(CategoryBase? category) async {
+    final p = _categorizingPurchase;
+    setState(() => _categorizingPurchase = null);
+    if (p == null) return;
+    try {
+      await SupabaseService.updatePurchase(
+          p.id, {'category_id': category?.id});
+    } catch (e) {
+      homeShellKey.currentState?.showBanner(
+        title: 'Falha ao categorizar',
+        body: '$e',
+        icon: Icons.error_outline,
+        iconColor: Colors.red,
+      );
+    }
+    _loadAll();
+  }
+
+  Widget _buildCategorizeOverlay() {
+    return CategorizeOverlay(
+      key: _overlayKey,
+      categories: _categories,
+      itemLabel: _categorizingPurchase?.item ?? '',
+      onAssign: _assignCategory,
+      onDismiss: _dismissCategorize,
+    );
+  }
+
   // --- Build ---
 
   @override
@@ -393,17 +439,25 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            _buildHeader(),
-            if (_isAuthenticated && _searchVisible) _buildSearchBar(),
-            if (_isAuthenticated) _buildMonthBar(),
-            Expanded(child: _buildContent()),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                if (_isAuthenticated && _searchVisible)
+                  _buildSearchBar(),
+                if (_isAuthenticated) _buildMonthBar(),
+                Expanded(child: _buildContent()),
+              ],
+            ),
+            if (_categorizingPurchase != null)
+              _buildCategorizeOverlay(),
           ],
         ),
       ),
-      floatingActionButton: _isAuthenticated
+      floatingActionButton:
+          _isAuthenticated && _categorizingPurchase == null
           ? FloatingActionButton(
               // Unique tag: the other tabs' FABs coexist in the
               // IndexedStack and default hero tags would clash.
@@ -703,29 +757,20 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
 
   Widget _buildPurchaseCard(Purchase p) {
     final cat = _categoryFor(p);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Dismissible(
-        key: ValueKey(p.id),
-        direction: DismissDirection.endToStart,
-        onDismissed: (_) => _deletePurchase(p),
-        background: Container(
-          decoration: BoxDecoration(
-            color: Colors.red.shade400,
-            borderRadius:
-                BorderRadius.circular(AppTheme.radiusMedium),
-          ),
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          child: const Icon(Icons.delete_outline,
-              color: Colors.white, size: 24),
-        ),
-        child: GestureDetector(
-          onTap: () => _showPurchaseSheet(existing: p),
-          child: ClipRRect(
-            borderRadius:
-                BorderRadius.circular(AppTheme.radiusMedium),
-            child: Container(
+    return SwipeActionCard(
+      key: ValueKey(p.id),
+      canCategorize: _categories.isNotEmpty,
+      onDelete: () => _deletePurchase(p),
+      onCategorizeStart: () => _startCategorize(p),
+      onCategorizeDragUpdate: (pos) =>
+          _overlayKey.currentState?.updateDrag(pos),
+      onCategorizeDragEnd: (pos) =>
+          _overlayKey.currentState?.endDrag(pos),
+      onTap: () => _showPurchaseSheet(existing: p),
+      child: ClipRRect(
+        borderRadius:
+            BorderRadius.circular(AppTheme.radiusMedium),
+        child: Container(
               decoration: BoxDecoration(
                 color: AppTheme.white,
                 borderRadius:
@@ -789,8 +834,6 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 }
@@ -841,6 +884,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   late final TextEditingController _valorController;
   late final TextEditingController _localController;
   final _itemFocus = FocusNode();
+  final _valorFocus = FocusNode();
   late String _date;
   String? _localPreset;
   String? _categoryId;
@@ -887,6 +931,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     _valorController.dispose();
     _localController.dispose();
     _itemFocus.dispose();
+    _valorFocus.dispose();
     super.dispose();
   }
 
@@ -950,8 +995,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             controller: _itemController,
             focusNode: _itemFocus,
             autofocus: existing == null,
+            textInputAction: TextInputAction.next,
             decoration: _fieldDecoration('Item'),
-            onSubmitted: (_) => _save(),
+            onSubmitted: (_) => _valorFocus.requestFocus(),
           ),
           const SizedBox(height: 12),
           Row(
@@ -959,9 +1005,12 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               Expanded(
                 child: TextField(
                   controller: _valorController,
+                  focusNode: _valorFocus,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
+                  textInputAction: TextInputAction.done,
                   decoration: _fieldDecoration('Valor (R\$)'),
+                  onSubmitted: (_) => _save(),
                 ),
               ),
               const SizedBox(width: 12),

@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 
 /// Harpa Cristã: searchable list of the 640 hymns; tapping one opens a
-/// swipeable viewer (Niconne for titles, Noto Serif for the lyrics).
+/// swipeable viewer (Cookie for titles, Noto Serif for the lyrics).
 class HarpaScreen extends StatefulWidget {
   const HarpaScreen({super.key});
 
@@ -255,8 +255,9 @@ class _HarpaScreenState extends State<HarpaScreen> {
                       Text(
                         hymn.name,
                         style: const TextStyle(
-                          fontFamily: 'Niconne',
-                          fontSize: 22,
+                          fontFamily: 'NotoSerif',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17,
                           color: AppTheme.darkBrown,
                           height: 1.1,
                         ),
@@ -406,7 +407,7 @@ class _HymnViewerScreenState extends State<HymnViewerScreen> {
             hymn.name,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontFamily: 'Niconne',
+              fontFamily: 'PlayfairDisplaySC',
               fontSize: 36,
               color: AppTheme.darkBrown,
               height: 1.2,
@@ -473,7 +474,7 @@ class _HymnViewerScreenState extends State<HymnViewerScreen> {
           const Text(
             'Coro',
             style: TextStyle(
-              fontFamily: 'Niconne',
+              fontFamily: 'Cookie',
               fontSize: 24,
               color: AppTheme.mediumBrown,
             ),

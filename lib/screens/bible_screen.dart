@@ -5,7 +5,7 @@ import 'package:xml/xml.dart' as xml;
 import '../app_theme.dart';
 
 /// Bíblia (NVI): searchable list of the 66 books, then a chapter grid,
-/// then a swipeable verse reader (Niconne for titles, Noto Serif for text).
+/// then a swipeable verse reader (Cookie for titles, Noto Serif for text).
 class BibleScreen extends StatefulWidget {
   const BibleScreen({super.key});
 
@@ -277,8 +277,9 @@ class _BibleScreenState extends State<BibleScreen> {
                       Text(
                         book.name,
                         style: const TextStyle(
-                          fontFamily: 'Niconne',
-                          fontSize: 22,
+                          fontFamily: 'NotoSerif',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17,
                           color: AppTheme.darkBrown,
                           height: 1.1,
                         ),
@@ -492,7 +493,7 @@ class _BibleReaderScreenState extends State<BibleReaderScreen> {
             '${chapter.bookName} ${chapter.number}',
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontFamily: 'Niconne',
+              fontFamily: 'Cookie',
               fontSize: 36,
               color: AppTheme.darkBrown,
               height: 1.2,

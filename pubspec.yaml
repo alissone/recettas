@@ -87,6 +87,24 @@ flutter:
           weight: 700
         - asset: assets/fonts/NotoSerif-Italic.ttf
           style: italic
+    - family: PlayfairDisplaySC
+      fonts:
+        - asset: assets/fonts/PlayfairDisplaySC-Regular.ttf
+        - asset: assets/fonts/PlayfairDisplaySC-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlayfairDisplaySC-Italic.ttf
+          style: italic
+        - asset: assets/fonts/PlayfairDisplaySC-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/PlayfairDisplaySC-Black.ttf
+          weight: 900
+        - asset: assets/fonts/PlayfairDisplaySC-BlackItalic.ttf
+          weight: 900
+          style: italic
+    - family: Cookie
+      fonts:
+        - asset: assets/fonts/Cookie-Regular.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

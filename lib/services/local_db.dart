@@ -27,7 +27,7 @@ class LocalDb {
     final dir = await getDatabasesPath();
     _db = await openDatabase(
       p.join(dir, 'recettas_cache.db'),
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE todos (
@@ -58,14 +58,50 @@ class LocalDb {
             created_at TEXT NOT NULL
           )
         ''');
+        await db.execute(_createGpsRecordingsSql);
+        await db.execute(_createGpsPointsSql);
+        await db.execute(_createGpsPointsIndexSql);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute(
               'ALTER TABLE todos ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0');
         }
+        if (oldVersion < 3) {
+          await db.execute(_createGpsRecordingsSql);
+          await db.execute(_createGpsPointsSql);
+          await db.execute(_createGpsPointsIndexSql);
+        }
       },
     );
     return _db!;
   }
+
+  static const _createGpsRecordingsSql = '''
+    CREATE TABLE gps_recordings (
+      id TEXT PRIMARY KEY,
+      started_at TEXT NOT NULL,
+      ended_at TEXT,
+      interval_seconds INTEGER NOT NULL,
+      distance_meters REAL NOT NULL DEFAULT 0,
+      point_count INTEGER NOT NULL DEFAULT 0,
+      preview_points TEXT,
+      created_at TEXT NOT NULL
+    )
+  ''';
+
+  static const _createGpsPointsSql = '''
+    CREATE TABLE gps_points (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recording_id TEXT NOT NULL,
+      sequence INTEGER NOT NULL,
+      lat REAL NOT NULL,
+      lng REAL NOT NULL,
+      altitude REAL,
+      timestamp TEXT NOT NULL
+    )
+  ''';
+
+  static const _createGpsPointsIndexSql =
+      'CREATE INDEX idx_gps_points_recording_id ON gps_points(recording_id)';
 }

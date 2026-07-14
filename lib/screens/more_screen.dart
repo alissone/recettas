@@ -6,6 +6,7 @@ import '../services/supabase_service.dart';
 import 'accelerometer_screen.dart';
 import 'currency_converter_screen.dart';
 import 'date_calculator_screen.dart';
+import 'gps_tracker_screen.dart';
 import 'harpa_screen.dart';
 import 'home_shell.dart' show showNoInternetBanner;
 import 'profile_screen.dart';
@@ -116,6 +117,12 @@ class _MoreScreenState extends State<MoreScreen> {
               title: 'Acelerômetro',
               subtitle: 'Gravar e enviar leituras',
               screen: const AccelerometerScreen(),
+            ),
+            _buildUtilityTile(
+              icon: Icons.gps_fixed,
+              title: 'Rastreador GPS',
+              subtitle: 'Grave rotas e exporte em GPX',
+              screen: const GpsTrackerScreen(),
             ),
             _buildUtilityTile(
               icon: Icons.bedtime_outlined,

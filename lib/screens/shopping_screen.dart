@@ -575,11 +575,11 @@ class _CompletePurchaseSheetState extends State<_CompletePurchaseSheet> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String?>(
             initialValue: _categoryId,
-            decoration: _fieldDecoration('Importância'),
+            decoration: _fieldDecoration('Categoria'),
             items: [
               const DropdownMenuItem<String?>(
                 value: null,
-                child: Text('Sem importância'),
+                child: Text('Sem categoria'),
               ),
               for (final c in widget.categories)
                 DropdownMenuItem<String?>(

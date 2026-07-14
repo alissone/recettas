@@ -518,7 +518,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                       Icon(Icons.category_outlined,
                           color: AppTheme.primaryOrange, size: 20),
                       SizedBox(width: 12),
-                      Text('Editar Importâncias'),
+                      Text('Editar Categorias'),
                     ],
                   ),
                 ),
@@ -998,7 +998,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String?>(
             initialValue: _categoryId,
-            decoration: _fieldDecoration('Importância'),
+            decoration: _fieldDecoration('Categoria'),
             items: [
               const DropdownMenuItem<String?>(
                 value: null,

@@ -98,6 +98,15 @@ class SupabaseService {
     await _client.from('purchases').update(fields).eq('id', id);
   }
 
+  /// Sets the category of several purchases in one request.
+  static Future<void> updatePurchasesCategory(
+      List<String> ids, String categoryId) async {
+    if (ids.isEmpty) return;
+    await _client
+        .from('purchases')
+        .update({'category_id': categoryId}).inFilter('id', ids);
+  }
+
   static Future<void> deletePurchase(String id) async {
     await _client.from('purchases').delete().eq('id', id);
   }
@@ -141,12 +150,19 @@ class SupabaseService {
         .toList();
   }
 
-  static Future<void> addPurchaseCategory(String name, int colorValue) async {
-    await _client.from('purchase_categories').insert({
-      'user_id': currentUser!.id,
-      'name': name,
-      'color_value': colorValue,
-    });
+  /// Returns the id of the created category.
+  static Future<String> addPurchaseCategory(
+      String name, int colorValue) async {
+    final data = await _client
+        .from('purchase_categories')
+        .insert({
+          'user_id': currentUser!.id,
+          'name': name,
+          'color_value': colorValue,
+        })
+        .select('id')
+        .single();
+    return data['id'] as String;
   }
 
   static Future<void> updatePurchaseCategory(String id,

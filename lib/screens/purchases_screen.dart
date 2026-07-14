@@ -9,6 +9,7 @@ import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../services/category_store.dart';
 import '../services/local_guesser.dart';
+import '../services/purchase_categorizer.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
 import '../widgets/local_field.dart';
@@ -168,6 +169,134 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
       MaterialPageRoute(builder: (_) => const ReceiptQueueScreen()),
     );
     _loadAll();
+  }
+
+  // --- Auto-categorization ---
+
+  /// Runs the rule-based categorizer (port of categorizar.py) over this
+  /// month's purchases without importância, creating any missing
+  /// category on the fly.
+  Future<void> _autoCategorize() async {
+    final uncategorized =
+        _purchases.where((p) => p.categoryId == null).toList();
+    if (uncategorized.isEmpty) {
+      homeShellKey.currentState?.showBanner(
+        title: 'Nada para categorizar',
+        body: 'Todos os gastos de $_monthLabel já têm categoria.',
+        icon: Icons.check_circle_outline,
+      );
+      return;
+    }
+
+    final byCategory = <String, List<Purchase>>{};
+    for (final p in uncategorized) {
+      final cat = PurchaseCategorizer.categorize(p.item, p.local);
+      if (cat != null) byCategory.putIfAbsent(cat, () => []).add(p);
+    }
+    final matched =
+        byCategory.values.fold<int>(0, (sum, l) => sum + l.length);
+    if (matched == 0) {
+      homeShellKey.currentState?.showBanner(
+        title: 'Nenhuma regra correspondeu',
+        body: 'Nenhum dos ${uncategorized.length} gastos sem '
+            'categoria foi reconhecido pelas regras.',
+        icon: Icons.help_outline,
+      );
+      return;
+    }
+
+    final confirmed = await _confirmAutoCategorize(
+        byCategory, matched, uncategorized.length);
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+    try {
+      // Existing categories by accent/case-insensitive name; rules
+      // whose category doesn't exist yet create it with the default
+      // report color.
+      final categoryIds = {
+        for (final c in _categories)
+          PurchaseCategorizer.nameKey(c.name): c.id,
+      };
+      for (final entry in byCategory.entries) {
+        var id = categoryIds[PurchaseCategorizer.nameKey(entry.key)];
+        id ??= await SupabaseService.addPurchaseCategory(
+          entry.key,
+          PurchaseCategorizer.categoryColors[entry.key] ?? 0xFFFF8C42,
+        );
+        await SupabaseService.updatePurchasesCategory(
+            [for (final p in entry.value) p.id], id);
+      }
+      final left = uncategorized.length - matched;
+      homeShellKey.currentState?.showBanner(
+        title: matched == 1
+            ? '1 gasto categorizado'
+            : '$matched gastos categorizados',
+        body: left > 0
+            ? '$left sem regra correspondente — categorize manualmente.'
+            : 'Todos os gastos do mês têm categoria agora.',
+        icon: Icons.auto_awesome,
+      );
+    } catch (e) {
+      homeShellKey.currentState?.showBanner(
+        title: 'Falha ao categorizar',
+        body: '$e',
+        icon: Icons.error_outline,
+        iconColor: Colors.red,
+      );
+    }
+    await _loadAll();
+  }
+
+  Future<bool?> _confirmAutoCategorize(
+      Map<String, List<Purchase>> byCategory, int matched, int total) {
+    final entries = byCategory.entries.toList()
+      ..sort((a, b) => b.value.length.compareTo(a.value.length));
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.creamBackground,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
+        title: const Text('Categorizar gastos'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$matched de $total gastos sem categoria foram '
+                'reconhecidos:',
+                style: AppTheme.bodyText,
+              ),
+              const SizedBox(height: 12),
+              for (final e in entries)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '• ${e.key}: ${e.value.length}',
+                    style: AppTheme.caption,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryOrange,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Aplicar'),
+          ),
+        ],
+      ),
+    );
   }
 
   // --- Receipt capture ---
@@ -368,8 +497,20 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               color: AppTheme.white,
               onSelected: (value) {
                 if (value == 'categories') _openEditCategories();
+                if (value == 'autocat') _autoCategorize();
               },
               itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'autocat',
+                  child: Row(
+                    children: [
+                      Icon(Icons.auto_awesome,
+                          color: AppTheme.primaryOrange, size: 20),
+                      SizedBox(width: 12),
+                      Text('Categorizar gastos'),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'categories',
                   child: Row(

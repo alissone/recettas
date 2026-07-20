@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../app_theme.dart';
 import '../models/category_base.dart';
+import '../models/list_invite.dart';
 import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../services/category_store.dart';
@@ -14,10 +15,12 @@ import '../services/purchase_categorizer.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
 import '../widgets/categorize_overlay.dart';
+import '../widgets/list_owner_tabs.dart';
 import '../widgets/local_field.dart';
 import '../widgets/swipe_action_card.dart';
 import 'edit_categories_screen.dart';
 import 'home_shell.dart' show homeShellKey, showNoInternetBanner;
+import 'list_invites_screen.dart';
 import 'receipt_queue_screen.dart';
 
 class PurchasesScreen extends StatefulWidget {
@@ -43,8 +46,14 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     'Dezembro',
   ];
 
-  List<Purchase> _purchases = [];
-  List<PurchaseCategory> _categories = [];
+  /// Every accessible purchase for the month (own + shared lists);
+  /// [_purchases] narrows to the active list.
+  List<Purchase> _allPurchases = [];
+  List<PurchaseCategory> _allCategories = [];
+  List<ListOwner> _owners = [];
+
+  /// Tab picked by the user; null falls back to the default list.
+  String? _selectedOwnerId;
   bool _isLoading = true;
   bool _uploadingReceipt = false;
   StreamSubscription? _authSubscription;
@@ -99,12 +108,57 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
 
   bool get _isAuthenticated => SupabaseService.currentUser != null;
 
+  /// Owners with a non-empty list this month; tabs only appear when
+  /// more than one list has items.
+  List<ListOwner> get _tabOwners {
+    final withItems = [
+      for (final o in _owners)
+        if (_allPurchases.any((p) => p.userId == o.id)) o
+    ];
+    return withItems.length > 1 ? withItems : const [];
+  }
+
+  /// List being displayed: the picked tab, else the only non-empty
+  /// list (so an invited user lands on the inviter's list), else the
+  /// user's own list.
+  ListOwner? get _activeOwner {
+    if (_owners.isEmpty) return null;
+    final tabs = _tabOwners;
+    if (tabs.isNotEmpty) {
+      return tabs.firstWhere((o) => o.id == _selectedOwnerId,
+          orElse: () => tabs.first);
+    }
+    for (final o in _owners) {
+      if (_allPurchases.any((p) => p.userId == o.id)) return o;
+    }
+    return _owners.first;
+  }
+
+  List<Purchase> get _purchases {
+    final owner = _activeOwner;
+    if (owner == null) return const [];
+    return [
+      for (final p in _allPurchases)
+        if (p.userId == owner.id) p
+    ];
+  }
+
+  List<PurchaseCategory> get _categories {
+    final owner = _activeOwner;
+    if (owner == null) return const [];
+    return [
+      for (final c in _allCategories)
+        if (c.userId == owner.id) c
+    ];
+  }
+
   Future<void> _loadAll() async {
     if (!_isAuthenticated) {
       if (mounted) {
         setState(() {
-          _purchases = [];
-          _categories = [];
+          _allPurchases = [];
+          _allCategories = [];
+          _owners = [];
           _isLoading = false;
         });
       }
@@ -118,11 +172,13 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               _dateString(DateTime(_month.year, _month.month + 1)),
         ),
         SupabaseService.getPurchaseCategories(),
+        SupabaseService.getListOwners(),
       ]);
       if (mounted) {
         setState(() {
-          _purchases = results[0] as List<Purchase>;
-          _categories = results[1] as List<PurchaseCategory>;
+          _allPurchases = results[0] as List<Purchase>;
+          _allCategories = results[1] as List<PurchaseCategory>;
+          _owners = results[2] as List<ListOwner>;
           _isLoading = false;
         });
       }
@@ -164,8 +220,16 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (_) =>
-              EditCategoriesScreen(store: PurchaseCategoryStore())),
+          builder: (_) => EditCategoriesScreen(
+              store: PurchaseCategoryStore(ownerId: _activeOwner?.id))),
+    );
+    _loadAll();
+  }
+
+  void _openInvites() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ListInvitesScreen()),
     );
     _loadAll();
   }
@@ -219,8 +283,9 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     setState(() => _isLoading = true);
     try {
       // Existing categories by accent/case-insensitive name; rules
-      // whose category doesn't exist yet create it with the default
-      // report color.
+      // whose category doesn't exist yet create it (in the active
+      // list) with the default report color.
+      final ownerId = _activeOwner?.id;
       final categoryIds = {
         for (final c in _categories)
           PurchaseCategorizer.nameKey(c.name): c.id,
@@ -230,6 +295,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
         id ??= await SupabaseService.addPurchaseCategory(
           entry.key,
           PurchaseCategorizer.categoryColors[entry.key] ?? 0xFFFF8C42,
+          ownerId: ownerId,
         );
         await SupabaseService.updatePurchasesCategory(
             [for (final p in entry.value) p.id], id);
@@ -351,6 +417,8 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   // --- Manual add / edit ---
 
   Future<void> _showPurchaseSheet({Purchase? existing}) async {
+    // New gastos land on the list being displayed (own or shared).
+    final ownerId = _activeOwner?.id;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -378,6 +446,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               valor: result.valor,
               local: result.local,
               categoryId: result.categoryId,
+              ownerId: ownerId,
             );
           }
           // Refresh the list behind the sheet after every save; in add
@@ -447,6 +516,13 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                 _buildHeader(),
                 if (_isAuthenticated && _searchVisible)
                   _buildSearchBar(),
+                if (_isAuthenticated && _tabOwners.isNotEmpty)
+                  ListOwnerTabs(
+                    owners: _tabOwners,
+                    activeOwnerId: _activeOwner!.id,
+                    onSelect: (o) =>
+                        setState(() => _selectedOwnerId = o.id),
+                  ),
                 if (_isAuthenticated) _buildMonthBar(),
                 Expanded(child: _buildContent()),
               ],
@@ -552,6 +628,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               onSelected: (value) {
                 if (value == 'categories') _openEditCategories();
                 if (value == 'autocat') _autoCategorize();
+                if (value == 'invites') _openInvites();
               },
               itemBuilder: (_) => [
                 const PopupMenuItem(
@@ -573,6 +650,17 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                           color: AppTheme.primaryOrange, size: 20),
                       SizedBox(width: 12),
                       Text('Editar Categorias'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'invites',
+                  child: Row(
+                    children: [
+                      Icon(Icons.group_add_outlined,
+                          color: AppTheme.primaryOrange, size: 20),
+                      SizedBox(width: 12),
+                      Text('Compartilhar listas'),
                     ],
                   ),
                 ),

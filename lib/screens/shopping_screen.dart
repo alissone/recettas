@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app_theme.dart';
+import '../models/list_invite.dart';
 import '../models/purchase_category.dart';
 import '../models/shopping_item.dart';
 import '../services/local_guesser.dart';
 import '../services/supabase_service.dart';
 import '../utils/brl.dart';
+import '../widgets/list_owner_tabs.dart';
 import '../widgets/local_field.dart';
 import 'home_shell.dart' show homeShellKey, showNoInternetBanner;
+import 'list_invites_screen.dart';
 
 /// Shopping list ("Compras"): reminders of stuff to buy. Checking an
 /// item asks for the price and registers the purchase in Gastos.
@@ -21,8 +24,14 @@ class ShoppingScreen extends StatefulWidget {
 }
 
 class _ShoppingScreenState extends State<ShoppingScreen> {
-  List<ShoppingItem> _items = [];
-  List<PurchaseCategory> _categories = [];
+  /// Every accessible item (own + shared lists); [_items] narrows to
+  /// the active list.
+  List<ShoppingItem> _allItems = [];
+  List<PurchaseCategory> _allCategories = [];
+  List<ListOwner> _owners = [];
+
+  /// Tab picked by the user; null falls back to the default list.
+  String? _selectedOwnerId;
   bool _isLoading = true;
   bool _isAdding = false;
   final _textController = TextEditingController();
@@ -54,12 +63,48 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
 
   bool get _isAuthenticated => SupabaseService.currentUser != null;
 
+  /// Owners with a non-empty list; tabs only appear when more than one
+  /// list has items.
+  List<ListOwner> get _tabOwners {
+    final withItems = [
+      for (final o in _owners)
+        if (_allItems.any((i) => i.userId == o.id)) o
+    ];
+    return withItems.length > 1 ? withItems : const [];
+  }
+
+  /// List being displayed: the picked tab, else the only non-empty
+  /// list (so an invited user lands on the inviter's list), else the
+  /// user's own list.
+  ListOwner? get _activeOwner {
+    if (_owners.isEmpty) return null;
+    final tabs = _tabOwners;
+    if (tabs.isNotEmpty) {
+      return tabs.firstWhere((o) => o.id == _selectedOwnerId,
+          orElse: () => tabs.first);
+    }
+    for (final o in _owners) {
+      if (_allItems.any((i) => i.userId == o.id)) return o;
+    }
+    return _owners.first;
+  }
+
+  List<ShoppingItem> get _items {
+    final owner = _activeOwner;
+    if (owner == null) return const [];
+    return [
+      for (final i in _allItems)
+        if (i.userId == owner.id) i
+    ];
+  }
+
   Future<void> _loadAll() async {
     if (!_isAuthenticated) {
       if (mounted) {
         setState(() {
-          _items = [];
-          _categories = [];
+          _allItems = [];
+          _allCategories = [];
+          _owners = [];
           _isLoading = false;
         });
       }
@@ -69,11 +114,13 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
       final results = await Future.wait([
         SupabaseService.getShoppingItems(),
         SupabaseService.getPurchaseCategories(),
+        SupabaseService.getListOwners(),
       ]);
       if (mounted) {
         setState(() {
-          _items = results[0] as List<ShoppingItem>;
-          _categories = results[1] as List<PurchaseCategory>;
+          _allItems = results[0] as List<ShoppingItem>;
+          _allCategories = results[1] as List<PurchaseCategory>;
+          _owners = results[2] as List<ListOwner>;
           _isLoading = false;
         });
       }
@@ -86,7 +133,16 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
     final title = _textController.text.trim();
     if (title.isEmpty) return;
     _textController.clear();
-    await SupabaseService.addShoppingItem(title);
+    await SupabaseService.addShoppingItem(title,
+        ownerId: _activeOwner?.id);
+    _loadAll();
+  }
+
+  void _openInvites() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ListInvitesScreen()),
+    );
     _loadAll();
   }
 
@@ -129,9 +185,14 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
         borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppTheme.radiusLarge)),
       ),
+      // The gasto goes to the same list the item belongs to, using
+      // that list's categories.
       builder: (_) => _CompletePurchaseSheet(
         item: item,
-        categories: _categories,
+        categories: [
+          for (final c in _allCategories)
+            if (c.userId == item.userId) c
+        ],
         onSubmit: (result) async {
           final purchaseId = await SupabaseService.addPurchase(
             purchaseDate: result.date,
@@ -139,6 +200,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
             valor: result.valor,
             local: result.local,
             categoryId: result.categoryId,
+            ownerId: item.userId,
           );
           await SupabaseService.updateShoppingItem(item.id, {
             'is_purchased': true,
@@ -169,6 +231,13 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
+            if (_isAuthenticated && _tabOwners.isNotEmpty)
+              ListOwnerTabs(
+                owners: _tabOwners,
+                activeOwnerId: _activeOwner!.id,
+                onSelect: (o) =>
+                    setState(() => _selectedOwnerId = o.id),
+              ),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -209,6 +278,13 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
               ],
             ),
           ),
+          if (_isAuthenticated)
+            IconButton(
+              tooltip: 'Compartilhar listas',
+              icon: const Icon(Icons.group_add_outlined,
+                  color: AppTheme.darkBrown),
+              onPressed: _openInvites,
+            ),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/list_invite.dart';
 import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../models/receipt_job.dart';
@@ -49,6 +50,8 @@ class SupabaseService {
   // Purchases
   /// Newest first; [fromDate] inclusive and [toDateExclusive] exclusive,
   /// both YYYY-MM-DD, filter server-side (used for the month view).
+  /// RLS returns the user's own rows plus every list shared with them
+  /// through an accepted invite — group by user_id to split them.
   static Future<List<Purchase>> getPurchases(
       {String? fromDate, String? toDateExclusive}) async {
     var query = _client.from('purchases').select();
@@ -64,18 +67,20 @@ class SupabaseService {
     return data.map<Purchase>((json) => Purchase.fromJson(json)).toList();
   }
 
-  /// Returns the id of the created purchase.
+  /// Returns the id of the created purchase. [ownerId] targets a
+  /// shared list; defaults to the signed-in user's own list.
   static Future<String> addPurchase({
     required String purchaseDate,
     required String item,
     required double valor,
     String? local,
     String? categoryId,
+    String? ownerId,
   }) async {
     final data = await _client
         .from('purchases')
         .insert({
-          'user_id': currentUser!.id,
+          'user_id': ownerId ?? currentUser!.id,
           'purchase_date': purchaseDate,
           'item': item,
           'valor': valor,
@@ -123,9 +128,11 @@ class SupabaseService {
         .toList();
   }
 
-  static Future<void> addShoppingItem(String item) async {
+  /// [ownerId] targets a shared list; defaults to the user's own.
+  static Future<void> addShoppingItem(String item,
+      {String? ownerId}) async {
     await _client.from('shopping_items').insert({
-      'user_id': currentUser!.id,
+      'user_id': ownerId ?? currentUser!.id,
       'item': item,
     });
   }
@@ -139,6 +146,78 @@ class SupabaseService {
     await _client.from('shopping_items').delete().eq('id', id);
   }
 
+  // Shared lists: invites give another account full access to the
+  // inviter's Gastos + Compras lists (see migrations 012/013).
+  static Future<void> sendListInvite(String email) async {
+    await _client.from('list_invites').insert({
+      'inviter_id': currentUser!.id,
+      'invitee_email': email.trim().toLowerCase(),
+    });
+  }
+
+  static Future<List<ListInvite>> getSentInvites() async {
+    final data = await _client
+        .from('list_invites')
+        .select()
+        .eq('inviter_id', currentUser!.id)
+        .order('created_at', ascending: false);
+    return data
+        .map<ListInvite>((json) => ListInvite.fromJson(json))
+        .toList();
+  }
+
+  /// Invites other users sent to this account's email.
+  static Future<List<ListInvite>> getReceivedInvites() async {
+    final data = await _client
+        .from('list_invites')
+        .select('*, inviter:profiles!list_invites_inviter_id_fkey('
+            'display_name, email)')
+        .neq('inviter_id', currentUser!.id)
+        .order('created_at', ascending: false);
+    return data
+        .map<ListInvite>((json) => ListInvite.fromJson(json))
+        .toList();
+  }
+
+  /// Accepting or declining claims the invite: RLS requires the update
+  /// to set invitee_id to the responding user.
+  static Future<void> respondToListInvite(String id,
+      {required bool accept}) async {
+    await _client.from('list_invites').update({
+      'status': accept ? 'accepted' : 'declined',
+      'invitee_id': currentUser!.id,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
+  }
+
+  /// Revokes a sent invite (and the access it granted).
+  static Future<void> deleteListInvite(String id) async {
+    await _client.from('list_invites').delete().eq('id', id);
+  }
+
+  /// Lists the user can read and write: their own first, then one per
+  /// accepted invite, named after the inviter.
+  static Future<List<ListOwner>> getListOwners() async {
+    final me = currentUser!;
+    final data = await _client
+        .from('list_invites')
+        .select('inviter_id, inviter:profiles!list_invites_inviter_id_fkey('
+            'display_name, email)')
+        .eq('invitee_id', me.id)
+        .eq('status', 'accepted');
+    return [
+      ListOwner(id: me.id, name: 'Minha lista', isMine: true),
+      for (final row in data)
+        ListOwner(
+          id: row['inviter_id'] as String,
+          name: ((row['inviter'] as Map<String, dynamic>?)?['display_name'] ??
+              (row['inviter'] as Map<String, dynamic>?)?['email'] ??
+              'Lista compartilhada') as String,
+          isMine: false,
+        ),
+    ];
+  }
+
   // Purchase categories ("Importância")
   static Future<List<PurchaseCategory>> getPurchaseCategories() async {
     final data = await _client
@@ -150,13 +229,14 @@ class SupabaseService {
         .toList();
   }
 
-  /// Returns the id of the created category.
-  static Future<String> addPurchaseCategory(
-      String name, int colorValue) async {
+  /// Returns the id of the created category. [ownerId] targets a
+  /// shared list; defaults to the user's own.
+  static Future<String> addPurchaseCategory(String name, int colorValue,
+      {String? ownerId}) async {
     final data = await _client
         .from('purchase_categories')
         .insert({
-          'user_id': currentUser!.id,
+          'user_id': ownerId ?? currentUser!.id,
           'name': name,
           'color_value': colorValue,
         })

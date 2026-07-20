@@ -44,8 +44,15 @@ class TodoCategoryStore extends CategoryStore {
       TodoRepository.instance.deleteCategory(id);
 }
 
-/// Purchase categories ("Categoria"), straight from Supabase.
+/// Purchase categories ("Categoria"), straight from Supabase. Scoped
+/// to one list owner, since shared lists made getPurchaseCategories
+/// return every accessible list's categories.
 class PurchaseCategoryStore extends CategoryStore {
+  /// Owner of the list being edited; null means the signed-in user.
+  final String? ownerId;
+
+  PurchaseCategoryStore({this.ownerId});
+
   @override
   String get title => 'Editar Categoria';
 
@@ -54,12 +61,19 @@ class PurchaseCategoryStore extends CategoryStore {
       'Compras com esta importância ficarão sem categoria.';
 
   @override
-  Future<List<CategoryBase>> getAll() =>
-      SupabaseService.getPurchaseCategories();
+  Future<List<CategoryBase>> getAll() async {
+    final owner = ownerId ?? SupabaseService.currentUser!.id;
+    final all = await SupabaseService.getPurchaseCategories();
+    return [
+      for (final c in all)
+        if (c.userId == owner) c
+    ];
+  }
 
   @override
   Future<void> add(String name, int colorValue) =>
-      SupabaseService.addPurchaseCategory(name, colorValue);
+      SupabaseService.addPurchaseCategory(name, colorValue,
+          ownerId: ownerId);
 
   @override
   Future<void> update(String id, {String? name, int? colorValue}) =>

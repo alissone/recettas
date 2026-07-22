@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
@@ -1084,7 +1085,39 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             focusNode: _itemFocus,
             autofocus: existing == null,
             textInputAction: TextInputAction.next,
-            decoration: _fieldDecoration('Item'),
+            decoration: _fieldDecoration('Item').copyWith(
+              suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _itemController,
+                builder: (context, value, _) {
+                  final hasText = value.text.trim().isNotEmpty;
+                  return IconButton(
+                    icon: Icon(hasText
+                        ? Icons.content_copy
+                        : Icons.content_paste),
+                    tooltip: hasText ? 'Copiar' : 'Colar',
+                    onPressed: hasText
+                        ? () async {
+                            await Clipboard.setData(
+                                ClipboardData(text: value.text));
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Copiado')),
+                            );
+                          }
+                        : () async {
+                            final data = await Clipboard.getData(
+                                Clipboard.kTextPlain);
+                            final text = data?.text;
+                            if (text == null || text.isEmpty) return;
+                            _itemController.text = text;
+                            _itemController.selection =
+                                TextSelection.collapsed(
+                                    offset: text.length);
+                          },
+                  );
+                },
+              ),
+            ),
             onSubmitted: (_) => _valorFocus.requestFocus(),
           ),
           const SizedBox(height: 12),
@@ -1097,7 +1130,16 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   textInputAction: TextInputAction.done,
-                  decoration: _fieldDecoration('Valor (R\$)'),
+                  decoration: _fieldDecoration('Valor (R\$)').copyWith(
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.backspace_outlined),
+                      tooltip: 'Limpar',
+                      onPressed: () {
+                        _valorController.clear();
+                        _valorFocus.requestFocus();
+                      },
+                    ),
+                  ),
                   onSubmitted: (_) => _save(),
                 ),
               ),

@@ -2,8 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 
-/// Converts between BRL, USD and EUR. Rates are entered manually and
-/// kept in shared preferences (both quoted in BRL).
+/// A convertible unit: [toBase] maps a value in this unit to the group's
+/// base unit, [fromBase] maps a base-unit value back into this unit.
+/// Linear for most units, affine for temperature (hence functions rather
+/// than a single ratio).
+class _Unit {
+  final String code;
+  final String label;
+  final double Function(double) toBase;
+  final double Function(double) fromBase;
+
+  const _Unit(this.code, this.label, this.toBase, this.fromBase);
+}
+
+// Base unit: km/h.
+const _speedUnits = [
+  _Unit('KPH', 'km/h', _identity, _identity),
+  _Unit('MPH', 'mph', _mphToKph, _kphToMph),
+];
+
+// Base unit: Kelvin.
+const _tempUnits = [
+  _Unit('C', '°C', _cToK, _kToC),
+  _Unit('F', '°F', _fToK, _kToF),
+  _Unit('K', 'K', _identity, _identity),
+];
+
+// Base unit: kg.
+const _weightUnits = [
+  _Unit('KG', 'kg', _identity, _identity),
+  _Unit('LBS', 'lbs', _lbsToKg, _kgToLbs),
+  _Unit('ST', 'stone', _stoneToKg, _kgToStone),
+];
+
+double _identity(double v) => v;
+double _mphToKph(double v) => v * 1.609344;
+double _kphToMph(double v) => v / 1.609344;
+double _cToK(double v) => v + 273.15;
+double _kToC(double v) => v - 273.15;
+double _fToK(double v) => (v - 32) * 5 / 9 + 273.15;
+double _kToF(double v) => (v - 273.15) * 9 / 5 + 32;
+const _kgPerLb = 0.45359237;
+double _lbsToKg(double v) => v * _kgPerLb;
+double _kgToLbs(double v) => v / _kgPerLb;
+const _kgPerStone = _kgPerLb * 14;
+double _stoneToKg(double v) => v * _kgPerStone;
+double _kgToStone(double v) => v / _kgPerStone;
+
+/// Converts between BRL, USD and EUR (manual rates), plus fixed-ratio
+/// unit boxes for speed, temperature and weight.
 class CurrencyConverterScreen extends StatefulWidget {
   const CurrencyConverterScreen({super.key});
 
@@ -28,6 +75,18 @@ class _CurrencyConverterScreenState
   final _usdRateController = TextEditingController();
   final _eurRateController = TextEditingController();
 
+  String _speedFrom = 'KPH';
+  String _speedTo = 'MPH';
+  final _speedAmountController = TextEditingController();
+
+  String _tempFrom = 'C';
+  String _tempTo = 'F';
+  final _tempAmountController = TextEditingController();
+
+  String _weightFrom = 'KG';
+  String _weightTo = 'LBS';
+  final _weightAmountController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +98,9 @@ class _CurrencyConverterScreenState
     _amountController.dispose();
     _usdRateController.dispose();
     _eurRateController.dispose();
+    _speedAmountController.dispose();
+    _tempAmountController.dispose();
+    _weightAmountController.dispose();
     super.dispose();
   }
 
@@ -104,6 +166,39 @@ class _CurrencyConverterScreenState
       _from = _to;
       _to = tmp;
     });
+  }
+
+  void _swapSpeed() {
+    setState(() {
+      final tmp = _speedFrom;
+      _speedFrom = _speedTo;
+      _speedTo = tmp;
+    });
+  }
+
+  void _swapTemp() {
+    setState(() {
+      final tmp = _tempFrom;
+      _tempFrom = _tempTo;
+      _tempTo = tmp;
+    });
+  }
+
+  void _swapWeight() {
+    setState(() {
+      final tmp = _weightFrom;
+      _weightFrom = _weightTo;
+      _weightTo = tmp;
+    });
+  }
+
+  double? _convertUnit(
+      List<_Unit> units, String fromCode, String toCode, String text) {
+    final amount = _parseNumber(text);
+    if (amount == null) return null;
+    final from = units.firstWhere((u) => u.code == fromCode);
+    final to = units.firstWhere((u) => u.code == toCode);
+    return to.fromBase(from.toBase(amount));
   }
 
   @override
@@ -200,9 +295,129 @@ class _CurrencyConverterScreenState
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+            _buildUnitConverterCard(
+              title: 'Velocidade',
+              units: _speedUnits,
+              amountController: _speedAmountController,
+              from: _speedFrom,
+              to: _speedTo,
+              onFromChanged: (v) => setState(() => _speedFrom = v),
+              onToChanged: (v) => setState(() => _speedTo = v),
+              onSwap: _swapSpeed,
+            ),
+            const SizedBox(height: 20),
+            _buildUnitConverterCard(
+              title: 'Temperatura',
+              units: _tempUnits,
+              amountController: _tempAmountController,
+              from: _tempFrom,
+              to: _tempTo,
+              onFromChanged: (v) => setState(() => _tempFrom = v),
+              onToChanged: (v) => setState(() => _tempTo = v),
+              onSwap: _swapTemp,
+              allowNegative: true,
+            ),
+            const SizedBox(height: 20),
+            _buildUnitConverterCard(
+              title: 'Peso',
+              units: _weightUnits,
+              amountController: _weightAmountController,
+              from: _weightFrom,
+              to: _weightTo,
+              onFromChanged: (v) => setState(() => _weightFrom = v),
+              onToChanged: (v) => setState(() => _weightTo = v),
+              onSwap: _swapWeight,
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildUnitConverterCard({
+    required String title,
+    required List<_Unit> units,
+    required TextEditingController amountController,
+    required String from,
+    required String to,
+    required ValueChanged<String> onFromChanged,
+    required ValueChanged<String> onToChanged,
+    required VoidCallback onSwap,
+    bool allowNegative = false,
+  }) {
+    final result = _convertUnit(units, from, to, amountController.text);
+    final toUnit = units.firstWhere((u) => u.code == to);
+    return _buildCard(
+      title: title,
+      child: Column(
+        children: [
+          TextField(
+            controller: amountController,
+            keyboardType: TextInputType.numberWithOptions(
+                decimal: true, signed: allowNegative),
+            style: AppTheme.valueBold.copyWith(fontSize: 20),
+            decoration: _inputDecoration('Valor'),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                  child: _buildUnitDropdown(
+                      units, from, 'De', onFromChanged)),
+              IconButton(
+                onPressed: onSwap,
+                icon: const Icon(Icons.swap_horiz,
+                    color: AppTheme.primaryOrange),
+                tooltip: 'Inverter',
+              ),
+              Expanded(
+                  child:
+                      _buildUnitDropdown(units, to, 'Para', onToChanged)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryOrange.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              border: Border.all(color: AppTheme.borderOrange),
+            ),
+            child: Column(
+              children: [
+                Text('$from → $to', style: AppTheme.caption),
+                const SizedBox(height: 4),
+                Text(
+                  result != null
+                      ? '${result.toStringAsFixed(2)} ${toUnit.label}'
+                      : '—',
+                  style: AppTheme.headingMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnitDropdown(List<_Unit> units, String value, String label,
+      ValueChanged<String> onChanged) {
+    return DropdownButtonFormField<String>(
+      key: ValueKey('${label}_$value'),
+      initialValue: value,
+      decoration: _inputDecoration(label),
+      items: [
+        for (final u in units)
+          DropdownMenuItem(value: u.code, child: Text(u.label)),
+      ],
+      onChanged: (v) {
+        if (v == null) return;
+        onChanged(v);
+      },
     );
   }
 

@@ -17,12 +17,18 @@ class CategorizeOverlay extends StatefulWidget {
   final ValueChanged<CategoryBase?> onAssign;
   final VoidCallback onDismiss;
 
+  /// Called instead of [onAssign]/[onDismiss] when the drag is released
+  /// over the title text. When null, the title behaves like empty space
+  /// (releasing there just dismisses).
+  final VoidCallback? onMoveToTop;
+
   const CategorizeOverlay({
     super.key,
     required this.categories,
     required this.itemLabel,
     required this.onAssign,
     required this.onDismiss,
+    this.onMoveToTop,
   });
 
   @override
@@ -31,7 +37,9 @@ class CategorizeOverlay extends StatefulWidget {
 
 class CategorizeOverlayState extends State<CategorizeOverlay> {
   late List<GlobalKey> _squircleKeys;
+  final GlobalKey _titleKey = GlobalKey();
   int? _highlighted;
+  bool _overTitle = false;
 
   @override
   void initState() {
@@ -53,13 +61,23 @@ class CategorizeOverlayState extends State<CategorizeOverlay> {
         List.generate(widget.categories.length + 1, (_) => GlobalKey());
   }
 
-  /// Highlights the squircle under the finger while the drag continues.
+  /// Highlights the squircle (or the title, for "move to top") under the
+  /// finger while the drag continues.
   void updateDrag(Offset globalPos) {
-    setState(() => _highlighted = _hitTest(globalPos));
+    setState(() {
+      _overTitle = widget.onMoveToTop != null &&
+          _hitTestKey(_titleKey, globalPos);
+      _highlighted = _overTitle ? null : _hitTest(globalPos);
+    });
   }
 
-  /// Assigns the squircle under the release point, or dismisses.
+  /// Moves to top over the title, assigns the squircle under the release
+  /// point, or dismisses.
   void endDrag(Offset globalPos) {
+    if (widget.onMoveToTop != null && _hitTestKey(_titleKey, globalPos)) {
+      widget.onMoveToTop!();
+      return;
+    }
     final index = _hitTest(globalPos);
     if (index != null) {
       _assign(index);
@@ -68,14 +86,18 @@ class CategorizeOverlayState extends State<CategorizeOverlay> {
     }
   }
 
+  bool _hitTestKey(GlobalKey key, Offset globalPos) {
+    final box = key.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null && box.attached) {
+      final local = box.globalToLocal(globalPos);
+      if (box.paintBounds.contains(local)) return true;
+    }
+    return false;
+  }
+
   int? _hitTest(Offset globalPos) {
     for (var i = 0; i < _squircleKeys.length; i++) {
-      final box =
-          _squircleKeys[i].currentContext?.findRenderObject() as RenderBox?;
-      if (box != null && box.attached) {
-        final local = box.globalToLocal(globalPos);
-        if (box.paintBounds.contains(local)) return i;
-      }
+      if (_hitTestKey(_squircleKeys[i], globalPos)) return i;
     }
     return null;
   }
@@ -100,11 +122,7 @@ class CategorizeOverlayState extends State<CategorizeOverlay> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Arraste pra uma categoria',
-                    style: AppTheme.headingMedium
-                        .copyWith(color: Colors.white),
-                  ),
+                  _buildTitle(),
                   const SizedBox(height: 8),
                   Text(
                     widget.itemLabel,
@@ -158,6 +176,29 @@ class CategorizeOverlayState extends State<CategorizeOverlay> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTitle() {
+    final movable = widget.onMoveToTop != null;
+    final highlighted = movable && _overTitle;
+    return AnimatedContainer(
+      key: _titleKey,
+      duration: const Duration(milliseconds: 120),
+      padding: EdgeInsets.symmetric(
+          horizontal: highlighted ? 16 : 0, vertical: highlighted ? 8 : 0),
+      decoration: BoxDecoration(
+        color: highlighted
+            ? Colors.white.withValues(alpha: 0.15)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        border:
+            highlighted ? Border.all(color: Colors.white, width: 2) : null,
+      ),
+      child: Text(
+        'Arraste pra uma categoria',
+        style: AppTheme.headingMedium.copyWith(color: Colors.white),
       ),
     );
   }

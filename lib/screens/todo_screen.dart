@@ -329,6 +329,20 @@ class _TodoScreenState extends State<TodoScreen> {
     setState(() => _categorizingTodo = null);
   }
 
+  /// Dropped on the overlay title instead of a category: moves the todo
+  /// to the front of the list (and persists the new order) rather than
+  /// categorizing it.
+  void _moveCategorizingTodoToTop() {
+    final todo = _categorizingTodo;
+    if (todo == null) return;
+    setState(() {
+      _todos.removeWhere((t) => t.id == todo.id);
+      _todos.insert(0, todo);
+      _categorizingTodo = null;
+    });
+    _repo.reorderTodos(_todos.map((t) => t.id).toList());
+  }
+
   Future<void> _editTodo(Todo todo) async {
     final newTitle = await showDialog<String>(
       context: context,
@@ -878,6 +892,7 @@ class _TodoScreenState extends State<TodoScreen> {
       itemLabel: _categorizingTodo?.title ?? '',
       onAssign: _assignCategory,
       onDismiss: _dismissCategorize,
+      onMoveToTop: _moveCategorizingTodoToTop,
     );
   }
 }

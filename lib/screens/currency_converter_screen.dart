@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 
@@ -74,6 +77,7 @@ class _CurrencyConverterScreenState
   final _amountController = TextEditingController();
   final _usdRateController = TextEditingController();
   final _eurRateController = TextEditingController();
+  bool _updatingRates = false;
 
   String _speedFrom = 'KPH';
   String _speedTo = 'MPH';
@@ -126,6 +130,53 @@ class _CurrencyConverterScreenState
       _eurBrl = eur;
     });
     if (mounted) FocusScope.of(context).unfocus();
+  }
+
+  /// Pulls EUR→USD and EUR→BRL from Frankfurter, derives USD→BRL from
+  /// them, and saves through [_saveRates] so it's cached for offline use.
+  Future<void> _fetchRates() async {
+    setState(() => _updatingRates = true);
+    try {
+      final res = await http
+          .get(Uri.parse(
+              'https://api.frankfurter.dev/v2/rates?base=EUR&quotes=USD,BRL'))
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode != 200) {
+        throw Exception('HTTP ${res.statusCode}');
+      }
+      final quotes = jsonDecode(res.body) as List<dynamic>;
+      double? eurUsd;
+      double? eurBrl;
+      for (final entry in quotes) {
+        final map = entry as Map<String, dynamic>;
+        final rate = (map['rate'] as num?)?.toDouble();
+        switch (map['quote']) {
+          case 'USD':
+            eurUsd = rate;
+          case 'BRL':
+            eurBrl = rate;
+        }
+      }
+      if (eurUsd == null || eurUsd <= 0 || eurBrl == null || eurBrl <= 0) {
+        throw Exception('Resposta inesperada da API');
+      }
+      _usdRateController.text = (eurBrl / eurUsd).toStringAsFixed(2);
+      _eurRateController.text = eurBrl.toStringAsFixed(2);
+      await _saveRates();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cotações atualizadas')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao atualizar cotações: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updatingRates = false);
+    }
   }
 
   /// Accepts both "5.30" and "5,30".
@@ -274,6 +325,36 @@ class _CurrencyConverterScreenState
                   const SizedBox(height: 12),
                   _buildRateField('1 EUR em BRL', _eurRateController),
                   const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _updatingRates ? null : _fetchRates,
+                      icon: _updatingRates
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cloud_download_outlined,
+                              size: 18),
+                      label: Text(_updatingRates
+                          ? 'Atualizando...'
+                          : 'Atualizar cotações'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primaryOrange,
+                        side: const BorderSide(
+                            color: AppTheme.primaryOrange),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              AppTheme.radiusSmall),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(

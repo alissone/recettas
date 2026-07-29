@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/food.dart';
 import '../models/nutrient.dart';
-import '../models/nutrient_recommendation.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
+import 'nutrient_targets_screen.dart';
 
 /// Nutrition log: pick a food and an amount, and see the day's nutrient
 /// intake against the active recommendation set. The food catalog is
@@ -24,9 +24,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
   /// Static reference data, fetched once.
   Map<NutrientId, Nutrient> _catalog = {};
   List<Food> _foods = [];
-  List<NutrientRecommendationSet> _sets = [];
+
+  /// Daily targets from whichever set the profile points at. Which set
+  /// that is - and what's in it - is owned by NutrientTargetsScreen.
   Map<NutrientId, double> _targets = {};
-  String? _activeSetId;
 
   /// Entries for the whole visible range; the day's list is filtered out
   /// of this so paging a day never costs a second request.
@@ -89,8 +90,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
       setState(() {
         _catalog = catalog;
         _foods = foods;
-        _sets = sets;
-        _activeSetId = activeSetId;
       });
       await _loadTargets(activeSetId);
       await _load();
@@ -167,66 +166,31 @@ class _NutritionScreenState extends State<NutritionScreen> {
     _load();
   }
 
-  Future<void> _pickRecommendationSet() async {
-    final chosen = await showDialog<String?>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        backgroundColor: AppTheme.creamBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        ),
-        title: Text('Metas diárias', style: AppTheme.headingMedium),
-        children: [
-          for (final set in _sets)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, set.id),
-              child: Row(
-                children: [
-                  Icon(
-                    set.id == _activeSetId
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                    size: 18,
-                    color: AppTheme.primaryOrange,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: Text(set.name, style: AppTheme.bodyText)),
-                ],
-              ),
-            ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, ''),
-            child: Row(
-              children: [
-                Icon(
-                  _activeSetId == null
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  size: 18,
-                  color: AppTheme.primaryOrange,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                    child:
-                        Text('Sem metas', style: AppTheme.bodyText)),
-              ],
-            ),
-          ),
-        ],
-      ),
+  /// The targets screen owns both picking a set and editing its
+  /// numbers, and reports back whether anything changed.
+  Future<void> _openTargets() async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const NutrientTargetsScreen()),
     );
-    if (chosen == null) return;
+    if (changed != true || !mounted) return;
 
-    final setId = chosen.isEmpty ? null : chosen;
-    setState(() => _activeSetId = setId);
+    // The active set may now be a different one, so re-read it.
     try {
-      await SupabaseService.setActiveRecommendationSet(setId);
+      String? setId;
+      try {
+        final profile = await SupabaseService.getProfile();
+        setId = profile?['active_recommendation_set_id'];
+      } catch (_) {}
+      setId ??= (await SupabaseService.getRecommendationSets())
+          .where((s) => s.isShared)
+          .firstOrNull
+          ?.id;
       await _loadTargets(setId);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Falha ao salvar meta: $e')));
+            SnackBar(content: Text('Falha ao recarregar metas: $e')));
       }
     }
   }
@@ -325,7 +289,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
         title: const Text('Nutrição'),
         actions: [
           IconButton(
-            onPressed: _sets.isEmpty ? null : _pickRecommendationSet,
+            onPressed: _openTargets,
             icon: const Icon(Icons.flag_outlined),
             tooltip: 'Metas diárias',
           ),

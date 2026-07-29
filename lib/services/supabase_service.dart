@@ -466,6 +466,74 @@ class SupabaseService {
         .toList();
   }
 
+  static Future<String> createRecommendationSet({
+    required String name,
+    String? description,
+  }) async {
+    final data = await _client
+        .from('nutrient_recommendation_sets')
+        .insert({
+          'user_id': currentUser!.id,
+          'name': name,
+          'description': description,
+        })
+        .select('id')
+        .single();
+    return data['id'] as String;
+  }
+
+  /// Bulk-copies targets into [setId] - used when a user forks a shared
+  /// preset into a set they own and can edit.
+  static Future<void> addRecommendations(
+    String setId,
+    List<NutrientRecommendation> recommendations,
+  ) async {
+    if (recommendations.isEmpty) return;
+    await _client.from('nutrient_recommendations').insert([
+      for (final r in recommendations)
+        {
+          'set_id': setId,
+          'nutrient_id': r.nutrient.name,
+          'amount': r.amount,
+          'unit': r.unit.name,
+        }
+    ]);
+  }
+
+  /// One target per (set, nutrient), via the unique index from
+  /// migration 016.
+  static Future<void> upsertRecommendation({
+    required String setId,
+    required NutrientId nutrient,
+    required double amount,
+    required NutrientUnit unit,
+  }) async {
+    await _client.from('nutrient_recommendations').upsert({
+      'set_id': setId,
+      'nutrient_id': nutrient.name,
+      'amount': amount,
+      'unit': unit.name,
+    }, onConflict: 'set_id,nutrient_id');
+  }
+
+  static Future<void> deleteRecommendation({
+    required String setId,
+    required NutrientId nutrient,
+  }) async {
+    await _client
+        .from('nutrient_recommendations')
+        .delete()
+        .eq('set_id', setId)
+        .eq('nutrient_id', nutrient.name);
+  }
+
+  static Future<void> deleteRecommendationSet(String id) async {
+    await _client
+        .from('nutrient_recommendation_sets')
+        .delete()
+        .eq('id', id);
+  }
+
   /// Null clears the active set, leaving the charts without targets.
   static Future<void> setActiveRecommendationSet(String? setId) async {
     await _client

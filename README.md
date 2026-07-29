@@ -97,3 +97,13 @@ values, and `DD/MM/YYYY` date normalization.
   blank dates, handles Brazilian decimal-comma values, and matches category
   names against the user's existing `purchase_categories`). Run with `-h` for
   usage.
+- `scripts/nutrition_report_to_sql.py` — paste a "Relatório completo" page
+  from the SR25 food composition table (UNIFESP) and it writes
+  `migrations/nutrition/<alimento>.sql`, ready to run in the SQL editor.
+  It reads the nutrient catalog straight out of `migrations/` so it cannot
+  drift from the database, maps the Portuguese labels to `nutrient_id`s,
+  converts between mass units when the report disagrees with the catalog,
+  and refuses to guess: an unrecognised nutrient is reported and left out
+  rather than matched to something close. Food ids are a `uuid5` of the
+  name, so re-running a report updates the same row instead of duplicating
+  it. Run with `-h` for usage.

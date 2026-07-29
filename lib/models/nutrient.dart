@@ -61,10 +61,18 @@ enum NutrientId {
   monounsaturatedFat,
   polyunsaturatedFat,
   transFat,
-  cholesterol,
 
   omega3,
   omega6,
+
+  // Sterols
+  cholesterol,
+  stigmasterol,
+  campesterol,
+  betaSitosterol,
+
+  transMonoenoicFat,
+  transPolyenoicFat,
 
   // Saturated chains
   butyricAcid,
@@ -74,16 +82,24 @@ enum NutrientId {
   lauricAcid,
   myristicAcid,
   palmiticAcid,
+  heptadecanoicAcid,
   stearicAcid,
+  arachidicAcid,
 
   // Monounsaturated chains
   palmitoleicAcid,
+  palmitoleicAcidCis,
   oleicAcid,
+  oleicAcidCis,
+  oleicAcidTrans,
   gadoleicAcid,
   erucicAcid,
 
   // Polyunsaturated chains
   linoleicAcid,
+  linoleicAcidCis,
+  conjugatedLinoleicAcid,
+  linoleicAcidIsomers,
   ala,
   parinaricAcid,
   arachidonicAcid,
@@ -134,8 +150,13 @@ enum NutrientId {
   vitaminDIu,
   vitaminE,
   addedVitaminE,
+  betaTocopherol,
   gammaTocopherol,
   deltaTocopherol,
+  alphaTocotrienol,
+  betaTocotrienol,
+  gammaTocotrienol,
+  deltaTocotrienol,
   vitaminK,
   dihydrophylloquinone,
 

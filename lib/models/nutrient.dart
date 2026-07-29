@@ -9,6 +9,7 @@ enum NutrientCategory {
   sugar,
   sterol,
   phytochemical,
+  carotenoid,
   other,
 }
 
@@ -38,14 +39,22 @@ enum NutrientId {
   fat,
   water,
   alcohol,
+  ash,
 
   // Carb breakdown
   fiber,
   solubleFiber,
   insolubleFiber,
+  starch,
   sugar,
   addedSugar,
-  starch,
+  monosaccharides,
+  glucose,
+  fructose,
+  galactose,
+  sucrose,
+  lactose,
+  maltose,
 
   // Fat breakdown
   saturatedFat,
@@ -57,9 +66,30 @@ enum NutrientId {
   omega3,
   omega6,
 
-  epa,
-  dha,
+  // Saturated chains
+  butyricAcid,
+  caproicAcid,
+  caprylicAcid,
+  capricAcid,
+  lauricAcid,
+  myristicAcid,
+  palmiticAcid,
+  stearicAcid,
+
+  // Monounsaturated chains
+  palmitoleicAcid,
+  oleicAcid,
+  gadoleicAcid,
+  erucicAcid,
+
+  // Polyunsaturated chains
+  linoleicAcid,
   ala,
+  parinaricAcid,
+  arachidonicAcid,
+  epa,
+  dpa,
+  dha,
 
   // Protein breakdown
   tryptophan,
@@ -68,12 +98,23 @@ enum NutrientId {
   leucine,
   lysine,
   methionine,
+  cysteine,
   phenylalanine,
+  tyrosine,
   valine,
+  arginine,
   histidine,
+  alanine,
+  asparticAcid,
+  glutamicAcid,
+  glycine,
+  proline,
+  serine,
 
   // Vitamins
   vitaminA,
+  retinol,
+  vitaminAIu,
   vitaminB1,
   vitaminB2,
   vitaminB3,
@@ -81,11 +122,29 @@ enum NutrientId {
   vitaminB6,
   vitaminB7,
   vitaminB9,
+  folicAcid,
+  foodFolate,
+  folateDfe,
   vitaminB12,
+  addedVitaminB12,
   vitaminC,
   vitaminD,
+  vitaminD2,
+  vitaminD3,
+  vitaminDIu,
   vitaminE,
+  addedVitaminE,
+  gammaTocopherol,
+  deltaTocopherol,
   vitaminK,
+  dihydrophylloquinone,
+
+  // Carotenoids
+  betaCarotene,
+  alphaCarotene,
+  betaCryptoxanthin,
+  lycopene,
+  luteinZeaxanthin,
 
   // Minerals
   calcium,
@@ -106,7 +165,9 @@ enum NutrientId {
 
   // Other
   caffeine,
+  theobromine,
   choline,
+  betaine,
 }
 
 /// Display suffix for each unit. NutrientUnit.name is what the database
@@ -133,6 +194,7 @@ const Map<NutrientCategory, String> kNutrientCategoryLabels = {
   NutrientCategory.sugar: 'Açúcares',
   NutrientCategory.sterol: 'Esteróis',
   NutrientCategory.phytochemical: 'Fitoquímicos',
+  NutrientCategory.carotenoid: 'Carotenoides',
   NutrientCategory.other: 'Outros',
 };
 
@@ -210,12 +272,15 @@ class Nutrient {
   }
 }
 
-/// Formats an amount with a sensible number of decimals: micrograms and
-/// calories read better whole, grams to one decimal, tiny values to two.
+/// Formats an amount with a sensible number of decimals: large values
+/// read better whole, grams to one decimal, and traces to three - source
+/// tables report copper at 0.031 mg and manganese at 0.009 mg, which two
+/// decimals would round away to noise.
 String formatNutrientAmount(double value) {
-  if (value.abs() >= 100) return value.round().toString();
-  if (value.abs() >= 10) return value.toStringAsFixed(1);
-  if (value.abs() >= 1) return value.toStringAsFixed(1);
   if (value == 0) return '0';
-  return value.toStringAsFixed(2);
+  final abs = value.abs();
+  if (abs >= 100) return value.round().toString();
+  if (abs >= 1) return value.toStringAsFixed(1);
+  if (abs >= 0.1) return value.toStringAsFixed(2);
+  return value.toStringAsFixed(3);
 }

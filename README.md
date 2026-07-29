@@ -13,6 +13,16 @@ Android, iOS, Windows, macOS and Linux from a single codebase.
   category. Add entries manually, or snap/upload a receipt photo to have it
   queued for OCR extraction.
 - **Receitas (Recipes)** — browse recipes (public, read-only).
+- **Hábitos (Habits)** — three trackers behind one summary tab:
+  - *Nutrição*: log how much of a food you ate and see the day's nutrient
+    intake charted against a named recommendation set. The nutrient and food
+    catalogs are seeded by hand in SQL; the app only reads them.
+  - *Academia*: per day, which exercises you did — sets, reps and one weight
+    each (no drop sets). The exercise catalog, photos included, is seeded by
+    hand too.
+  - *Hábitos*: custom habits with an icon, color, image and a counter- or
+    duration-based goal over a daily/weekly/monthly period, each with a month
+    calendar heatmap of how much you did per day.
 - **Perfil (Profile)** — Supabase email/password auth and profile info.
 
 ## Architecture
@@ -21,8 +31,15 @@ Android, iOS, Windows, macOS and Linux from a single codebase.
 - **Supabase** (Postgres + Auth + Storage) is the backend. There is no
   CLI-managed migration flow — SQL files under [`migrations/`](migrations) are
   applied by hand, in numeric order, via the Supabase SQL editor. All
-  user-owned tables have row-level security scoped to `auth.uid()`; `recipes`
-  is public read-only.
+  user-owned tables have row-level security scoped to `auth.uid()`; `recipes`,
+  `nutrients`, `foods` and `exercises` are public read-only catalogs.
+- **Storage buckets**: `receipts` (private, per-user folders) for receipt
+  photos, and `habits` (private, readable by any signed-in account) for habit,
+  food and exercise pictures. Habit images are uploaded from the app; food and
+  exercise images are uploaded through the Supabase dashboard and their
+  `image_path` set by hand alongside the catalog rows. Because the bucket is
+  private, images are fetched through short-lived signed URLs memoized by
+  `SupabaseService.habitImageUrl`.
 - **Offline-first sync** (todos only): `lib/services/local_db.dart` keeps a
   SQLite cache (via `sqflite`, or `sqflite_common_ffi` on Windows/Linux), and
   `lib/services/todo_repository.dart` reads/writes that cache first so the UI
@@ -46,7 +63,7 @@ lib/
   app_theme.dart                Colors, text styles, shared decorations
   models/                       Todo, TodoCategory, Purchase, ReceiptJob, ...
   screens/                       One file per tab/screen (home_shell.dart is the
-                                 bottom-nav shell wiring the four tabs together)
+                                 bottom-nav shell wiring the six tabs together)
   services/                      Supabase access, local DB/offline sync,
                                  receipt processing + CSV parsing
   utils/, widgets/               Small shared helpers/components

@@ -1,7 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/exercise.dart';
+import '../models/food.dart';
+import '../models/gym_entry.dart';
+import '../models/habit.dart';
 import '../models/list_invite.dart';
+import '../models/nutrient.dart';
+import '../models/nutrient_recommendation.dart';
 import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../models/receipt_job.dart';
@@ -368,6 +374,277 @@ class SupabaseService {
 
   static Future<void> deleteSleepEvent(String id) async {
     await _client.from('sleep_events').delete().eq('id', id);
+  }
+
+  // Nutrition (hand-seeded nutrient + food catalogs, per-day food log)
+
+  /// The public.nutrients catalog. Rows naming a nutrient this build
+  /// doesn't know are skipped rather than defaulted - see
+  /// Nutrient.fromJson.
+  static Future<List<Nutrient>> getNutrientCatalog() async {
+    final data =
+        await _client.from('nutrients').select().order('sort_order');
+    return data
+        .map(Nutrient.fromJson)
+        .whereType<Nutrient>()
+        .toList();
+  }
+
+  /// Every food plus its nutrient values, in one request. RLS makes the
+  /// shared catalog (user_id null) visible alongside the user's own.
+  static Future<List<Food>> getFoods(
+      Map<NutrientId, Nutrient> catalog) async {
+    final data = await _client
+        .from('foods')
+        .select('*, food_nutrients(nutrient_id, amount)')
+        .order('name');
+    return data.map<Food>((json) => Food.fromJson(json, catalog)).toList();
+  }
+
+  /// Food log between two YYYY-MM-DD dates, [toDateExclusive] excluded.
+  static Future<List<FoodEntry>> getFoodEntries({
+    required String fromDate,
+    required String toDateExclusive,
+    required Map<NutrientId, Nutrient> catalog,
+  }) async {
+    final data = await _client
+        .from('food_entries')
+        .select('*, food:foods(*, food_nutrients(nutrient_id, amount))')
+        .gte('entry_date', fromDate)
+        .lt('entry_date', toDateExclusive)
+        .order('entry_date', ascending: false)
+        .order('created_at', ascending: false);
+    return data
+        .map<FoodEntry>((json) => FoodEntry.fromJson(json, catalog))
+        .toList();
+  }
+
+  static Future<void> addFoodEntry({
+    required String entryDate,
+    required String foodId,
+    required double amount,
+  }) async {
+    await _client.from('food_entries').insert({
+      'user_id': currentUser!.id,
+      'entry_date': entryDate,
+      'food_id': foodId,
+      'amount': amount,
+    });
+  }
+
+  static Future<void> updateFoodEntry(
+      String id, Map<String, dynamic> fields) async {
+    await _client.from('food_entries').update(fields).eq('id', id);
+  }
+
+  static Future<void> deleteFoodEntry(String id) async {
+    await _client.from('food_entries').delete().eq('id', id);
+  }
+
+  /// Shared presets plus the user's own sets (RLS returns both).
+  static Future<List<NutrientRecommendationSet>>
+      getRecommendationSets() async {
+    final data = await _client
+        .from('nutrient_recommendation_sets')
+        .select()
+        .order('name');
+    return data
+        .map<NutrientRecommendationSet>(
+            (json) => NutrientRecommendationSet.fromJson(json))
+        .toList();
+  }
+
+  static Future<List<NutrientRecommendation>> getRecommendations(
+      String setId) async {
+    final data = await _client
+        .from('nutrient_recommendations')
+        .select()
+        .eq('set_id', setId);
+    return data
+        .map(NutrientRecommendation.fromJson)
+        .whereType<NutrientRecommendation>()
+        .toList();
+  }
+
+  /// Null clears the active set, leaving the charts without targets.
+  static Future<void> setActiveRecommendationSet(String? setId) async {
+    await _client
+        .from('profiles')
+        .update({'active_recommendation_set_id': setId})
+        .eq('id', currentUser!.id);
+  }
+
+  // Gym (shared exercise catalog, one row per exercise per day)
+  static Future<List<Exercise>> getExercises() async {
+    final data = await _client
+        .from('exercises')
+        .select()
+        .order('sort_order')
+        .order('name');
+    return data.map<Exercise>((json) => Exercise.fromJson(json)).toList();
+  }
+
+  /// Gym log between two YYYY-MM-DD dates, [toDateExclusive] excluded.
+  static Future<List<GymEntry>> getGymEntries({
+    required String fromDate,
+    required String toDateExclusive,
+  }) async {
+    final data = await _client
+        .from('gym_entries')
+        .select('*, exercise:exercises(*)')
+        .gte('entry_date', fromDate)
+        .lt('entry_date', toDateExclusive)
+        .order('entry_date', ascending: false)
+        .order('created_at', ascending: true);
+    return data.map<GymEntry>((json) => GymEntry.fromJson(json)).toList();
+  }
+
+  /// One row per (day, exercise): logging the same exercise twice on a
+  /// day overwrites it, via the unique index from migration 017.
+  static Future<void> upsertGymEntry({
+    required String entryDate,
+    required String exerciseId,
+    required int sets,
+    required int reps,
+    double? weight,
+    String? notes,
+  }) async {
+    await _client.from('gym_entries').upsert({
+      'user_id': currentUser!.id,
+      'entry_date': entryDate,
+      'exercise_id': exerciseId,
+      'sets': sets,
+      'reps': reps,
+      'weight': weight,
+      'notes': notes,
+    }, onConflict: 'user_id,entry_date,exercise_id');
+  }
+
+  static Future<void> deleteGymEntry(String id) async {
+    await _client.from('gym_entries').delete().eq('id', id);
+  }
+
+  // Habits (custom habits and their daily logs)
+  static Future<List<Habit>> getHabits() async {
+    final data = await _client
+        .from('habits')
+        .select()
+        .eq('is_archived', false)
+        .order('sort_order')
+        .order('created_at');
+    return data.map<Habit>((json) => Habit.fromJson(json)).toList();
+  }
+
+  static Future<String> addHabit({
+    required String name,
+    String? description,
+    required String iconName,
+    required int colorValue,
+    String? imagePath,
+    required HabitGoalType goalType,
+    required double goalTarget,
+    String? goalUnit,
+    required HabitPeriod period,
+  }) async {
+    final data = await _client
+        .from('habits')
+        .insert({
+          'user_id': currentUser!.id,
+          'name': name,
+          'description': description,
+          'icon_name': iconName,
+          'color_value': colorValue,
+          'image_path': imagePath,
+          'goal_type': goalType.name,
+          'goal_target': goalTarget,
+          'goal_unit': goalUnit,
+          'period': period.name,
+        })
+        .select('id')
+        .single();
+    return data['id'] as String;
+  }
+
+  static Future<void> updateHabit(
+      String id, Map<String, dynamic> fields) async {
+    await _client.from('habits').update(fields).eq('id', id);
+  }
+
+  static Future<void> deleteHabit(String id) async {
+    await _client.from('habits').delete().eq('id', id);
+  }
+
+  /// Habit logs between two YYYY-MM-DD dates, [toDateExclusive]
+  /// excluded. Omit [habitId] for every habit at once.
+  static Future<List<HabitLog>> getHabitLogs({
+    required String fromDate,
+    required String toDateExclusive,
+    String? habitId,
+  }) async {
+    var query = _client
+        .from('habit_logs')
+        .select()
+        .gte('log_date', fromDate)
+        .lt('log_date', toDateExclusive);
+    if (habitId != null) query = query.eq('habit_id', habitId);
+    final data = await query.order('created_at', ascending: true);
+    return data.map<HabitLog>((json) => HabitLog.fromJson(json)).toList();
+  }
+
+  static Future<void> addHabitLog({
+    required String habitId,
+    required String logDate,
+    double value = 1,
+  }) async {
+    await _client.from('habit_logs').insert({
+      'user_id': currentUser!.id,
+      'habit_id': habitId,
+      'log_date': logDate,
+      'value': value,
+    });
+  }
+
+  static Future<void> deleteHabitLog(String id) async {
+    await _client.from('habit_logs').delete().eq('id', id);
+  }
+
+  // Habit images (shared "habits" storage bucket: foods, exercises,
+  // habits). Objects are stored as "<user_id>/<kind>/<id>.jpg".
+  static final Map<String, String> _habitImageUrls = {};
+
+  static Future<void> uploadHabitImage(
+      String path, Uint8List bytes) async {
+    await _client.storage.from('habits').uploadBinary(
+          path,
+          bytes,
+          // Unlike receipts, a habit photo can be replaced.
+          fileOptions: const FileOptions(
+              contentType: 'image/jpeg', upsert: true),
+        );
+    _habitImageUrls.remove(path);
+  }
+
+  /// Signed URL for an object in the bucket, memoized for the life of
+  /// the process. The bucket is private, so getPublicUrl would fail; the
+  /// memo also keeps the URL - and therefore Flutter's ImageCache key -
+  /// stable across rebuilds, otherwise every rebuild re-downloads the
+  /// image. If the bucket is ever made public, the whole body becomes
+  /// `_client.storage.from('habits').getPublicUrl(path)`.
+  static Future<String> habitImageUrl(String path) async {
+    final cached = _habitImageUrls[path];
+    if (cached != null) return cached;
+    // A day outlives any realistic session, so a memoized URL never
+    // expires while it is still in the map.
+    final url = await _client.storage
+        .from('habits')
+        .createSignedUrl(path, 60 * 60 * 24);
+    _habitImageUrls[path] = url;
+    return url;
+  }
+
+  static Future<void> deleteHabitImage(String path) async {
+    await _client.storage.from('habits').remove([path]);
+    _habitImageUrls.remove(path);
   }
 
   // Profile

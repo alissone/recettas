@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import 'habits_screen.dart';
 import 'purchases_screen.dart';
 import 'recipes_screen.dart';
 import 'shopping_screen.dart';
@@ -49,6 +50,7 @@ class HomeShellState extends State<HomeShell> {
     ShoppingScreen(),
     PurchasesScreen(),
     RecipesScreen(),
+    HabitsScreen(),
     MoreScreen(),
   ];
 
@@ -112,6 +114,10 @@ class HomeShellState extends State<HomeShell> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
+          // Six fixed items: the default 14/12 pt sizing ellipsizes
+          // "Afazeres" and "Receitas" on narrow screens.
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
           onTap: (index) {
             setState(() => _currentIndex = index);
             homeTabIndex.value = index;
@@ -136,6 +142,11 @@ class HomeShellState extends State<HomeShell> {
               icon: Icon(Icons.restaurant_menu_outlined),
               activeIcon: Icon(Icons.restaurant_menu),
               label: 'Receitas',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.self_improvement_outlined),
+              activeIcon: Icon(Icons.self_improvement),
+              label: 'Hábitos',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.grid_view),

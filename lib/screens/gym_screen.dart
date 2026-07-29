@@ -1,0 +1,622 @@
+import 'package:flutter/material.dart';
+import '../app_theme.dart';
+import '../models/exercise.dart';
+import '../models/gym_entry.dart';
+import '../services/supabase_service.dart';
+import '../utils/dates.dart';
+import '../widgets/remote_image.dart';
+
+/// One day of training at a time: which exercises were done, how many
+/// sets and reps, and at what weight. The exercise catalog itself is
+/// seeded in SQL, so this screen only reads it.
+class GymScreen extends StatefulWidget {
+  const GymScreen({super.key});
+
+  @override
+  State<GymScreen> createState() => _GymScreenState();
+}
+
+class _GymScreenState extends State<GymScreen> {
+  bool _isLoading = true;
+  DateTime _day = today();
+  List<GymEntry> _entries = [];
+  List<Exercise> _exercises = [];
+  int _loadSeq = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  bool get _isAtToday => !_day.isBefore(today());
+
+  Future<void> _load() async {
+    if (SupabaseService.currentUser == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    final seq = ++_loadSeq;
+    try {
+      // The catalog is static reference data: fetch it once.
+      if (_exercises.isEmpty) {
+        _exercises = await SupabaseService.getExercises();
+      }
+      final entries = await SupabaseService.getGymEntries(
+        fromDate: isoDate(_day),
+        toDateExclusive: isoDate(_day.add(const Duration(days: 1))),
+      );
+      if (mounted && seq == _loadSeq) {
+        setState(() {
+          _entries = entries;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted && seq == _loadSeq) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Falha ao carregar: $e')));
+      }
+    }
+  }
+
+  void _changeDay(int delta) {
+    final next = _day.add(Duration(days: delta));
+    if (next.isAfter(today())) return;
+    setState(() {
+      _day = next;
+      _isLoading = true;
+    });
+    _load();
+  }
+
+  Future<void> _deleteEntry(GymEntry entry) async {
+    try {
+      await SupabaseService.deleteGymEntry(entry.id);
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Falha ao excluir: $e')));
+      }
+    }
+  }
+
+  /// Picks an exercise, then collects sets/reps/weight for it. Choosing
+  /// an exercise already logged today pre-fills the sheet and overwrites
+  /// the row on save.
+  Future<void> _addEntry() async {
+    if (_exercises.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Nenhum exercício cadastrado. Adicione-os no Supabase.')));
+      return;
+    }
+    final exercise = await showModalBottomSheet<Exercise>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.creamBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusLarge)),
+      ),
+      builder: (_) => _ExercisePickerSheet(exercises: _exercises),
+    );
+    if (exercise == null || !mounted) return;
+
+    final existing =
+        _entries.where((e) => e.exerciseId == exercise.id).firstOrNull;
+    await _showEntrySheet(exercise, existing);
+  }
+
+  Future<void> _showEntrySheet(
+      Exercise exercise, GymEntry? existing) async {
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.creamBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusLarge)),
+      ),
+      builder: (_) => _GymEntrySheet(
+        exercise: exercise,
+        existing: existing,
+        entryDate: isoDate(_day),
+      ),
+    );
+    if (saved == true) await _load();
+  }
+
+  // --- Build ---
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.creamBackground,
+      appBar: AppBar(title: const Text('Academia')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addEntry,
+        child: const Icon(Icons.add),
+      ),
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                    color: AppTheme.primaryOrange))
+            : SupabaseService.currentUser == null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(
+                        'Entre na sua conta para registrar treinos.',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.caption
+                            .copyWith(fontWeight: FontWeight.w400),
+                      ),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
+                    children: [
+                      _buildSummaryCard(),
+                      const SizedBox(height: 20),
+                      if (_entries.isEmpty)
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'Nenhum exercício neste dia.\n'
+                              'Toque em + para registrar.',
+                              textAlign: TextAlign.center,
+                              style: AppTheme.caption
+                                  .copyWith(fontWeight: FontWeight.w400),
+                            ),
+                          ),
+                        )
+                      else
+                        for (final entry in _entries)
+                          _buildEntryCard(entry),
+                    ],
+                  ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    final sets = _entries.fold<int>(0, (sum, e) => sum + e.sets);
+    final volume = _entries.fold<double>(0, (sum, e) => sum + e.volume);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => _changeDay(-1),
+                icon: const Icon(Icons.chevron_left),
+                color: AppTheme.mediumBrown,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Dia anterior',
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${kWeekdaysShort[_day.weekday - 1]} '
+                    '${formatDayMonth(_day)}',
+                    style: AppTheme.caption
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: _isAtToday ? null : () => _changeDay(1),
+                icon: const Icon(Icons.chevron_right),
+                color: AppTheme.mediumBrown,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Próximo dia',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildStat('Exercícios', '${_entries.length}'),
+              const SizedBox(width: 24),
+              _buildStat('Séries', '$sets'),
+              const SizedBox(width: 24),
+              _buildStat('Volume',
+                  volume > 0 ? '${volume.round()} kg' : '—'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStat(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTheme.caption),
+        const SizedBox(height: 2),
+        Text(value, style: AppTheme.headingMedium),
+      ],
+    );
+  }
+
+  Widget _buildEntryCard(GymEntry entry) {
+    final exercise = entry.exercise;
+    final weight = entry.weight;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          onTap: exercise == null
+              ? null
+              : () => _showEntrySheet(exercise, entry),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                RemoteImage(
+                  path: exercise?.imagePath,
+                  width: 52,
+                  height: 52,
+                  placeholder: Icons.fitness_center,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(exercise?.name ?? 'Exercício',
+                          style: AppTheme.valueBold,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          entry.setsLabel,
+                          if (weight != null && weight > 0)
+                            '${_trimWeight(weight)} kg',
+                          if (exercise?.muscleGroup != null)
+                            exercise!.muscleGroup!,
+                        ].join(' · '),
+                        style: AppTheme.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (entry.notes != null &&
+                          entry.notes!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(entry.notes!,
+                            style: AppTheme.caption.copyWith(
+                                fontWeight: FontWeight.w400),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _deleteEntry(entry),
+                  icon: Icon(Icons.close,
+                      size: 18,
+                      color: AppTheme.mediumBrown
+                          .withValues(alpha: 0.6)),
+                  tooltip: 'Excluir',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _trimWeight(double v) =>
+    v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
+
+// ---------------------------------------------------------------------------
+// Sheets
+// ---------------------------------------------------------------------------
+
+/// Searchable list of the exercise catalog. Pops the chosen exercise.
+class _ExercisePickerSheet extends StatefulWidget {
+  final List<Exercise> exercises;
+
+  const _ExercisePickerSheet({required this.exercises});
+
+  @override
+  State<_ExercisePickerSheet> createState() =>
+      _ExercisePickerSheetState();
+}
+
+class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final query = _query.trim().toLowerCase();
+    final matches = query.isEmpty
+        ? widget.exercises
+        : widget.exercises
+            .where((e) =>
+                e.name.toLowerCase().contains(query) ||
+                (e.muscleGroup ?? '').toLowerCase().contains(query))
+            .toList();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Escolher exercício', style: AppTheme.headingMedium),
+          const SizedBox(height: 16),
+          TextField(
+            autofocus: true,
+            onChanged: (v) => setState(() => _query = v),
+            decoration: InputDecoration(
+              hintText: 'Buscar',
+              prefixIcon: const Icon(Icons.search,
+                  color: AppTheme.mediumBrown),
+              filled: true,
+              fillColor: AppTheme.white,
+              border: OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.circular(AppTheme.radiusSmall),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5),
+            child: matches.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text('Nenhum exercício encontrado.',
+                        style: AppTheme.caption
+                            .copyWith(fontWeight: FontWeight.w400)),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: matches.length,
+                    itemBuilder: (context, index) {
+                      final exercise = matches[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: RemoteImage(
+                          path: exercise.imagePath,
+                          width: 44,
+                          height: 44,
+                          placeholder: Icons.fitness_center,
+                        ),
+                        title: Text(exercise.name,
+                            style: AppTheme.valueBold),
+                        subtitle: exercise.muscleGroup == null
+                            ? null
+                            : Text(exercise.muscleGroup!,
+                                style: AppTheme.caption),
+                        onTap: () => Navigator.pop(context, exercise),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sets, reps and weight for one exercise on one day. Pops `true` after
+/// a successful save.
+class _GymEntrySheet extends StatefulWidget {
+  final Exercise exercise;
+  final GymEntry? existing;
+  final String entryDate;
+
+  const _GymEntrySheet({
+    required this.exercise,
+    required this.existing,
+    required this.entryDate,
+  });
+
+  @override
+  State<_GymEntrySheet> createState() => _GymEntrySheetState();
+}
+
+class _GymEntrySheetState extends State<_GymEntrySheet> {
+  late int _sets;
+  late int _reps;
+  late final TextEditingController _weightController;
+  late final TextEditingController _notesController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    _sets = existing?.sets ?? 3;
+    _reps = existing?.reps ?? 12;
+    _weightController = TextEditingController(
+        text: existing?.weight != null
+            ? _trimWeight(existing!.weight!)
+            : '');
+    _notesController =
+        TextEditingController(text: existing?.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    try {
+      final notes = _notesController.text.trim();
+      await SupabaseService.upsertGymEntry(
+        entryDate: widget.entryDate,
+        exerciseId: widget.exercise.id,
+        sets: _sets,
+        reps: _reps,
+        weight: double.tryParse(
+            _weightController.text.trim().replaceAll(',', '.')),
+        notes: notes.isEmpty ? null : notes,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Falha ao salvar: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              RemoteImage(
+                path: widget.exercise.imagePath,
+                width: 48,
+                height: 48,
+                placeholder: Icons.fitness_center,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(widget.exercise.name,
+                    style: AppTheme.headingMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildStepper(
+            label: 'Séries',
+            value: _sets,
+            onChanged: (v) => setState(() => _sets = v),
+          ),
+          const SizedBox(height: 12),
+          _buildStepper(
+            label: 'Repetições',
+            value: _reps,
+            onChanged: (v) => setState(() => _reps = v),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _weightController,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            decoration: _decoration('Peso em kg (opcional)'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notesController,
+            decoration: _decoration('Observações (opcional)'),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isSaving ? null : _save,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryOrange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusSmall),
+                ),
+              ),
+              child: Text(_isSaving ? 'Salvando...' : 'Salvar'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _decoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle:
+          TextStyle(color: AppTheme.mediumBrown.withValues(alpha: 0.8)),
+      filled: true,
+      fillColor: AppTheme.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        borderSide:
+            const BorderSide(color: AppTheme.primaryOrange, width: 2),
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
+  Widget _buildStepper({
+    required String label,
+    required int value,
+    required ValueChanged<int> onChanged,
+  }) {
+    return Row(
+      children: [
+        Expanded(child: Text(label, style: AppTheme.bodyText)),
+        IconButton(
+          onPressed: value > 1 ? () => onChanged(value - 1) : null,
+          icon: const Icon(Icons.remove_circle_outline),
+          color: AppTheme.mediumBrown,
+        ),
+        SizedBox(
+          width: 40,
+          child: Text('$value',
+              textAlign: TextAlign.center,
+              style: AppTheme.headingMedium),
+        ),
+        IconButton(
+          onPressed: () => onChanged(value + 1),
+          icon: const Icon(Icons.add_circle_outline),
+          color: AppTheme.primaryOrange,
+        ),
+      ],
+    );
+  }
+}

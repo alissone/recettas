@@ -127,9 +127,14 @@ class AppTheme {
           unselectedItemColor: mediumBrown.withValues(alpha: 0.5),
           type: BottomNavigationBarType.fixed,
           elevation: 0,
+          // Six fixed items leave ~53dp each on a 320dp screen, so the
+          // labels run a point smaller than the default. The matching
+          // selectedFontSize/unselectedFontSize live on the widget in
+          // home_shell.dart - BottomNavigationBarThemeData has no such
+          // fields, and they are what actually reserves the row height.
           selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 12,
+            fontSize: 11,
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(

@@ -33,7 +33,7 @@ class _MoreScreenState extends State<MoreScreen> {
   void initState() {
     super.initState();
     if (_isAuthenticated) _loadProfile();
-    _authSubscription = SupabaseService.authStateChanges.listen((data) {
+    _authSubscription = SupabaseService.authDataChanges.listen((data) {
       if (mounted) {
         setState(() {
           if (data.session == null) _profile = null;

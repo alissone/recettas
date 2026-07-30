@@ -6,9 +6,15 @@ import '../services/supabase_service.dart';
 /// URL has to be signed; SupabaseService.habitImageUrl memoizes it, which
 /// also keeps Flutter's ImageCache key stable across rebuilds.
 ///
+/// Stateful on purpose: the signing Future is resolved once in initState
+/// and only re-resolved when [path] changes. Building it inside build()
+/// would mint a request on every rebuild - a grid of these repainting
+/// would fan out into dozens of storage calls, each able to trigger a
+/// token refresh.
+///
 /// Falls back to a soft placeholder whenever [path] is null, the signing
 /// call fails, or the object is missing.
-class RemoteImage extends StatelessWidget {
+class RemoteImage extends StatefulWidget {
   final String? path;
   final double width;
   final double height;
@@ -27,25 +33,51 @@ class RemoteImage extends StatelessWidget {
   });
 
   @override
+  State<RemoteImage> createState() => _RemoteImageState();
+}
+
+class _RemoteImageState extends State<RemoteImage> {
+  Future<String>? _url;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(RemoteImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.path != widget.path) _resolve();
+  }
+
+  void _resolve() {
+    final path = widget.path;
+    _url = (path == null || path.isEmpty)
+        ? null
+        : SupabaseService.habitImageUrl(path);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ??
-        BorderRadius.circular(AppTheme.radiusXSmall);
-    final imagePath = path;
+    final radius =
+        widget.borderRadius ?? BorderRadius.circular(AppTheme.radiusXSmall);
+    final url = _url;
 
     Widget child;
-    if (imagePath == null || imagePath.isEmpty) {
+    if (url == null) {
       child = _buildPlaceholder();
     } else {
       child = FutureBuilder<String>(
-        future: SupabaseService.habitImageUrl(imagePath),
+        future: url,
         builder: (context, snapshot) {
-          final url = snapshot.data;
-          if (url == null) return _buildPlaceholder();
+          final resolved = snapshot.data;
+          if (resolved == null) return _buildPlaceholder();
           return Image.network(
-            url,
-            width: width,
-            height: height,
-            fit: fit,
+            resolved,
+            width: widget.width,
+            height: widget.height,
+            fit: widget.fit,
             errorBuilder: (_, _, _) => _buildPlaceholder(),
           );
         },
@@ -54,18 +86,24 @@ class RemoteImage extends StatelessWidget {
 
     return ClipRRect(
       borderRadius: radius,
-      child: SizedBox(width: width, height: height, child: child),
+      child: SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: child,
+      ),
     );
   }
 
   Widget _buildPlaceholder() {
+    final shorter =
+        widget.width < widget.height ? widget.width : widget.height;
     return Container(
-      width: width,
-      height: height,
+      width: widget.width,
+      height: widget.height,
       color: AppTheme.lightPeach,
       child: Icon(
-        placeholder,
-        size: (width < height ? width : height) * 0.4,
+        widget.placeholder,
+        size: shorter * 0.4,
         color: AppTheme.mediumBrown.withValues(alpha: 0.5),
       ),
     );

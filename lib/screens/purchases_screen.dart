@@ -90,7 +90,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     super.initState();
     _loadAll();
 
-    _authSubscription = SupabaseService.authStateChanges.listen((data) {
+    _authSubscription = SupabaseService.authDataChanges.listen((data) {
       if (mounted) {
         setState(() {});
         _loadAll();

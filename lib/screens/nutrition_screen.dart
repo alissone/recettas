@@ -232,8 +232,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   /// Rows for the selected category: everything with a target or an
   /// actual intake. Nutrients nobody tracks stay out of the way.
-  List<_NutrientRow> get _rows {
-    final totals = calculateTotals(_dayEntries);
+  List<_NutrientRow> _rowsFor(Map<NutrientId, double> totals) {
     final rows = <_NutrientRow>[];
     for (final nutrient in _catalog.values) {
       if (nutrient.category != _category) continue;
@@ -251,18 +250,39 @@ class _NutritionScreenState extends State<NutritionScreen> {
     return rows;
   }
 
-  /// Categories that have something to show today, so the chips don't
-  /// offer empty groups.
-  List<NutrientCategory> get _availableCategories {
-    final totals = calculateTotals(_dayEntries);
-    final result = <NutrientCategory>[];
-    for (final category in NutrientCategory.values) {
-      final has = _catalog.values.any((n) =>
-          n.category == category &&
-          ((totals[n.id] ?? 0) > 0 || (_targets[n.id] ?? 0) > 0));
-      if (has) result.add(category);
+  /// Every group the catalog has nutrients for, ordered the way the
+  /// printed panels are (by sort_order, not enum declaration order):
+  /// Principais, Açúcares, Ácidos graxos, Esteróis, Aminoácidos,
+  /// Vitaminas, Carotenoides, Minerais, Fitoquímicos, Outros.
+  ///
+  /// Every group is always offered, even when today has nothing in it -
+  /// gating the chips on "has a value or a target" hid vitamins, amino
+  /// acids and the rest behind whichever nutrients the active target set
+  /// happened to mention.
+  List<NutrientCategory> get _categories {
+    final firstSort = <NutrientCategory, int>{};
+    for (final nutrient in _catalog.values) {
+      final current = firstSort[nutrient.category];
+      if (current == null || nutrient.sortOrder < current) {
+        firstSort[nutrient.category] = nutrient.sortOrder;
+      }
     }
-    return result;
+    return firstSort.keys.toList()
+      ..sort((a, b) => firstSort[a]!.compareTo(firstSort[b]!));
+  }
+
+  /// How many nutrients each group would show, so a chip can say whether
+  /// it is worth opening.
+  Map<NutrientCategory, int> _countsFor(Map<NutrientId, double> totals) {
+    final counts = <NutrientCategory, int>{};
+    for (final nutrient in _catalog.values) {
+      final intake = totals[nutrient.id] ?? 0;
+      final target = _targets[nutrient.id] ?? 0;
+      if (intake > 0 || target > 0) {
+        counts[nutrient.category] = (counts[nutrient.category] ?? 0) + 1;
+      }
+    }
+    return counts;
   }
 
   /// Per-day totals of the selected nutrient across the visible range.
@@ -333,10 +353,15 @@ class _NutritionScreenState extends State<NutritionScreen> {
   }
 
   Widget _buildDailyCard() {
-    final rows = _rows;
-    final categories = _availableCategories;
-    final kcal = calculateTotals(_dayEntries)[NutrientId.calories] ?? 0;
+    // One pass over the day's entries feeds the rows, the chip counts and
+    // the headline figure.
+    final totals = calculateTotals(_dayEntries);
+    final rows = _rowsFor(totals);
+    final categories = _categories;
+    final counts = _countsFor(totals);
+    final kcal = totals[NutrientId.calories] ?? 0;
     final kcalTarget = _targets[NutrientId.calories];
+    final trackedTotal = counts.values.fold<int>(0, (sum, c) => sum + c);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -393,13 +418,16 @@ class _NutritionScreenState extends State<NutritionScreen> {
             ],
           ),
           const SizedBox(height: 14),
+          // Wrapped rather than a horizontal scroller: every group has to
+          // be visible at a glance, which is the whole point of showing
+          // them all.
           if (categories.isNotEmpty)
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 for (final category in categories)
-                  _buildCategoryChip(category),
+                  _buildCategoryChip(category, counts[category] ?? 0),
               ],
             ),
           const SizedBox(height: 14),
@@ -408,8 +436,15 @@ class _NutritionScreenState extends State<NutritionScreen> {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
-                  'Nada registrado neste dia.\n'
-                  'Toque em + para adicionar um alimento.',
+                  // "Nothing in this group" and "nothing all day" are very
+                  // different situations now that every group is offered.
+                  trackedTotal == 0
+                      ? 'Nada registrado neste dia.\n'
+                          'Toque em + para adicionar um alimento.'
+                      : 'Nenhum valor de '
+                          '${(kNutrientCategoryLabels[_category] ?? '').toLowerCase()} '
+                          'neste dia.\nOs alimentos registrados não trazem '
+                          'esses componentes, ou eles são zero.',
                   textAlign: TextAlign.center,
                   style: AppTheme.caption
                       .copyWith(fontWeight: FontWeight.w400),
@@ -457,26 +492,47 @@ class _NutritionScreenState extends State<NutritionScreen> {
     });
   }
 
-  Widget _buildCategoryChip(NutrientCategory category) {
+  /// [count] is how many nutrients the group would show; an empty group
+  /// stays tappable but reads as muted so it doesn't invite a dead end.
+  Widget _buildCategoryChip(NutrientCategory category, int count) {
     final isSelected = category == _category;
+    final isEmpty = count == 0;
+
+    final Color background;
+    final Color foreground;
+    if (isSelected) {
+      background = isEmpty
+          ? AppTheme.mediumBrown.withValues(alpha: 0.35)
+          : AppTheme.primaryOrange;
+      foreground = Colors.white;
+    } else if (isEmpty) {
+      background = AppTheme.mediumBrown.withValues(alpha: 0.08);
+      foreground = AppTheme.mediumBrown.withValues(alpha: 0.6);
+    } else {
+      background = AppTheme.primaryOrange.withValues(alpha: 0.1);
+      foreground = AppTheme.primaryOrange;
+    }
+
     return GestureDetector(
-      onTap: () => setState(() => _category = category),
+      onTap: () => setState(() {
+        _category = category;
+        _selectedNutrient = null;
+      }),
       child: Container(
         padding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryOrange
-              : AppTheme.primaryOrange.withValues(alpha: 0.1),
+          color: background,
           borderRadius: BorderRadius.circular(AppTheme.radiusTiny),
         ),
         child: Text(
-          kNutrientCategoryLabels[category] ?? category.name,
+          isEmpty
+              ? (kNutrientCategoryLabels[category] ?? category.name)
+              : '${kNutrientCategoryLabels[category] ?? category.name} · $count',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color:
-                isSelected ? Colors.white : AppTheme.primaryOrange,
+            color: foreground,
           ),
         ),
       ),
@@ -928,13 +984,19 @@ class _NutrientBarChartPainter extends CustomPainter {
 
   static const axisHeight = 22.0;
   static const rowHeight = 28.0;
-  static const leftLabelWidth = 96.0;
   static const _rightLabelWidth = 60.0;
+
+  /// Names run long once the full panel is reachable ("Vitamina B5 (ácido
+  /// pantotênico)", "Ácido linoleico conjugado (CLA)"), so the label
+  /// column scales with the card rather than sitting at a fixed width.
+  /// Only paint() needs this - row hit-testing is purely vertical.
+  static double labelWidthFor(double width) =>
+      (width * 0.40).clamp(96.0, 160.0);
   static const _axisMaxPercent = 150.0;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final plotLeft = leftLabelWidth;
+    final plotLeft = labelWidthFor(size.width);
     final plotWidth = size.width - plotLeft - _rightLabelWidth;
     if (plotWidth <= 0) return;
 
@@ -982,7 +1044,7 @@ class _NutrientBarChartPainter extends CustomPainter {
         row.nutrient.name,
         Offset(plotLeft - 8, center),
         anchorRight: true,
-        maxWidth: leftLabelWidth - 10,
+        maxWidth: plotLeft - 10,
         style: TextStyle(
           fontSize: 11,
           color: AppTheme.mediumBrown,

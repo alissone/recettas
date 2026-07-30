@@ -23,6 +23,18 @@ class SupabaseService {
   static Stream<AuthState> get authStateChanges =>
       _client.auth.onAuthStateChange;
 
+  /// Auth events that change *which data* the user should be seeing.
+  ///
+  /// Screens must listen to this rather than [authStateChanges], because
+  /// it drops `tokenRefreshed`. A token refresh is the same user with the
+  /// same rows, but every screen reloading on it turns one refresh into a
+  /// reload on each listening screen, and those requests can themselves
+  /// trigger a refresh - which fans out again. That feedback loop is what
+  /// produces hundreds of "supabase.auth: INFO: Refresh session" lines in
+  /// a burst, usually on a cold start with an expired stored session.
+  static Stream<AuthState> get authDataChanges => authStateChanges
+      .where((state) => state.event != AuthChangeEvent.tokenRefreshed);
+
   /// True for auth errors caused by connectivity issues (background token
   /// refresh failing because there's no internet), as opposed to a real
   /// auth failure. [authStateChanges] listeners must handle these or they
@@ -678,7 +690,10 @@ class SupabaseService {
 
   // Habit images (shared "habits" storage bucket: foods, exercises,
   // habits). Objects are stored as "<user_id>/<kind>/<id>.jpg".
-  static final Map<String, String> _habitImageUrls = {};
+  // Keyed by object path. Holds the Future rather than the resolved URL
+  // so widgets building in the same frame share one signing request
+  // instead of each firing its own.
+  static final Map<String, Future<String>> _habitImageUrls = {};
 
   static Future<void> uploadHabitImage(
       String path, Uint8List bytes) async {
@@ -698,16 +713,27 @@ class SupabaseService {
   /// stable across rebuilds, otherwise every rebuild re-downloads the
   /// image. If the bucket is ever made public, the whole body becomes
   /// `_client.storage.from('habits').getPublicUrl(path)`.
-  static Future<String> habitImageUrl(String path) async {
+  static Future<String> habitImageUrl(String path) {
     final cached = _habitImageUrls[path];
     if (cached != null) return cached;
-    // A day outlives any realistic session, so a memoized URL never
-    // expires while it is still in the map.
-    final url = await _client.storage
-        .from('habits')
-        .createSignedUrl(path, 60 * 60 * 24);
-    _habitImageUrls[path] = url;
-    return url;
+    final future = _signHabitImage(path);
+    _habitImageUrls[path] = future;
+    return future;
+  }
+
+  static Future<String> _signHabitImage(String path) async {
+    try {
+      // A day outlives any realistic session, so a memoized URL never
+      // expires while it is still in the map.
+      return await _client.storage
+          .from('habits')
+          .createSignedUrl(path, 60 * 60 * 24);
+    } catch (_) {
+      // Never cache a failure: otherwise one flaky request means the
+      // image can't load again for the rest of the session.
+      _habitImageUrls.remove(path);
+      rethrow;
+    }
   }
 
   static Future<void> deleteHabitImage(String path) async {

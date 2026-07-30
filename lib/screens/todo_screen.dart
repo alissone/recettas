@@ -122,7 +122,7 @@ class _TodoScreenState extends State<TodoScreen> {
     // sync pulling fresh data from the server).
     _repo.onChange.addListener(_loadAll);
 
-    _authSubscription = SupabaseService.authStateChanges.listen((data) {
+    _authSubscription = SupabaseService.authDataChanges.listen((data) {
       if (mounted) {
         setState(() {});
         _loadAll();

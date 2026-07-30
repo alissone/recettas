@@ -88,6 +88,47 @@ void main() {
             '${clashes.map((e) => '${e.key} -> ${e.value}').join(', ')}');
   });
 
+  test('sort_order groups the categories in printed-panel order', () {
+    // NutritionScreen orders its chips by each category's lowest
+    // sort_order, so the seed data is what decides that order. Keep the
+    // blocks contiguous: interleaving them would scatter the chips.
+    final lowest = <String, int>{};
+    for (final row in rows) {
+      final current = lowest[row.category];
+      if (current == null || row.sortOrder < current) {
+        lowest[row.category] = row.sortOrder;
+      }
+    }
+    final ordered = lowest.keys.toList()
+      ..sort((a, b) => lowest[a]!.compareTo(lowest[b]!));
+
+    expect(ordered, [
+      'macronutrient',
+      'sugar',
+      'fattyAcid',
+      'sterol',
+      'aminoAcid',
+      'vitamin',
+      'carotenoid',
+      'mineral',
+      'phytochemical',
+      'other',
+    ]);
+
+    // Contiguous blocks: no category's range overlaps another's.
+    final highest = <String, int>{};
+    for (final row in rows) {
+      final current = highest[row.category];
+      if (current == null || row.sortOrder > current) {
+        highest[row.category] = row.sortOrder;
+      }
+    }
+    for (var i = 0; i < ordered.length - 1; i++) {
+      expect(highest[ordered[i]]!, lessThan(lowest[ordered[i + 1]]!),
+          reason: '${ordered[i]} overlaps ${ordered[i + 1]}');
+    }
+  });
+
   test('every category has at least one nutrient', () {
     final seededCategories = rows.map((r) => r.category).toSet();
     for (final category in NutrientCategory.values) {

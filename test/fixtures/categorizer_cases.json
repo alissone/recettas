@@ -2,2656 +2,3187 @@
  {
   "item": "Papel higiênico 4 rolos",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Pessoal"
  },
  {
   "item": "Amaciante 500mL",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "2 limões",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "1 tomate",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Monster laranja",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Castanha",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "4 flanelas",
   "store": "Melo",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Soro fisiológico",
   "store": "Farmácia bom preço",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Seringa",
   "store": "Farmácia bom preço",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Mentos",
   "store": "Farmácia bom preço",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Lápis Helena",
   "store": "Americanas",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Top Carol verde",
   "store": "Americanas",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Triologia Senhor dos Anéis",
   "store": "Americanas",
-  "category": "Lazer"
+  "category": "Lazer",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "6 lâmpadas branco quente",
   "store": "Americanas",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "João bobo Samuel",
   "store": "Americanas",
-  "category": "Lazer"
+  "category": "Lazer",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Bacia cozinha verde",
   "store": "Americanas",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "3 esmaltes Carol",
   "store": "Americanas",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Enxaguante close-up",
   "store": "Americanas",
-  "category": "Higiene"
+  "category": "Higiene",
+  "app": "Pessoal"
  },
  {
   "item": "Toalha de banho bege",
   "store": "Americanas",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Bis hersheys",
   "store": "Americanas",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pizza G",
   "store": "La Basque",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Gasolina Moto",
   "store": "Posto JM",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Baixão encantado",
   "store": "Baixão encantado",
-  "category": "Lazer"
+  "category": "Lazer",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Pão de forma",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Queijo",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Tatu",
   "store": "",
-  "category": "Lazer"
+  "category": "Lazer",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Leite condensado",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Miojo",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Brincos",
   "store": "Farmácia Unifarma",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "4 bananas",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Neosoro",
   "store": "Pague Menos",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Pimentão",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Presunto",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Requeijão Light",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Coletores",
   "store": "Farmácia bom preço",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Tapioca",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Tapioca c batata doce",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Ração rico",
   "store": "Queiroz",
-  "category": "Pet"
+  "category": "Pet",
+  "app": "Pet"
  },
  {
   "item": "2 cenouras",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Feijão",
   "store": "Adega",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "800g sabão em pó",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Amaciante",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Queijo",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Doce de leite",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Leite fermentado",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Sorvete copinho",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Cola super bonder",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Creme de Leite Piracanjuba",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Creme de Leite Italac",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Creme de Leite Damare Culinario",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Creme de Leite Damare Leve",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Creme de Leite Camponesa",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Creme de Leite Italac Zero Lac",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Tomate",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Papel crepom Semana Academica",
   "store": "Papelaria ABC",
-  "category": "Papelaria"
+  "category": "Papelaria",
+  "app": "Papelaria"
  },
  {
   "item": "Pix Carol",
   "store": "",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Biscoito Recheado Passatempo",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Leite 1L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Doce de leite pasta",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pao de Forma",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "2 Sache Cachorro",
   "store": "Peixoto",
-  "category": "Pet"
+  "category": "Pet",
+  "app": "Pet"
  },
  {
   "item": "Neston",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Feijao",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Crédito Carol",
   "store": "Vivo",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Gasolina",
   "store": "Nacional",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "2 guaranás",
   "store": "Guaraná rodoviária",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Banner papel",
   "store": "",
-  "category": "Papelaria"
+  "category": "Papelaria",
+  "app": "Papelaria"
  },
  {
   "item": "Papel higiênico",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Pessoal"
  },
  {
   "item": "Maionese",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Bolinho bauducco",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pão de queijo",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "2 Pão",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Batata palha",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Espátula grande",
   "store": "Hiper",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Espátula pequena",
   "store": "Hiper",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Barata",
   "store": "Hiper",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Abacaxi",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Polpa cajá",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Whey sachê",
   "store": "Ultra Popular",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Creatina Alice",
   "store": "Ultra Popular",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Plaquinha Decorativa Cafe",
   "store": "Sete",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Refri Sukita 2L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Doce de Leite Barra",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Agua Mineral 20L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Padaria",
   "store": "Padaria perto Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Histamin",
   "store": "Ultra Popular",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "camara dianteira moto",
   "store": "Oficina perto Peixoto",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Tecido quadriculado",
   "store": "Loja Tecidos Centro",
-  "category": "Papelaria"
+  "category": "Papelaria",
+  "app": "Papelaria"
  },
  {
   "item": "Tela pintura",
   "store": "Papelaria ABC",
-  "category": "Papelaria"
+  "category": "Papelaria",
+  "app": "Papelaria"
  },
  {
   "item": "Presente mãe Carol",
   "store": "Cinco",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Presente mãe Alisson",
   "store": "Cinco",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Pote spray",
   "store": "Cinco",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Guaraná maca peruana e morango em pó",
   "store": "Loja Natural Centro",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "linguiça",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pão hambúrguer",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Tempero do edu",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Açafrão",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "2 cebolas",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "3 limões",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "2 sorvetes chiquinho",
   "store": "Chiquinho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Dívida Uninter",
   "store": "",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Pula pula canoeiro",
   "store": "",
-  "category": "Lazer"
+  "category": "Lazer",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Festival do milho",
   "store": "",
-  "category": "Lazer"
+  "category": "Lazer",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Imitacao M&M",
   "store": "Plastilandia",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Jujuba Jellybean",
   "store": "Plastilandia",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "?",
   "store": "Plastilandia",
-  "category": "Outros"
+  "category": "Outros",
+  "app": "Outros"
  },
  {
   "item": "2 canecas dia das maes",
   "store": "Plastilandia",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Petisqueira Acrilico",
   "store": "Plastilandia",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "100 sacos plasticos",
   "store": "Plastilandia",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Vela dourada 2",
   "store": "Plastilandia",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Batata Palha",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Ketchup Quero",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Batata Palito",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "2 Carne Hamburguer",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Nutella",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Macarico Culinario",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Leite em Po",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Jujuba",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Flor Carol mãe",
   "store": "Floricultura Rodoviaria",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Flor Alisson mãe",
   "store": "Floricultura Rodoviaria",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Almoço dia das mães",
   "store": "Nacional",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Monster",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Salgadinho Carol",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Meia cartela ovo",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Termômetro Samuel",
   "store": "Farmácia ultra popular",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Pizza",
   "store": "Lá basque",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Dentista Carol",
   "store": "Dentista",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Chave 10",
   "store": "Gonçalves",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Azeite de oliva",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Sabão em pó",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Sabão líquido",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Molho de tomate",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Sorvete em flocos",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Sabao Lava Loucas Finish 450g",
   "store": "Camino",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "JiuJitsu",
   "store": "CTFalcao",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "MuayThai",
   "store": "CTFalcao",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Sepurin",
   "store": "Farmácia ultra popular",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "2 pedaços bolo",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Peito de frango",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Conta internet",
   "store": "Queiroz",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Cabo USB C 2m",
   "store": "Aliexpress",
-  "category": "Tecnologia"
+  "category": "Tecnologia",
+  "app": "Tecnologia"
  },
  {
   "item": "2 Cabo iPhone 1m",
   "store": "Aliexpress",
-  "category": "Tecnologia"
+  "category": "Tecnologia",
+  "app": "Tecnologia"
  },
  {
   "item": "Cabo USB 4 em 1",
   "store": "Aliexpress",
-  "category": "Tecnologia"
+  "category": "Tecnologia",
+  "app": "Tecnologia"
  },
  {
   "item": "3 peliculas iPhone 13",
   "store": "Aliexpress",
-  "category": "Tecnologia"
+  "category": "Tecnologia",
+  "app": "Tecnologia"
  },
  {
   "item": "3 valvulas solenoides",
   "store": "Aliexpress",
-  "category": "Tecnologia"
+  "category": "Tecnologia",
+  "app": "Tecnologia"
  },
  {
   "item": "Lampada escritorio 32cm",
   "store": "Aliexpress",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Camera de Re Carro",
   "store": "Aliexpress",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Pedaleira moto",
   "store": "Torres",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Tinta preto fosco",
   "store": "Torres",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Gás maçarico culinário",
   "store": "Torres",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "2 sabonetes",
   "store": "Queiroz",
-  "category": "Higiene"
+  "category": "Higiene",
+  "app": "Pessoal"
  },
  {
   "item": "Vinagre maçã",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Iogurte natural",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pilhas AAA",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Pilhas AA",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Chocolate granulado",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Gasolina carro",
   "store": "Posto Canoeiro",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Máscara descartável",
   "store": "Farmacia Canoeiro",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Coxinha",
   "store": "Lanche Vitoria",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Exaustor quartinho",
   "store": "Golcalves Construcoes",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Refri lata",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Água mineral 20L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Circo",
   "store": "Circo",
-  "category": "Lazer"
+  "category": "Lazer",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "X Tudo com Alice e Helena",
   "store": "Pit Dog Chapa Quente",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Bolo",
   "store": "Lanche vitória",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Luva 150mm",
   "store": "Mateus",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Oleo Singer",
   "store": "Hiper",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "3 Paes de Queijo",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Leite CCGL",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Maçã",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Espetinho",
   "store": "Espetinho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Neosoro",
   "store": "Farmácia Serra negra",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Ovos meia cartela",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Pão de forma",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Quatro bananas",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Mistura láctea",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Vara cano 20mm",
   "store": "Torres",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Tomada e fita veda rosca",
   "store": "Torres",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Cílios Carol",
   "store": "Leona",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Saquinhos lembranças",
   "store": "Plastilandia",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Corrente da moto",
   "store": "Oficina Mangueira",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Ritalina",
   "store": "Farmacia Serra Negra",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Açaí",
   "store": "Acai Rodoviaria",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pula pula Alice Carol Helena",
   "store": "Praca Familia",
-  "category": "Lazer"
+  "category": "Lazer",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Pao",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Pao de Queijo",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Limpador Alcool",
   "store": "Hiper",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Iogurte Nestle Mel Copo",
   "store": "Hiper",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Bacon Aurora 250g",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Peito de Peru Pratinho",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Peixe File de Merluza",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Conexoes Cano",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Bolinho Bauducco",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Creme Dental",
   "store": "Peixoto",
-  "category": "Higiene"
+  "category": "Higiene",
+  "app": "Pessoal"
  },
  {
   "item": "Salgadinho Carol",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Queijo mussarela",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Carne Moida",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Linguica Calabresa",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Refri Legger",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Batata frita",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Refri latinha",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Vitamina AZ omega",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Miojo",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Tapioca",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Leite 1L",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "4 Paes de Queijo",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "6 Paes de Hamburguer",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Desinfetante",
   "store": "",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Palito Mosquito",
   "store": "",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Bala",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Cartão mercado pago",
   "store": "",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Pacote luvas descartáveis P",
   "store": "RC farma",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Suco Uva Dell Vale 100%",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "2 Cebola Roxa",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "2 Pimentao",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Cartela de Ovos",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Pao de Forma",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Requeijao cremoso",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Iogurte Chamyto Bolinhas",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Leite em Po CCGL",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Biscoito Amori",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Leite Condensado Triangulo",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Ketchup Tambau",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Indicado injetáveis Carol",
   "store": "",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "3 Bananas",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "4 Linguicas Frango",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Arroz",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Cabeca de Alho",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Lixeira cozinha",
   "store": "20 grande",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Pote academia",
   "store": "",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "4 potes água",
   "store": "",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Chaveiro C Carol",
   "store": "",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Luvas Gleice",
   "store": "Distrimed",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Gasolina moto",
   "store": "",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Leite 1L",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Farinha Lactea",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Jujuba",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Registro escritório",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Energetico 2L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pao hot dog",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Conexoes",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "2 curvas",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "6 fatias de queijo mussarela de 38g",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Linguiça frango aurora 0.408",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "2 linguiça calabresa",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Repolho 320g",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Mel flor laranjeira",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Danone",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Macarrão",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Leite Fermentado",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Joelho c rosca",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Gasolina moto",
   "store": "Nacional",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Biscoito Maizena",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Massa Tapioca Viana",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Tapioca Lopes",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Carne Patinho 506g",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Maionese Hellmans",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Polpa de Caju",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Farofa Tradicional Lopes",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Feijao Branco",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Leite Condensado",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "2 Miojos",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Shampoo Dove",
   "store": "Queiroz",
-  "category": "Higiene"
+  "category": "Higiene",
+  "app": "Pessoal"
  },
  {
   "item": "Whey Piracanjuba",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Mentos",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Agua 1.5L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Encanacao",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Depakene",
   "store": "Farmácia centro",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Sementes",
   "store": "Casa do Produtor",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Papel higiênico",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Pessoal"
  },
  {
   "item": "3 curvas 20",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Sementes",
   "store": "Agroterra",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Inscrição injetáveis Alisson",
   "store": "Even3",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Macarronada Casa Ludmilla",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Pão",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Kronel",
   "store": "Farmácia pague menos",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Cachorro quente",
   "store": "Cachorrinho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Tempero chimichurri",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Esponja lavar prato",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "3 pães",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Água c gás",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Leite em pó",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Sabonete",
   "store": "Queiroz",
-  "category": "Higiene"
+  "category": "Higiene",
+  "app": "Pessoal"
  },
  {
   "item": "6 coxinhas",
   "store": "Lanche Vitoria",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Conexões mangueira grama",
   "store": "Torres",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "3 coxinhas",
   "store": "Lanche vitória",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Cachorros quentes",
   "store": "Cachorrinho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Cachorrinho com refri",
   "store": "Cachorrinho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Finish 450g",
   "store": "Camino",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Gasolina",
   "store": "Posto Canoeiro",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Trufado de Nutella + Milk Shake",
   "store": "Chiquinho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Gasolina",
   "store": "Posto JM",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Leite Condensaso",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Maionese Heinz",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Vinho",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Miojo",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Bombom Serenata de amor",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Arroz",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Ruffles",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Linguica",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Tapioca",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Farinha de trigo c fermento",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Farinha de trigo s fermento",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Molho shoyu",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Maionese Hellmans",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Tempero",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Presunto",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Gasolina do carro",
   "store": "Nacional",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Suporte de prateleira do escritório",
   "store": "Larissa Construções",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Batata Crony",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Doce Palitos Cory",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Arroz Parboilizado",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Arroz Branco",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Sprite Lata",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Repolho",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "3 Tomadas",
   "store": "Goncalves",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Serra Copo",
   "store": "Goncalves",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Selecao Churrasco",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Margarina Delicia",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Presunto Fatiado",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Guarana 1L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Nikito Morango",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Aveia QUaker",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Creme de Leite Piracanjuba",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Agua Mineral",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Miojo",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Salgadinho",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Leite Condensado",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Barra de Chocolate",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Presunto Fatiado",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Ketchup Heinz",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Suco Natural Uva",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Sabao em Po 800G",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Amaziante Ype",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Agua Sanitaria Ype",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Desinfetante Azulim",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Refrigerante Pepsi 1L",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Alcool 500mL",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Sabao em Po 400g",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Acucar Cristal Organico",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Flocao de Milho",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Suporte TV",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Sache Rico",
   "store": "Queiroz",
-  "category": "Pet"
+  "category": "Pet",
+  "app": "Pet"
  },
  {
   "item": "Racao Rico",
   "store": "Queiroz",
-  "category": "Pet"
+  "category": "Pet",
+  "app": "Pet"
  },
  {
   "item": "Depakene",
   "store": "Farmacia Centro",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Melancia",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Maxixe",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Oleo de Soja",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Agua com gas",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Queijo mussarela",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Carne moida 632g",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Macarrao",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Tempero Fit",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Amaciante",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Sabao em pedra",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Sabao em pedra de coco",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Detergente",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Maca",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Sabao em Po 500g",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Carne Patinho 596g",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Ameixa Importada",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Acafrao 15g",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Capuccino Rancheiro Soluvel",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Batata Inglesa",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Banana",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Stuks",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Cartela de Ovos",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Cenoura",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Pao de Hamburguer",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Vinho Galiotto",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Chantilly Mix",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Doce de Leite",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Biscoito Maizena",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Gelatina",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Guarana Jesus Lata",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Lava Loucas Finish",
   "store": "Caminho",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Sabonete",
   "store": "Peixoto",
-  "category": "Higiene"
+  "category": "Higiene",
+  "app": "Pessoal"
  },
  {
   "item": "Coca Zero 2L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Tempero Pega Esposa",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Carne Hamburguer",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Bala",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Ovos",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Leite piracanjuba líquido",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Creme de leite",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Macarrão",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Shampoo",
   "store": "Peixoto",
-  "category": "Higiene"
+  "category": "Higiene",
+  "app": "Pessoal"
  },
  {
   "item": "Macarrão espaguete",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Cebola roxa",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Prestígio recheado",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Milho verde",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Flocão de milho",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Arroz",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Detergente",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Sabão em pó",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Leite em pó",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Corante",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Refrigerante guaraná",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Ração",
   "store": "Queiroz",
-  "category": "Pet"
+  "category": "Pet",
+  "app": "Pet"
  },
  {
   "item": "Páprica doce",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Carne moída",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Linguiça calabresa",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Alface",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Esmalte",
   "store": "Farmacia Pague Menos",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "Lubrificante",
   "store": "Farmacia Pague Menos",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Guaraná da Amazonia",
   "store": "Guarana Rodoviaria",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Creame de Leite",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Macarrao",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Shampoo Pantene",
   "store": "Peixoto",
-  "category": "Higiene"
+  "category": "Higiene",
+  "app": "Pessoal"
  },
  {
   "item": "Biscoito Recheado Prestigio",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Cuscuz",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Arroz Branco",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Sabao em Po 400g",
   "store": "Peixoto",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Leite em Po 400g",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Corante Marata",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Gasolina moto",
   "store": "Posto",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Conta Carol",
   "store": "",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Histamin líquido",
   "store": "Farmácia ultra popular",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Coxinha",
   "store": "Lanche Vitória",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Copo",
   "store": "Seis",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Vasilha",
   "store": "Seis",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Forma de gelo com tampa",
   "store": "Seis",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Vasilhas",
   "store": "Seis",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "120 elásticos dinheiro",
   "store": "Seis",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Almoço adega",
   "store": "Adega Centro",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Lazer, beleza e brinquedos"
  },
  {
   "item": "Irrigadores",
   "store": "Central das Maquinas Canoeiro",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Monster",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Camarão congelado",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Patê de atum",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Esponja prato tinindo 3",
   "store": "Caminho",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Feijão",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Leite de coco",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Macarrão penne renata",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Coluna 8mm",
   "store": "Larissa Construções",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Vara de cano 20mm",
   "store": "Larissa Construções",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Conexões",
   "store": "Larissa Construções",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Refrigerante 2L",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Absorvente",
   "store": "Peixoto",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Cola de cano",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Conexões",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Amendoim confeitado",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Conexões",
   "store": "Torres",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "2 pimentões",
   "store": "Frutaria",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Cacho banana",
   "store": "Frutaria",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Muay Thai",
   "store": "",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Pasta d'água",
   "store": "Farmácia ultra popular",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Melatonina",
   "store": "Farmácia ultra popular",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Pães de queijo",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "4 bombinhas",
   "store": "Queiroz",
-  "category": "Lazer"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Suco maracujá",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Disco de corte madeira",
   "store": "Queiroz",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Margarina delícia",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Cabo de vassoura",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Bicarbonato de sódio",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Patinho 498g",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Caixa d'água",
   "store": "Larissa Construções",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Allegra e Predisona",
   "store": "Farmácia ultra popular",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Creme de ricota",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Dois pães",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Pao de queijo",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Gasolina moto",
   "store": "Queiroz",
-  "category": "Veiculos"
+  "category": "Veiculos",
+  "app": "Veiculos"
  },
  {
   "item": "Chá de camomila",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Biscoito recheado",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Allegra",
   "store": "Queiroz",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Pizza",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "2 coletores",
   "store": "Farmácia ultra popular",
-  "category": "Farmacia"
+  "category": "Farmacia",
+  "app": "Saude"
  },
  {
   "item": "Luva 20mm LR",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Trident",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pão de queijo",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Internet",
   "store": "",
-  "category": "Servicos"
+  "category": "Servicos",
+  "app": "Servicos"
  },
  {
   "item": "Encanação",
   "store": "Peixoto",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Leite 400g",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Polpa de cajá",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Fita veda rosca",
   "store": "Torres",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "2m cano 25mm",
   "store": "Torres",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Schweppes",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Água mineral",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Espetinho",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Lixas parede",
   "store": "Torres",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Pacoquita",
   "store": "Melo",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Sprite Zero açúcar",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "2 Guaraná",
   "store": "Rodoviária",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Sabao em Po",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Linugica Calabresa",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Tempero Ana Maria",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Papel Toalha",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Carne Moida",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Tomate",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Coca Zero Lata",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Azeite Oliva",
   "store": "Caminho",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Semente Quiabo",
   "store": "Caminho",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Semente Flor",
   "store": "Caminho",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Mix Sementes",
   "store": "Queiroz",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Casa"
  },
  {
   "item": "Farofa Pronta",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Farofa Panko",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Painel de led",
   "store": "Gonçalves",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Nylon roçadeira",
   "store": "Gonçalves",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Luva LR 20mm",
   "store": "Gonçalves",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Jujuba",
   "store": "Plastilandia",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Pao Hamburguer",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Presunto",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Sazon Nordeste",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Sazon Legumes",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Leite Piracanjuba líquido",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Carne Hamburguer",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Super Liga Neutra Sorvete",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Sorvete Chocolate Branco",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Nutella",
   "store": "Hiper",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Amaciante 2L",
   "store": "Hiper",
-  "category": "Casa"
+  "category": "Casa",
+  "app": "Limpeza"
  },
  {
   "item": "Extrato de Tomate Elefante",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "3 Cebolas",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Chapéu",
   "store": "Peixoto",
-  "category": "Pessoal"
+  "category": "Pessoal",
+  "app": "Pessoal"
  },
  {
   "item": "2 ameixas",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Pera",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Frutas"
  },
  {
   "item": "Talhadeira",
   "store": "",
-  "category": "Construcao"
+  "category": "Construcao",
+  "app": "Construcao"
  },
  {
   "item": "Hambúrguer Canoeiro",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Capuccino 3 corações",
   "store": "Queiroz",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Salgadinho",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Leite condensado",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Biscoito recheado",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Margarina",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Queijo",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Massa bolo chocolate avelã",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Creme de leite",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Comida"
  },
  {
   "item": "Refrigerante Jesus 2L",
   "store": "Peixoto",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Barra de cereal",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Guarana",
   "store": "Guaraná rodoviária",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Batata frita com queijo e bacon",
   "store": "Baixão encantado",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Picolé Alice",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Picolé Carol",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Picolé Alisson",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  },
  {
   "item": "Sprite limoneto",
   "store": "",
-  "category": "Alimentacao"
+  "category": "Alimentacao",
+  "app": "Dieta de Engorda"
  }
 ]

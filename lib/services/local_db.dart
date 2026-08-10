@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as ffi;
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart' as ffi_web;
 
 /// Local SQLite cache. Todos and categories are mirrored here so the UI
 /// reads/writes instantly and offline; pending_ops holds writes that
@@ -13,10 +14,12 @@ class LocalDb {
 
   static Database? _db;
 
-  /// Must run before any db access. Desktop platforms need the ffi
-  /// factory instead of the mobile plugin.
+  /// Must run before any db access. Web needs the wasm-backed factory;
+  /// desktop platforms need the ffi factory instead of the mobile plugin.
   static void initPlatform() {
-    if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+    if (kIsWeb) {
+      databaseFactory = ffi_web.databaseFactoryFfiWeb;
+    } else if (Platform.isWindows || Platform.isLinux) {
       ffi.sqfliteFfiInit();
       databaseFactory = ffi.databaseFactoryFfi;
     }

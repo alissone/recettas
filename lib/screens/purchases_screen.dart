@@ -85,6 +85,21 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     _loadAll();
   }
 
+  Future<void> _pickMonth() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(_month.year, _month.month, 1),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null) return;
+    setState(() {
+      _month = DateTime(picked.year, picked.month);
+      _isLoading = true;
+    });
+    _loadAll();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -729,10 +744,17 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               onPressed: () => _changeMonth(-1),
             ),
             Expanded(
-              child: Text(
-                _monthLabel,
-                textAlign: TextAlign.center,
-                style: AppTheme.valueBold,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                onTap: _pickMonth,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    _monthLabel,
+                    textAlign: TextAlign.center,
+                    style: AppTheme.valueBold,
+                  ),
+                ),
               ),
             ),
             IconButton(

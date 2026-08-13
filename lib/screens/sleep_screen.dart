@@ -6,8 +6,10 @@ import '../services/supabase_service.dart';
 import 'sleep_history_screen.dart';
 
 /// Sleep log: two buttons record "went to sleep" / "woke up" moments
-/// (long-press to pick a custom time), and a chart shows one bar per
-/// night on a noon-to-noon axis, one week or month at a time.
+/// (long-press to pick a custom time), a third button registers both
+/// at once from a "slept the last N minutes" prompt, and a chart shows
+/// one bar per night on a noon-to-noon axis, one week or month at a
+/// time.
 class SleepScreen extends StatefulWidget {
   const SleepScreen({super.key});
 
@@ -100,6 +102,82 @@ class _SleepScreenState extends State<SleepScreen> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  /// "I slept the last N minutes" flow: prompts for a duration and
+  /// registers both the sleep and the wake moment at once, N minutes
+  /// apart, ending now.
+  Future<void> _recordInterval() async {
+    final minutes = await _promptMinutes();
+    if (minutes == null || minutes <= 0) return;
+    if (SupabaseService.currentUser == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Entre na sua conta para registrar.')));
+      }
+      return;
+    }
+    final now = DateTime.now();
+    final start = now.subtract(Duration(minutes: minutes));
+    setState(() => _isSaving = true);
+    try {
+      await SupabaseService.addSleepEvent('sleep', start);
+      await SupabaseService.addSleepEvent('wake', now);
+      if (now.isAfter(_anchorDay.add(const Duration(days: 1)))) {
+        _anchorDay = _today();
+      }
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Falha ao registrar: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<int?> _promptMinutes() async {
+    final controller = TextEditingController();
+    return showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.creamBackground,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge)),
+        title: const Text('Dormi há quantos minutos?'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'Minutos',
+            filled: true,
+            fillColor: AppTheme.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          onSubmitted: (v) => Navigator.pop(context, int.tryParse(v)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () =>
+                Navigator.pop(context, int.tryParse(controller.text)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryOrange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Registrar'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Long-press flow: pick a custom date and time for the event.
@@ -217,16 +295,27 @@ class _SleepScreenState extends State<SleepScreen> {
             label: 'Fui dormir',
             icon: Icons.bedtime_outlined,
             color: AppTheme.darkBrown,
-            type: 'sleep',
+            onTap: () => _record('sleep', DateTime.now()),
+            onLongPress: () => _recordCustom('sleep'),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildRecordButton(
+            label: 'Dormi um pouco',
+            icon: Icons.hourglass_bottom,
+            color: AppTheme.mediumBrown,
+            onTap: _recordInterval,
+          ),
+        ),
+        const SizedBox(width: 10),
         Expanded(
           child: _buildRecordButton(
             label: 'Acordei',
             icon: Icons.wb_sunny_outlined,
             color: AppTheme.primaryOrange,
-            type: 'wake',
+            onTap: () => _record('wake', DateTime.now()),
+            onLongPress: () => _recordCustom('wake'),
           ),
         ),
       ],
@@ -237,27 +326,31 @@ class _SleepScreenState extends State<SleepScreen> {
     required String label,
     required IconData icon,
     required Color color,
-    required String type,
+    required VoidCallback onTap,
+    VoidCallback? onLongPress,
   }) {
     return Material(
       color: color,
       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        onTap: _isSaving ? null : () => _record(type, DateTime.now()),
-        onLongPress: _isSaving ? null : () => _recordCustom(type),
+        onTap: _isSaving ? null : onTap,
+        onLongPress:
+            _isSaving || onLongPress == null ? null : onLongPress,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding:
+              const EdgeInsets.symmetric(vertical: 18, horizontal: 4),
           child: Column(
             children: [
               Icon(icon, color: Colors.white, size: 28),
               const SizedBox(height: 6),
               Text(
                 label,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  fontSize: 13,
                 ),
               ),
             ],

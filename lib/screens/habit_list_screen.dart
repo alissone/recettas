@@ -10,9 +10,10 @@ import '../widgets/remote_image.dart';
 import 'habit_detail_screen.dart';
 
 /// List of the user's habits with the progress of the current period and
-/// a one-tap way to log another repeat. Tapping a habit opens its
-/// calendar; the "+" button logs one unit, long-press logs a custom
-/// amount.
+/// a one-tap way to log another repeat. A day strip above the list picks
+/// which day is being logged (defaults to today). Tapping a habit opens
+/// its calendar; the "+" button logs one unit (long-press removes one),
+/// and long-pressing the card itself logs a custom amount.
 class HabitListScreen extends StatefulWidget {
   const HabitListScreen({super.key});
 
@@ -23,15 +24,68 @@ class HabitListScreen extends StatefulWidget {
 class _HabitListScreenState extends State<HabitListScreen> {
   bool _isLoading = true;
   List<Habit> _habits = [];
+  List<HabitLog> _logs = [];
 
-  /// habitId -> total logged in the habit's current period.
+  /// habitId -> total logged in the habit's current period, relative to
+  /// [_selectedDay].
   Map<String, double> _periodValues = {};
   int _loadSeq = 0;
+
+  /// Day the list is showing/logging for; the strip above the list picks
+  /// this. Defaults to today.
+  DateTime _selectedDay = today();
+  final _dayScrollController = ScrollController();
+
+  /// How far back the day strip scrolls; older days stay reachable
+  /// through each habit's own calendar.
+  static const _carouselDays = 60;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _scrollToToday();
+  }
+
+  @override
+  void dispose() {
+    _dayScrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToToday() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _dayScrollController.hasClients) {
+        _dayScrollController
+            .jumpTo(_dayScrollController.position.maxScrollExtent);
+      }
+    });
+  }
+
+  Map<String, double> _computeValues(DateTime day) {
+    final values = <String, double>{};
+    for (final habit in _habits) {
+      final start = habit.periodStart(day);
+      final end = habit.periodEnd(day);
+      var total = 0.0;
+      for (final log in _logs) {
+        if (log.habitId != habit.id) continue;
+        final d = DateTime.tryParse(log.logDate);
+        if (d == null) continue;
+        if (d.isBefore(start) || !d.isBefore(end)) continue;
+        total += log.value;
+      }
+      values[habit.id] = total;
+    }
+    return values;
+  }
+
+  void _selectDay(DateTime day) {
+    if (day == _selectedDay) return;
+    setState(() {
+      _selectedDay = day;
+      _periodValues = _computeValues(day);
+    });
   }
 
   Future<void> _load() async {
@@ -42,35 +96,21 @@ class _HabitListScreenState extends State<HabitListScreen> {
     final seq = ++_loadSeq;
     try {
       final habits = await SupabaseService.getHabits();
-      // One fetch wide enough for every period: the current month plus
-      // the week that may start in the previous one.
-      final now = today();
-      final from = DateTime(now.year, now.month, 1)
-          .subtract(const Duration(days: 7));
+      // Wide enough to cover every day in the carousel, plus the whole
+      // month of the oldest one so monthly goals resolve correctly.
+      final oldest =
+          today().subtract(const Duration(days: _carouselDays - 1));
+      final from = DateTime(oldest.year, oldest.month, 1);
       final logs = await SupabaseService.getHabitLogs(
         fromDate: isoDate(from),
-        toDateExclusive: isoDate(now.add(const Duration(days: 1))),
+        toDateExclusive: isoDate(today().add(const Duration(days: 1))),
       );
-
-      final values = <String, double>{};
-      for (final habit in habits) {
-        final start = habit.periodStart(now);
-        final end = habit.periodEnd(now);
-        var total = 0.0;
-        for (final log in logs) {
-          if (log.habitId != habit.id) continue;
-          final day = DateTime.tryParse(log.logDate);
-          if (day == null) continue;
-          if (day.isBefore(start) || !day.isBefore(end)) continue;
-          total += log.value;
-        }
-        values[habit.id] = total;
-      }
 
       if (mounted && seq == _loadSeq) {
         setState(() {
           _habits = habits;
-          _periodValues = values;
+          _logs = logs;
+          _periodValues = _computeValues(_selectedDay);
           _isLoading = false;
         });
       }
@@ -83,12 +123,21 @@ class _HabitListScreenState extends State<HabitListScreen> {
     }
   }
 
-  Future<void> _addLog(Habit habit, double value) async {
-    if (value <= 0) return;
+  /// Logs [delta] for the selected day; a negative delta removes that
+  /// much from the period total instead (clamped so it never goes
+  /// below zero).
+  Future<void> _addLog(Habit habit, double delta) async {
+    if (delta == 0) return;
+    var value = delta;
+    if (value < 0) {
+      final current = _periodValues[habit.id] ?? 0;
+      if (current <= 0) return;
+      if (-value > current) value = -current;
+    }
     try {
       await SupabaseService.addHabitLog(
         habitId: habit.id,
-        logDate: isoDate(today()),
+        logDate: isoDate(_selectedDay),
         value: value,
       );
       await _load();
@@ -176,6 +225,7 @@ class _HabitListScreenState extends State<HabitListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authenticated = SupabaseService.currentUser != null;
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       appBar: AppBar(title: const Text('Hábitos')),
@@ -184,31 +234,84 @@ class _HabitListScreenState extends State<HabitListScreen> {
         child: const Icon(Icons.add),
       ),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                    color: AppTheme.primaryOrange))
-            : SupabaseService.currentUser == null
-                ? _buildMessage(
-                    'Entre na sua conta para acompanhar seus hábitos.')
-                : _habits.isEmpty
-                    ? _buildMessage(
-                        'Nenhum hábito ainda.\n'
-                        'Toque em + para criar o primeiro.')
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        color: AppTheme.primaryOrange,
-                        child: ListView.builder(
-                          // Short lists still have to drag to refresh.
-                          physics:
-                              const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(
-                              20, 20, 20, 96),
-                          itemCount: _habits.length,
-                          itemBuilder: (context, index) =>
-                              _buildHabitCard(_habits[index]),
-                        ),
-                      ),
+        child: Column(
+          children: [
+            if (authenticated) _buildDaySelector(),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                          color: AppTheme.primaryOrange))
+                  : !authenticated
+                      ? _buildMessage(
+                          'Entre na sua conta para acompanhar seus hábitos.')
+                      : _habits.isEmpty
+                          ? _buildMessage(
+                              'Nenhum hábito ainda.\n'
+                              'Toque em + para criar o primeiro.')
+                          : RefreshIndicator(
+                              onRefresh: _load,
+                              color: AppTheme.primaryOrange,
+                              child: ListView.builder(
+                                // Short lists still have to drag to refresh.
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.fromLTRB(
+                                    20, 12, 20, 96),
+                                itemCount: _habits.length,
+                                itemBuilder: (context, index) =>
+                                    _buildHabitCard(_habits[index]),
+                              ),
+                            ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDaySelector() {
+    return SizedBox(
+      height: 56,
+      child: ListView.builder(
+        controller: _dayScrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+        itemCount: _carouselDays,
+        itemBuilder: (context, index) {
+          final day =
+              today().subtract(Duration(days: _carouselDays - 1 - index));
+          return _buildDayPill(day);
+        },
+      ),
+    );
+  }
+
+  Widget _buildDayPill(DateTime day) {
+    final isSelected = day == _selectedDay;
+    final isToday = day == today();
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: isSelected ? AppTheme.primaryOrange : AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        elevation: isSelected ? 2 : 0,
+        shadowColor: AppTheme.primaryOrange.withValues(alpha: 0.3),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          onTap: () => _selectDay(day),
+          child: Container(
+            width: 52,
+            alignment: Alignment.center,
+            child: Text(
+              isToday ? 'Hoje' : '${day.day}',
+              style: AppTheme.valueBold.copyWith(
+                color: isSelected ? Colors.white : AppTheme.darkBrown,
+                fontSize: isToday ? 13 : 16,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -295,21 +398,25 @@ class _HabitListScreenState extends State<HabitListScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                IconButton(
-                  onPressed: () =>
-                      _addLog(habit, habit.isDuration ? 5 : 1),
-                  icon: Icon(
-                    isComplete
-                        ? Icons.check_circle
-                        : Icons.add_circle_outline,
-                    color: isComplete
-                        ? const Color(0xFF43A047)
-                        : habit.color,
-                    size: 30,
+                GestureDetector(
+                  onLongPress: () =>
+                      _addLog(habit, habit.isDuration ? -5 : -1),
+                  child: IconButton(
+                    onPressed: () =>
+                        _addLog(habit, habit.isDuration ? 5 : 1),
+                    icon: Icon(
+                      isComplete
+                          ? Icons.check_circle
+                          : Icons.add_circle_outline,
+                      color: isComplete
+                          ? const Color(0xFF43A047)
+                          : habit.color,
+                      size: 30,
+                    ),
+                    tooltip: habit.isDuration
+                        ? 'Toque: +5 min · segure: -5 min'
+                        : 'Toque: +1 · segure: -1',
                   ),
-                  tooltip: habit.isDuration
-                      ? 'Adicionar 5 min'
-                      : 'Adicionar 1',
                 ),
               ],
             ),

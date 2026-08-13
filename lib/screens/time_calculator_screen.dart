@@ -47,6 +47,15 @@ class _TimeCalculatorScreenState extends State<TimeCalculatorScreen> {
   /// Days crossed when the raw total falls outside 00:00–24:00.
   int get _dayOffset => (_totalSeconds / _daySeconds).floor();
 
+  void _setNow(int row) {
+    final now = DateTime.now();
+    setState(() {
+      _ctrl(row, 0).text = now.hour.toString();
+      _ctrl(row, 1).text = now.minute.toString();
+      _ctrl(row, 2).text = now.second.toString();
+    });
+  }
+
   String get _result {
     // Dart's % is never negative for a positive divisor, so 02:00 −
     // 05:00 wraps to 21:00 (with _dayOffset −1) rather than −03:00.
@@ -78,6 +87,16 @@ class _TimeCalculatorScreenState extends State<TimeCalculatorScreen> {
               ),
               child: Column(
                 children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _setNow(0),
+                      icon: const Icon(Icons.access_time, size: 18),
+                      label: const Text('Agora'),
+                      style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryOrange),
+                    ),
+                  ),
                   _buildTimeRow(0),
                   const SizedBox(height: 12),
                   SegmentedButton<bool>(

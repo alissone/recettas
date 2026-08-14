@@ -1,5 +1,7 @@
 import 'exercise.dart';
 
+// Based on MuscleWiki Exercise Database
+
 /// One exercise done on one day: [sets] x [reps] at a single [weight].
 /// Drop sets are out of scope, so the weight applies to every set.
 class GymEntry {

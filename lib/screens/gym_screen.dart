@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import '../app_theme.dart';
 import '../models/exercise.dart';
 import '../models/gym_entry.dart';
@@ -21,6 +22,7 @@ class _GymScreenState extends State<GymScreen> {
   DateTime _day = today();
   List<GymEntry> _entries = [];
   List<Exercise> _exercises = [];
+  Map<String, double> _latestWeights = {};
   int _loadSeq = 0;
 
   @override
@@ -46,9 +48,11 @@ class _GymScreenState extends State<GymScreen> {
         fromDate: isoDate(_day),
         toDateExclusive: isoDate(_day.add(const Duration(days: 1))),
       );
+      final latestWeights = await SupabaseService.getLatestExerciseWeights();
       if (mounted && seq == _loadSeq) {
         setState(() {
           _entries = entries;
+          _latestWeights = latestWeights;
           _isLoading = false;
         });
       }
@@ -101,7 +105,10 @@ class _GymScreenState extends State<GymScreen> {
         borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppTheme.radiusLarge)),
       ),
-      builder: (_) => _ExercisePickerSheet(exercises: _exercises),
+      builder: (_) => _ExercisePickerSheet(
+        exercises: _exercises,
+        latestWeights: _latestWeights,
+      ),
     );
     if (exercise == null || !mounted) return;
 
@@ -340,11 +347,31 @@ String _trimWeight(double v) =>
 // Sheets
 // ---------------------------------------------------------------------------
 
-/// Searchable list of the exercise catalog. Pops the chosen exercise.
+/// Fixed display order for the category filter chips; any muscle_group
+/// value outside this list (e.g. a user-added exercise) is appended
+/// afterwards, alphabetically.
+const _kCategoryOrder = [
+  'Peito',
+  'Costas',
+  'Ombros',
+  'Bíceps',
+  'Tríceps',
+  'Pernas',
+  'Glúteos',
+  'Panturrilha',
+  'Corpo Inteiro',
+];
+
+/// Pinterest-style video gallery of the exercise catalog, searchable and
+/// filterable by category. Pops the chosen exercise.
 class _ExercisePickerSheet extends StatefulWidget {
   final List<Exercise> exercises;
+  final Map<String, double> latestWeights;
 
-  const _ExercisePickerSheet({required this.exercises});
+  const _ExercisePickerSheet({
+    required this.exercises,
+    required this.latestWeights,
+  });
 
   @override
   State<_ExercisePickerSheet> createState() =>
@@ -353,17 +380,30 @@ class _ExercisePickerSheet extends StatefulWidget {
 
 class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
   String _query = '';
+  String? _category;
+
+  List<String> get _categories {
+    final present = widget.exercises
+        .map((e) => e.muscleGroup)
+        .whereType<String>()
+        .toSet();
+    final extra = present.difference(_kCategoryOrder.toSet()).toList()
+      ..sort();
+    return [..._kCategoryOrder.where(present.contains), ...extra];
+  }
 
   @override
   Widget build(BuildContext context) {
     final query = _query.trim().toLowerCase();
-    final matches = query.isEmpty
-        ? widget.exercises
-        : widget.exercises
-            .where((e) =>
-                e.name.toLowerCase().contains(query) ||
-                (e.muscleGroup ?? '').toLowerCase().contains(query))
-            .toList();
+    final matches = widget.exercises.where((e) {
+      final matchesQuery = query.isEmpty ||
+          e.name.toLowerCase().contains(query) ||
+          (e.namePt ?? '').toLowerCase().contains(query) ||
+          (e.muscleGroup ?? '').toLowerCase().contains(query);
+      final matchesCategory =
+          _category == null || e.muscleGroup == _category;
+      return matchesQuery && matchesCategory;
+    }).toList();
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -391,9 +431,21 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
             ),
           ),
           const SizedBox(height: 12),
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildCategoryChip('Todos', null),
+                for (final category in _categories)
+                  _buildCategoryChip(category, category),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           ConstrainedBox(
             constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.5),
+                maxHeight: MediaQuery.of(context).size.height * 0.75),
             child: matches.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
@@ -401,31 +453,203 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
                         style: AppTheme.caption
                             .copyWith(fontWeight: FontWeight.w400)),
                   )
-                : ListView.builder(
+                : GridView.builder(
                     shrinkWrap: true,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      mainAxisExtent: 232,
+                    ),
                     itemCount: matches.length,
                     itemBuilder: (context, index) {
                       final exercise = matches[index];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: RemoteImage(
-                          path: exercise.imagePath,
-                          width: 44,
-                          height: 44,
-                          placeholder: Icons.fitness_center,
-                        ),
-                        title: Text(exercise.name,
-                            style: AppTheme.valueBold),
-                        subtitle: exercise.muscleGroup == null
-                            ? null
-                            : Text(exercise.muscleGroup!,
-                                style: AppTheme.caption),
+                      return _ExerciseGalleryCard(
+                        exercise: exercise,
+                        latestWeight: widget.latestWeights[exercise.id],
                         onTap: () => Navigator.pop(context, exercise),
                       );
                     },
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String label, String? value) {
+    final selected = _category == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => setState(() => _category = value),
+        selectedColor: AppTheme.primaryOrange,
+        backgroundColor: AppTheme.white,
+        labelStyle: TextStyle(
+          color: selected ? AppTheme.white : AppTheme.mediumBrown,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+        side: BorderSide(
+            color: selected ? Colors.transparent : AppTheme.borderBrown),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        ),
+      ),
+    );
+  }
+}
+
+/// One card in the exercise gallery: a looping muted video preview, the
+/// Portuguese name, the English catalog name underneath, and the latest
+/// recorded weight for that exercise, if any.
+class _ExerciseGalleryCard extends StatelessWidget {
+  final Exercise exercise;
+  final double? latestWeight;
+  final VoidCallback onTap;
+
+  const _ExerciseGalleryCard({
+    required this.exercise,
+    required this.latestWeight,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final weight = latestWeight;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusXSmall),
+                  child: SizedBox(
+                    height: 120,
+                    width: double.infinity,
+                    child: _ExerciseVideoThumbnail(path: exercise.videoPath),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  exercise.namePt ?? exercise.name,
+                  style: AppTheme.valueBold.copyWith(fontSize: 14),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (exercise.namePt != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    exercise.name,
+                    style: AppTheme.caption.copyWith(
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (weight != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'PR: ${_trimWeight(weight)} kg',
+                    style: AppTheme.caption
+                        .copyWith(color: AppTheme.primaryOrange),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A looping, muted preview of a local exercise video from
+/// assets/exercises/. Falls back to a placeholder icon while loading or
+/// if the asset is missing/unplayable.
+class _ExerciseVideoThumbnail extends StatefulWidget {
+  final String? path;
+
+  const _ExerciseVideoThumbnail({required this.path});
+
+  @override
+  State<_ExerciseVideoThumbnail> createState() =>
+      _ExerciseVideoThumbnailState();
+}
+
+class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail> {
+  VideoPlayerController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final path = widget.path;
+    if (path == null || path.isEmpty) return;
+    final controller = VideoPlayerController.asset(path);
+    _controller = controller;
+    try {
+      await controller.initialize();
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+      await controller.play();
+      setState(() {});
+    } catch (_) {
+      // build() falls back to the placeholder when the controller never
+      // reaches an initialized state.
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    if (controller == null ||
+        !controller.value.isInitialized ||
+        controller.value.hasError) {
+      return Container(
+        color: AppTheme.lightPeach,
+        alignment: Alignment.center,
+        child: Icon(Icons.fitness_center,
+            color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
+      );
+    }
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: controller.value.size.width,
+        height: controller.value.size.height,
+        child: VideoPlayer(controller),
       ),
     );
   }

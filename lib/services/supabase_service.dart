@@ -604,6 +604,28 @@ class SupabaseService {
     await _client.from('gym_entries').delete().eq('id', id);
   }
 
+  /// Most recently logged weight per exercise, for the "latest PR" line in
+  /// the exercise gallery. Entries come back newest-first, so the first
+  /// weighted row seen per exercise is the one kept.
+  static Future<Map<String, double>> getLatestExerciseWeights() async {
+    final data = await _client
+        .from('gym_entries')
+        .select('exercise_id, weight, entry_date')
+        .eq('user_id', currentUser!.id)
+        .order('entry_date', ascending: false)
+        .order('created_at', ascending: false);
+    final latest = <String, double>{};
+    for (final row in data) {
+      final exerciseId = row['exercise_id'] as String;
+      if (latest.containsKey(exerciseId)) continue;
+      final weight = row['weight'] != null
+          ? double.tryParse(row['weight'].toString())
+          : null;
+      if (weight != null && weight > 0) latest[exerciseId] = weight;
+    }
+    return latest;
+  }
+
   // Habits (custom habits and their daily logs)
   static Future<List<Habit>> getHabits() async {
     final data = await _client

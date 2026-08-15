@@ -78,6 +78,7 @@ flutter:
     - assets/chart.min.js
     - assets/NVI.xml
     - assets/exercises/
+    - assets/exercise_posters/
 
   fonts:
     - family: Niconne

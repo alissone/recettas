@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../app_theme.dart';
@@ -378,9 +379,22 @@ class _ExercisePickerSheet extends StatefulWidget {
       _ExercisePickerSheetState();
 }
 
+/// Grid card geometry, shared between the SliverGridDelegate and the
+/// scroll-position math in _updateFocus so the two can't drift apart.
+const _kCardExtent = 232.0;
+const _kGridSpacing = 12.0;
+const _kCrossAxisCount = 2;
+
 class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
   String _query = '';
   String? _category = 'Glúteos';
+  final ScrollController _scrollController = ScrollController();
+
+  /// Id of the single exercise whose video is allowed to play - whichever
+  /// card is centered in the viewport, YouTube/TikTok-feed style. Every
+  /// other card stays on its static placeholder, so at most one hardware
+  /// video decoder is ever in use at a time.
+  final ValueNotifier<String?> _focusedExerciseId = ValueNotifier(null);
 
   List<String> get _categories {
     final present = widget.exercises
@@ -392,10 +406,9 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
     return [..._kCategoryOrder.where(present.contains), ...extra];
   }
 
-  @override
-  Widget build(BuildContext context) {
+  List<Exercise> get _matches {
     final query = _query.trim().toLowerCase();
-    final matches = widget.exercises.where((e) {
+    return widget.exercises.where((e) {
       final matchesQuery = query.isEmpty ||
           e.name.toLowerCase().contains(query) ||
           (e.namePt ?? '').toLowerCase().contains(query) ||
@@ -404,6 +417,50 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
           _category == null || e.muscleGroup == _category;
       return matchesQuery && matchesCategory;
     }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateFocus);
+    // The initial `matches` list depends on the default category filter
+    // above, so pick the first card as focused only after the first
+    // frame rather than guessing during initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateFocus());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _focusedExerciseId.dispose();
+    super.dispose();
+  }
+
+  /// Picks whichever card sits nearest the vertical center of the
+  /// viewport as the one that gets to play. Called on every scroll tick
+  /// and whenever the search/category filter changes the list.
+  void _updateFocus() {
+    final matches = _matches;
+    if (matches.isEmpty) {
+      _focusedExerciseId.value = null;
+      return;
+    }
+    if (!_scrollController.hasClients) {
+      _focusedExerciseId.value = matches.first.id;
+      return;
+    }
+    const rowExtent = _kCardExtent + _kGridSpacing;
+    final viewport = _scrollController.position.viewportDimension;
+    final centerY = _scrollController.offset + viewport / 2;
+    final rowCount = (matches.length / _kCrossAxisCount).ceil();
+    final row = (centerY / rowExtent).floor().clamp(0, rowCount - 1);
+    final index = (row * _kCrossAxisCount).clamp(0, matches.length - 1);
+    _focusedExerciseId.value = matches[index].id;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final matches = _matches;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -415,7 +472,10 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
           Text('Escolher exercício', style: AppTheme.headingMedium),
           const SizedBox(height: 16),
           TextField(
-            onChanged: (v) => setState(() => _query = v),
+            onChanged: (v) {
+              setState(() => _query = v);
+              _updateFocus();
+            },
             decoration: InputDecoration(
               hintText: 'Buscar',
               prefixIcon: const Icon(Icons.search,
@@ -453,13 +513,14 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
                             .copyWith(fontWeight: FontWeight.w400)),
                   )
                 : GridView.builder(
+                    controller: _scrollController,
                     shrinkWrap: true,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      mainAxisExtent: 232,
+                      crossAxisCount: _kCrossAxisCount,
+                      mainAxisSpacing: _kGridSpacing,
+                      crossAxisSpacing: _kGridSpacing,
+                      mainAxisExtent: _kCardExtent,
                     ),
                     itemCount: matches.length,
                     itemBuilder: (context, index) {
@@ -468,6 +529,7 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
                         key: ValueKey(exercise.id),
                         exercise: exercise,
                         latestWeight: widget.latestWeights[exercise.id],
+                        focusedId: _focusedExerciseId,
                         onTap: () => Navigator.pop(context, exercise),
                       );
                     },
@@ -490,7 +552,10 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
         child: ChoiceChip(
           label: Text(label),
           selected: selected,
-          onSelected: (_) => setState(() => _category = value),
+          onSelected: (_) {
+            setState(() => _category = value);
+            _updateFocus();
+          },
           selectedColor: AppTheme.primaryOrange,
           backgroundColor: AppTheme.white,
           checkmarkColor: AppTheme.white,
@@ -518,12 +583,14 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
 class _ExerciseGalleryCard extends StatelessWidget {
   final Exercise exercise;
   final double? latestWeight;
+  final ValueListenable<String?> focusedId;
   final VoidCallback onTap;
 
   const _ExerciseGalleryCard({
     super.key,
     required this.exercise,
     required this.latestWeight,
+    required this.focusedId,
     required this.onTap,
   });
 
@@ -552,7 +619,11 @@ class _ExerciseGalleryCard extends StatelessWidget {
                   child: SizedBox(
                     height: 120,
                     width: double.infinity,
-                    child: _ExerciseVideoThumbnail(path: exercise.videoPath),
+                    child: _ExerciseVideoThumbnail(
+                      path: exercise.videoPath,
+                      exerciseId: exercise.id,
+                      focusedId: focusedId,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -593,12 +664,23 @@ class _ExerciseGalleryCard extends StatelessWidget {
 }
 
 /// A looping, muted preview of a local exercise video from
-/// assets/exercises/. Falls back to a placeholder icon while loading or
-/// if the asset is missing/unplayable.
+/// assets/exercises/, but only while this card is the gallery's single
+/// "focused" one (see _ExercisePickerSheetState._focusedExerciseId) -
+/// real devices only expose a handful of concurrent hardware video
+/// decoder sessions system-wide, so letting every visible card play at
+/// once means most of them lose the race for a decoder and never play,
+/// which one "wins" effectively random. Falls back to a static
+/// placeholder icon otherwise (loading, unfocused, or unplayable).
 class _ExerciseVideoThumbnail extends StatefulWidget {
   final String? path;
+  final String exerciseId;
+  final ValueListenable<String?> focusedId;
 
-  const _ExerciseVideoThumbnail({required this.path});
+  const _ExerciseVideoThumbnail({
+    required this.path,
+    required this.exerciseId,
+    required this.focusedId,
+  });
 
   @override
   State<_ExerciseVideoThumbnail> createState() =>
@@ -609,11 +691,33 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
     with WidgetsBindingObserver {
   VideoPlayerController? _controller;
 
+  // Tracks whether this widget actually saw AppLifecycleState.paused (a
+  // real backgrounding: screen off, home button, app switch). Opening a
+  // showModalBottomSheet can itself fire a transient
+  // inactive -> resumed blip as part of the route's open animation even
+  // though the app never left the foreground; reinitializing on every
+  // such blip raced dozens of still-in-flight controller inits against
+  // each other and left only one video surviving. Gating the rebuild
+  // behind a genuine prior pause avoids that storm while still fixing
+  // the real screen-off/on black-frame case.
+  bool _wasPaused = false;
+
+  bool get _isFocused => widget.focusedId.value == widget.exerciseId;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _init();
+    widget.focusedId.addListener(_onFocusChanged);
+    _onFocusChanged();
+  }
+
+  void _onFocusChanged() {
+    if (_isFocused) {
+      if (_controller == null) _init();
+    } else {
+      _teardown();
+    }
   }
 
   @override
@@ -622,10 +726,14 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
     // off; simply resuming playback afterwards leaves the frame black, so
     // the controller has to be rebuilt from scratch (the same thing that
     // happens naturally when this widget is unmounted and remounted).
-    if (state == AppLifecycleState.resumed) {
-      _reinit();
-    } else if (state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.paused) {
+      _wasPaused = true;
       _controller?.pause();
+    } else if (state == AppLifecycleState.resumed &&
+        _wasPaused &&
+        _isFocused) {
+      _wasPaused = false;
+      _reinit();
     }
   }
 
@@ -636,8 +744,9 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
     _controller = controller;
     try {
       await controller.initialize();
-      if (!mounted) {
+      if (!mounted || !_isFocused) {
         controller.dispose();
+        if (identical(_controller, controller)) _controller = null;
         return;
       }
       await controller.setLooping(true);
@@ -655,12 +764,21 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
     _controller = null;
     if (mounted) setState(() {});
     await old?.dispose();
-    if (mounted) await _init();
+    if (mounted && _isFocused) await _init();
+  }
+
+  void _teardown() {
+    final old = _controller;
+    if (old == null) return;
+    _controller = null;
+    if (mounted) setState(() {});
+    old.dispose();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.focusedId.removeListener(_onFocusChanged);
     _controller?.dispose();
     super.dispose();
   }
@@ -668,25 +786,61 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
-    if (controller == null ||
-        !controller.value.isInitialized ||
-        controller.value.hasError) {
-      return Container(
-        color: AppTheme.lightPeach,
-        alignment: Alignment.center,
-        child: Icon(Icons.fitness_center,
-            color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
-      );
-    }
-    return FittedBox(
-      fit: BoxFit.cover,
-      child: SizedBox(
-        width: controller.value.size.width,
-        height: controller.value.size.height,
-        child: VideoPlayer(controller),
-      ),
+    final ready = controller != null &&
+        controller.value.isInitialized &&
+        !controller.value.hasError;
+
+    // The poster always sits underneath, so an unfocused card still shows
+    // its exercise (YouTube-style) instead of a blank placeholder, and the
+    // focused one has something to display during the brief gap while its
+    // controller initializes.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildPoster(),
+        if (ready)
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: controller.value.size.width,
+              height: controller.value.size.height,
+              child: VideoPlayer(controller),
+            ),
+          ),
+      ],
     );
   }
+
+  /// Still frame for this exercise, pre-extracted from the video with
+  /// ffmpeg into assets/exercise_posters/ (same basename, .jpg).
+  Widget _buildPoster() {
+    final poster = _posterPath(widget.path);
+    if (poster == null) return _buildPlaceholder();
+    return Image.asset(
+      poster,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => _buildPlaceholder(),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: AppTheme.lightPeach,
+      alignment: Alignment.center,
+      child: Icon(Icons.fitness_center,
+          color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
+    );
+  }
+}
+
+/// 'assets/exercises/Foo.mp4' -> 'assets/exercise_posters/Foo.jpg'. The
+/// posters are generated from the videos themselves, so deriving the path
+/// keeps them in sync without a second database column.
+String? _posterPath(String? videoPath) {
+  if (videoPath == null || !videoPath.endsWith('.mp4')) return null;
+  final name = videoPath.split('/').last;
+  final base = name.substring(0, name.length - 4);
+  return 'assets/exercise_posters/$base.jpg';
 }
 
 /// Sets, reps and weight for one exercise on one day. Pops `true` after

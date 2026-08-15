@@ -351,13 +351,13 @@ String _trimWeight(double v) =>
 /// value outside this list (e.g. a user-added exercise) is appended
 /// afterwards, alphabetically.
 const _kCategoryOrder = [
+  'Glúteos',
   'Peito',
   'Costas',
   'Ombros',
   'Bíceps',
   'Tríceps',
   'Pernas',
-  'Glúteos',
   'Panturrilha',
   'Corpo Inteiro',
 ];
@@ -380,7 +380,7 @@ class _ExercisePickerSheet extends StatefulWidget {
 
 class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
   String _query = '';
-  String? _category;
+  String? _category = 'Glúteos';
 
   List<String> get _categories {
     final present = widget.exercises
@@ -415,7 +415,6 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
           Text('Escolher exercício', style: AppTheme.headingMedium),
           const SizedBox(height: 16),
           TextField(
-            autofocus: true,
             onChanged: (v) => setState(() => _query = v),
             decoration: InputDecoration(
               hintText: 'Buscar',
@@ -606,13 +605,28 @@ class _ExerciseVideoThumbnail extends StatefulWidget {
       _ExerciseVideoThumbnailState();
 }
 
-class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail> {
+class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
+    with WidgetsBindingObserver {
   VideoPlayerController? _controller;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _init();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Android tears down the decoder's GPU texture while the screen is
+    // off; simply resuming playback afterwards leaves the frame black, so
+    // the controller has to be rebuilt from scratch (the same thing that
+    // happens naturally when this widget is unmounted and remounted).
+    if (state == AppLifecycleState.resumed) {
+      _reinit();
+    } else if (state == AppLifecycleState.paused) {
+      _controller?.pause();
+    }
   }
 
   Future<void> _init() async {
@@ -636,8 +650,17 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail> {
     }
   }
 
+  Future<void> _reinit() async {
+    final old = _controller;
+    _controller = null;
+    if (mounted) setState(() {});
+    await old?.dispose();
+    if (mounted) await _init();
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
   }

@@ -390,11 +390,21 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
   String? _category = 'Glúteos';
   final ScrollController _scrollController = ScrollController();
 
-  /// Id of the single exercise whose video is allowed to play - whichever
-  /// card is centered in the viewport, YouTube/TikTok-feed style. Every
-  /// other card stays on its static placeholder, so at most one hardware
-  /// video decoder is ever in use at a time.
+  /// Id of the single exercise whose video is allowed to play - the card
+  /// under the user's finger, the way video sites preview on hover. Every
+  /// other card shows its static poster frame, so at most one hardware
+  /// video decoder is ever in use at a time (devices only expose a
+  /// handful, and letting them all play means most silently never do).
   final ValueNotifier<String?> _focusedExerciseId = ValueNotifier(null);
+
+  /// Last pointer position, local to the grid's viewport. Null once the
+  /// finger lifts - the card it left keeps playing, so focus stops
+  /// tracking until the next touch.
+  Offset? _pointer;
+
+  /// Grid viewport width, captured in build via LayoutBuilder; needed to
+  /// work out which column the pointer is over.
+  double _gridWidth = 0;
 
   List<String> get _categories {
     final present = widget.exercises
@@ -436,25 +446,45 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
     super.dispose();
   }
 
-  /// Picks whichever card sits nearest the vertical center of the
-  /// viewport as the one that gets to play. Called on every scroll tick
-  /// and whenever the search/category filter changes the list.
+  /// Plays the card under [_pointer]. Called on every touch move and on
+  /// every scroll tick - during a drag the content slides under a
+  /// stationary finger, so the card being pointed at keeps changing even
+  /// though the finger hasn't moved.
+  ///
+  /// With no finger down, focus is left alone: the card the finger lifted
+  /// from goes on playing through the momentum scroll, rather than
+  /// flickering between cards as they rush past.
   void _updateFocus() {
     final matches = _matches;
     if (matches.isEmpty) {
       _focusedExerciseId.value = null;
       return;
     }
-    if (!_scrollController.hasClients) {
-      _focusedExerciseId.value = matches.first.id;
+
+    final pointer = _pointer;
+    if (pointer == null || !_scrollController.hasClients || _gridWidth <= 0) {
+      // Nothing pointed at yet: seed with the first card so the gallery
+      // isn't completely static before the first touch.
+      _focusedExerciseId.value ??= matches.first.id;
       return;
     }
+
     const rowExtent = _kCardExtent + _kGridSpacing;
-    final viewport = _scrollController.position.viewportDimension;
-    final centerY = _scrollController.offset + viewport / 2;
+    final columnExtent =
+        (_gridWidth + _kGridSpacing) / _kCrossAxisCount;
+
+    final contentY = _scrollController.offset + pointer.dy;
     final rowCount = (matches.length / _kCrossAxisCount).ceil();
-    final row = (centerY / rowExtent).floor().clamp(0, rowCount - 1);
-    final index = (row * _kCrossAxisCount).clamp(0, matches.length - 1);
+    final row = (contentY / rowExtent).floor();
+    final column = (pointer.dx / columnExtent).floor();
+
+    // Ignore touches in the gutters or outside the grid rather than
+    // snapping to a neighbour the finger isn't actually over.
+    if (row < 0 || row >= rowCount) return;
+    if (column < 0 || column >= _kCrossAxisCount) return;
+
+    final index = row * _kCrossAxisCount + column;
+    if (index < 0 || index >= matches.length) return;
     _focusedExerciseId.value = matches[index].id;
   }
 
@@ -512,25 +542,48 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
                         style: AppTheme.caption
                             .copyWith(fontWeight: FontWeight.w400)),
                   )
-                : GridView.builder(
-                    controller: _scrollController,
-                    shrinkWrap: true,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: _kCrossAxisCount,
-                      mainAxisSpacing: _kGridSpacing,
-                      crossAxisSpacing: _kGridSpacing,
-                      mainAxisExtent: _kCardExtent,
-                    ),
-                    itemCount: matches.length,
-                    itemBuilder: (context, index) {
-                      final exercise = matches[index];
-                      return _ExerciseGalleryCard(
-                        key: ValueKey(exercise.id),
-                        exercise: exercise,
-                        latestWeight: widget.latestWeights[exercise.id],
-                        focusedId: _focusedExerciseId,
-                        onTap: () => Navigator.pop(context, exercise),
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      _gridWidth = constraints.maxWidth;
+                      // Listener rather than a gesture recognizer: this
+                      // has to observe the same touch the GridView is
+                      // using to scroll, not compete with it for the
+                      // gesture arena.
+                      return Listener(
+                        onPointerDown: (event) {
+                          _pointer = event.localPosition;
+                          _updateFocus();
+                        },
+                        onPointerMove: (event) {
+                          _pointer = event.localPosition;
+                          _updateFocus();
+                        },
+                        onPointerUp: (_) => _pointer = null,
+                        onPointerCancel: (_) => _pointer = null,
+                        child: GridView.builder(
+                          controller: _scrollController,
+                          shrinkWrap: true,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: _kCrossAxisCount,
+                            mainAxisSpacing: _kGridSpacing,
+                            crossAxisSpacing: _kGridSpacing,
+                            mainAxisExtent: _kCardExtent,
+                          ),
+                          itemCount: matches.length,
+                          itemBuilder: (context, index) {
+                            final exercise = matches[index];
+                            return _ExerciseGalleryCard(
+                              key: ValueKey(exercise.id),
+                              exercise: exercise,
+                              latestWeight:
+                                  widget.latestWeights[exercise.id],
+                              focusedId: _focusedExerciseId,
+                              onTap: () =>
+                                  Navigator.pop(context, exercise),
+                            );
+                          },
+                        ),
                       );
                     },
                   ),

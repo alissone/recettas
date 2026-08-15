@@ -284,18 +284,13 @@ class _GymScreenState extends State<GymScreen> {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                RemoteImage(
-                  path: exercise?.imagePath,
-                  width: 52,
-                  height: 52,
-                  placeholder: Icons.fitness_center,
-                ),
+                _ExerciseThumb(exercise: exercise, size: 52),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(exercise?.name ?? 'Exercício',
+                      Text(exercise?.namePt ?? 'Exercício',
                           style: AppTheme.valueBold,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
@@ -896,6 +891,40 @@ String? _posterPath(String? videoPath) {
   return 'assets/exercise_posters/$base.jpg';
 }
 
+/// Square thumbnail for one exercise: the poster frame pulled from its
+/// video, falling back to the hand-uploaded photo in the "habits" bucket
+/// and then to a placeholder icon. The seeded catalog has videos but no
+/// image_path, so without the poster these all render as bare icons.
+class _ExerciseThumb extends StatelessWidget {
+  final Exercise? exercise;
+  final double size;
+
+  const _ExerciseThumb({required this.exercise, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = RemoteImage(
+      path: exercise?.imagePath,
+      width: size,
+      height: size,
+      placeholder: Icons.fitness_center,
+    );
+    final poster = _posterPath(exercise?.videoPath);
+    if (poster == null) return fallback;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusXSmall),
+      child: Image.asset(
+        poster,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      ),
+    );
+  }
+}
+
 /// Sets, reps and weight for one exercise on one day. Pops `true` after
 /// a successful save.
 class _GymEntrySheet extends StatefulWidget {
@@ -975,12 +1004,7 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
         children: [
           Row(
             children: [
-              RemoteImage(
-                path: widget.exercise.imagePath,
-                width: 48,
-                height: 48,
-                placeholder: Icons.fitness_center,
-              ),
+              _ExerciseThumb(exercise: widget.exercise, size: 48),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(widget.exercise.name,

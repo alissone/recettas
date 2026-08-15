@@ -31,6 +31,15 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Impeller (the default Android renderer since Flutter ~3.29) has a
+             known bug where only the first of several simultaneously-playing
+             video_player textures actually updates - the rest freeze on
+             their first frame even though playback keeps advancing
+             internally. Disabling it is the documented workaround for the
+             exercise gallery's multi-video grid. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

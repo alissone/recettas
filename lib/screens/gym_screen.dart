@@ -466,6 +466,7 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
                     itemBuilder: (context, index) {
                       final exercise = matches[index];
                       return _ExerciseGalleryCard(
+                        key: ValueKey(exercise.id),
                         exercise: exercise,
                         latestWeight: widget.latestWeights[exercise.id],
                         onTap: () => Navigator.pop(context, exercise),
@@ -482,21 +483,30 @@ class _ExercisePickerSheetState extends State<_ExercisePickerSheet> {
     final selected = _category == value;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => setState(() => _category = value),
-        selectedColor: AppTheme.primaryOrange,
-        backgroundColor: AppTheme.white,
-        labelStyle: TextStyle(
-          color: selected ? AppTheme.white : AppTheme.mediumBrown,
-          fontWeight: FontWeight.w600,
-          fontSize: 13,
-        ),
-        side: BorderSide(
-            color: selected ? Colors.transparent : AppTheme.borderBrown),
-        shape: RoundedRectangleBorder(
+      child: Container(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          boxShadow: selected ? null : AppTheme.softShadow,
+        ),
+        child: ChoiceChip(
+          label: Text(label),
+          selected: selected,
+          onSelected: (_) => setState(() => _category = value),
+          selectedColor: AppTheme.primaryOrange,
+          backgroundColor: AppTheme.white,
+          checkmarkColor: AppTheme.white,
+          elevation: 0,
+          pressElevation: 0,
+          shadowColor: Colors.transparent,
+          labelStyle: TextStyle(
+            color: selected ? AppTheme.white : AppTheme.mediumBrown,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          ),
         ),
       ),
     );
@@ -512,6 +522,7 @@ class _ExerciseGalleryCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ExerciseGalleryCard({
+    super.key,
     required this.exercise,
     required this.latestWeight,
     required this.onTap,

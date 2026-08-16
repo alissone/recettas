@@ -305,3 +305,21 @@ String formatNutrientAmount(double value) {
   if (abs >= 0.1) return value.toStringAsFixed(2);
   return value.toStringAsFixed(3);
 }
+
+/// Formats a quantity at the precision the database keeps it in -
+/// numeric(10, 3) - with trailing zeros trimmed: "2", "140", "1250.5".
+///
+/// This is for weights and counts rather than nutrient values, and in
+/// particular for the text fields that are read back and saved again:
+/// [formatNutrientAmount] rounds anything above 100 to keep charts
+/// readable, which would quietly move a 1250.5 g recipe yield to 1251 g
+/// on every edit.
+String formatQuantity(double value) {
+  if (value == value.roundToDouble()) return value.round().toString();
+  var text = value.toStringAsFixed(3);
+  if (text.contains('.')) {
+    text = text.replaceFirst(RegExp(r'0+$'), '');
+    if (text.endsWith('.')) text = text.substring(0, text.length - 1);
+  }
+  return text;
+}

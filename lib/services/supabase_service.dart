@@ -413,6 +413,120 @@ class SupabaseService {
     return data.map<Food>((json) => Food.fromJson(json, catalog)).toList();
   }
 
+  /// Fixed-size packages of catalogued foods. Shared rows (user_id null)
+  /// come back alongside the user's own, same as [getFoods].
+  static Future<List<FoodPackage>> getFoodPackages() async {
+    final data =
+        await _client.from('food_packages').select().order('amount');
+    return data
+        .map<FoodPackage>((json) => FoodPackage.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> createFoodPackage({
+    required String foodId,
+    String? name,
+    required double amount,
+  }) async {
+    await _client.from('food_packages').insert({
+      'user_id': currentUser!.id,
+      'food_id': foodId,
+      'name': name,
+      'amount': amount,
+    });
+  }
+
+  static Future<void> updateFoodPackage(
+    String id, {
+    required String foodId,
+    String? name,
+    required double amount,
+  }) async {
+    await _client.from('food_packages').update({
+      'food_id': foodId,
+      'name': name,
+      'amount': amount,
+    }).eq('id', id);
+  }
+
+  static Future<void> deleteFoodPackage(String id) async {
+    await _client.from('food_packages').delete().eq('id', id);
+  }
+
+  /// Every recipe with its ingredients and their nutrient values, in one
+  /// request - a recipe is useless without them, since its own values are
+  /// nothing but the sum.
+  static Future<List<FoodRecipe>> getFoodRecipes(
+      Map<NutrientId, Nutrient> catalog) async {
+    final data = await _client
+        .from('food_recipes')
+        .select('*, items:food_recipe_items(*, '
+            'food:foods(*, food_nutrients(nutrient_id, amount)))')
+        .order('name');
+    return data
+        .map<FoodRecipe>((json) => FoodRecipe.fromJson(json, catalog))
+        .toList();
+  }
+
+  /// [items] is a list of `{food_id, amount}` in the order they should be
+  /// shown. Returns the new recipe's id.
+  static Future<String> createFoodRecipe({
+    required String name,
+    double? yieldAmount,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final data = await _client
+        .from('food_recipes')
+        .insert({
+          'user_id': currentUser!.id,
+          'name': name,
+          'yield_amount': yieldAmount,
+        })
+        .select('id')
+        .single();
+    final id = data['id'] as String;
+    await _replaceFoodRecipeItems(id, items);
+    return id;
+  }
+
+  static Future<void> updateFoodRecipe(
+    String id, {
+    required String name,
+    double? yieldAmount,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    await _client.from('food_recipes').update({
+      'name': name,
+      'yield_amount': yieldAmount,
+    }).eq('id', id);
+    await _replaceFoodRecipeItems(id, items);
+  }
+
+  /// The ingredient list is small and always edited as a whole, so it is
+  /// rewritten rather than diffed. Past log entries are unaffected: they
+  /// point at the recipe, not at its rows.
+  static Future<void> _replaceFoodRecipeItems(
+      String recipeId, List<Map<String, dynamic>> items) async {
+    await _client
+        .from('food_recipe_items')
+        .delete()
+        .eq('recipe_id', recipeId);
+    if (items.isEmpty) return;
+    await _client.from('food_recipe_items').insert([
+      for (var i = 0; i < items.length; i++)
+        {
+          'recipe_id': recipeId,
+          'food_id': items[i]['food_id'],
+          'amount': items[i]['amount'],
+          'sort_order': i,
+        }
+    ]);
+  }
+
+  static Future<void> deleteFoodRecipe(String id) async {
+    await _client.from('food_recipes').delete().eq('id', id);
+  }
+
   /// Food log between two YYYY-MM-DD dates, [toDateExclusive] excluded.
   static Future<List<FoodEntry>> getFoodEntries({
     required String fromDate,
@@ -421,7 +535,10 @@ class SupabaseService {
   }) async {
     final data = await _client
         .from('food_entries')
-        .select('*, food:foods(*, food_nutrients(nutrient_id, amount))')
+        .select('*, food:foods(*, food_nutrients(nutrient_id, amount)), '
+            'package:food_packages(*), '
+            'recipe:food_recipes(*, items:food_recipe_items(*, '
+            'food:foods(*, food_nutrients(nutrient_id, amount))))')
         .gte('entry_date', fromDate)
         .lt('entry_date', toDateExclusive)
         .order('entry_date', ascending: false)
@@ -431,15 +548,21 @@ class SupabaseService {
         .toList();
   }
 
+  /// Logs a portion. Exactly one of [foodId] and [recipeId] is set;
+  /// [packageId] only records which package [amount] was derived from.
   static Future<void> addFoodEntry({
     required String entryDate,
-    required String foodId,
+    String? foodId,
+    String? recipeId,
+    String? packageId,
     required double amount,
   }) async {
     await _client.from('food_entries').insert({
       'user_id': currentUser!.id,
       'entry_date': entryDate,
       'food_id': foodId,
+      'recipe_id': recipeId,
+      'package_id': packageId,
       'amount': amount,
     });
   }

@@ -6,6 +6,7 @@ import '../models/food.dart';
 import '../models/nutrient.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
+import 'food_library_screen.dart';
 import 'nutrient_targets_screen.dart';
 
 /// Nutrition log: pick a food and an amount, and see the day's nutrient
@@ -21,9 +22,13 @@ class NutritionScreen extends StatefulWidget {
 class _NutritionScreenState extends State<NutritionScreen> {
   bool _isLoading = true;
 
-  /// Static reference data, fetched once.
+  /// Static reference data, fetched once. Packages and recipes are built
+  /// on top of [_foods] and are what the "pacote" and "receita" entry
+  /// flows pick from.
   Map<NutrientId, Nutrient> _catalog = {};
   List<Food> _foods = [];
+  List<FoodPackage> _packages = [];
+  List<FoodRecipe> _recipes = [];
 
   /// Daily targets from whichever set the profile points at. Which set
   /// that is - and what's in it - is owned by NutrientTargetsScreen.
@@ -70,6 +75,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
       final catalogList = await SupabaseService.getNutrientCatalog();
       final catalog = {for (final n in catalogList) n.id: n};
       final foods = await SupabaseService.getFoods(catalog);
+      final packages = await SupabaseService.getFoodPackages();
+      final recipes = await SupabaseService.getFoodRecipes(catalog);
       final sets = await SupabaseService.getRecommendationSets();
 
       String? activeSetId;
@@ -90,6 +97,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
       setState(() {
         _catalog = catalog;
         _foods = foods;
+        _packages = packages;
+        _recipes = recipes;
       });
       await _loadTargets(activeSetId);
       await _load();
@@ -195,6 +204,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
     }
   }
 
+  /// The three things a day can be made of: a raw ingredient in grams, a
+  /// package of one, or a whole recipe.
   Future<void> _addEntry() async {
     if (_foods.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -202,6 +213,41 @@ class _NutritionScreenState extends State<NutritionScreen> {
               'Nenhum alimento cadastrado. Adicione-os no Supabase.')));
       return;
     }
+    final kind = await showModalBottomSheet<_EntryKind>(
+      context: context,
+      backgroundColor: AppTheme.creamBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusLarge)),
+      ),
+      builder: (_) => const _EntryKindSheet(),
+    );
+    if (kind == null || !mounted) return;
+
+    switch (kind) {
+      case _EntryKind.ingredient:
+        await _addFromOptions('Adicionar ingrediente', _ingredientOptions());
+      case _EntryKind.package:
+        if (_packages.isEmpty) {
+          _promptLibrary('Nenhum pacote cadastrado ainda.');
+          return;
+        }
+        await _addFromOptions('Adicionar pacote', _packageOptions());
+      case _EntryKind.recipe:
+        if (_recipes.isEmpty) {
+          _promptLibrary('Nenhuma receita cadastrada ainda.');
+          return;
+        }
+        await _addFromOptions('Adicionar receita', _recipeOptions());
+      case _EntryKind.manage:
+        await _openLibrary();
+    }
+  }
+
+  /// Search, pick, type an amount, save - identical for all three kinds,
+  /// which differ only in what a unit of the amount means.
+  Future<void> _addFromOptions(
+      String title, List<_LogOption> options) async {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -210,10 +256,128 @@ class _NutritionScreenState extends State<NutritionScreen> {
         borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppTheme.radiusLarge)),
       ),
-      builder: (_) =>
-          _FoodEntrySheet(foods: _foods, entryDate: isoDate(_day)),
+      builder: (_) => _EntrySheet(
+        title: title,
+        options: options,
+        entryDate: isoDate(_day),
+      ),
     );
     if (saved == true) await _load();
+  }
+
+  void _promptLibrary(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      action: SnackBarAction(
+        label: 'Criar',
+        textColor: AppTheme.primaryOrange,
+        onPressed: _openLibrary,
+      ),
+    ));
+  }
+
+  List<_LogOption> _ingredientOptions() {
+    return [
+      for (final food in _foods)
+        _LogOption(
+          title: food.label,
+          subtitle: '${food.get(NutrientId.calories).round()} kcal por '
+              '${formatNutrientAmount(food.baseAmount)} ${food.baseUnit}',
+          unitSuffix: food.baseUnit,
+          defaultAmount: food.baseAmount,
+          kcalPerUnit: food.baseAmount <= 0
+              ? 0
+              : food.get(NutrientId.calories) / food.baseAmount,
+          save: (entryDate, amount) => SupabaseService.addFoodEntry(
+            entryDate: entryDate,
+            foodId: food.id,
+            amount: amount,
+          ),
+        ),
+    ];
+  }
+
+  /// The amount is a number of packs; what gets logged is that many times
+  /// the pack's weight, against the underlying ingredient.
+  List<_LogOption> _packageOptions() {
+    final foodsById = {for (final food in _foods) food.id: food};
+    final options = <_LogOption>[];
+    for (final package in _packages) {
+      final food = foodsById[package.foodId];
+      if (food == null) continue;
+      final kcal = food.baseAmount <= 0
+          ? 0.0
+          : food.get(NutrientId.calories) *
+              package.amount /
+              food.baseAmount;
+      options.add(_LogOption(
+        title: '${food.label} · ${package.labelFor(food.baseUnit)}',
+        subtitle: '${formatNutrientAmount(package.amount)} '
+            '${food.baseUnit} · ${kcal.round()} kcal por unidade',
+        amountLabel: 'Quantidade',
+        unitSuffix: 'un',
+        defaultAmount: 1,
+        kcalPerUnit: kcal,
+        save: (entryDate, amount) => SupabaseService.addFoodEntry(
+          entryDate: entryDate,
+          foodId: food.id,
+          packageId: package.id,
+          amount: amount * package.amount,
+        ),
+      ));
+    }
+    return options;
+  }
+
+  List<_LogOption> _recipeOptions() {
+    return [
+      for (final recipe in _recipes)
+        () {
+          final weight = recipe.weight;
+          final kcal =
+              recipe.nutrients[NutrientId.calories]?.amount ?? 0;
+          return _LogOption(
+            title: recipe.name,
+            subtitle: '${recipe.items.length} ingredientes · '
+                '${formatNutrientAmount(weight)} g · '
+                '${weight > 0 ? (kcal * 100 / weight).round() : 0} kcal '
+                'por 100 g',
+            unitSuffix: 'g',
+            defaultAmount: weight,
+            kcalPerUnit: weight > 0 ? kcal / weight : 0,
+            save: (entryDate, amount) => SupabaseService.addFoodEntry(
+              entryDate: entryDate,
+              recipeId: recipe.id,
+              amount: amount,
+            ),
+          );
+        }(),
+    ];
+  }
+
+  /// Editing a recipe changes what every entry made from it is worth, so
+  /// the day's numbers are reloaded alongside the catalogs.
+  Future<void> _openLibrary() async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const FoodLibraryScreen()),
+    );
+    if (changed != true || !mounted) return;
+    try {
+      final packages = await SupabaseService.getFoodPackages();
+      final recipes = await SupabaseService.getFoodRecipes(_catalog);
+      if (!mounted) return;
+      setState(() {
+        _packages = packages;
+        _recipes = recipes;
+      });
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Falha ao recarregar: $e')));
+      }
+    }
   }
 
   Future<void> _deleteEntry(FoodEntry entry) async {
@@ -308,6 +472,11 @@ class _NutritionScreenState extends State<NutritionScreen> {
       appBar: AppBar(
         title: const Text('Nutrição'),
         actions: [
+          IconButton(
+            onPressed: _openLibrary,
+            icon: const Icon(Icons.library_books_outlined),
+            tooltip: 'Receitas e pacotes',
+          ),
           IconButton(
             onPressed: _openTargets,
             icon: const Icon(Icons.flag_outlined),
@@ -728,6 +897,20 @@ class _NutritionScreenState extends State<NutritionScreen> {
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
+                  // A recipe and a package look nothing alike once
+                  // logged - both end up as "name + weight" - so the
+                  // icon is what says where a row came from.
+                  if (entry.recipe != null || entry.package != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(
+                        entry.recipe != null
+                            ? Icons.menu_book_outlined
+                            : Icons.inventory_2_outlined,
+                        size: 16,
+                        color: AppTheme.primaryOrange,
+                      ),
+                    ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -780,26 +963,170 @@ class _NutrientRow {
 }
 
 // ---------------------------------------------------------------------------
-// Food sheet
+// Entry sheets
 // ---------------------------------------------------------------------------
 
-/// Search the catalog, pick a food, type how much of it was eaten. Pops
-/// `true` after a successful save.
-class _FoodEntrySheet extends StatefulWidget {
-  final List<Food> foods;
-  final String entryDate;
+enum _EntryKind { ingredient, package, recipe, manage }
 
-  const _FoodEntrySheet({required this.foods, required this.entryDate});
+/// What the + button opens: which of the three shapes of a meal is being
+/// logged, plus a way into the screen that defines the last two.
+class _EntryKindSheet extends StatelessWidget {
+  const _EntryKindSheet();
 
   @override
-  State<_FoodEntrySheet> createState() => _FoodEntrySheetState();
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('O que você comeu?', style: AppTheme.headingMedium),
+            const SizedBox(height: 12),
+            _buildOption(
+              context,
+              kind: _EntryKind.ingredient,
+              icon: Icons.grain,
+              title: 'Ingrediente',
+              subtitle: 'Um alimento do catálogo, pesado em '
+                  'gramas ou ml',
+            ),
+            _buildOption(
+              context,
+              kind: _EntryKind.package,
+              icon: Icons.inventory_2_outlined,
+              title: 'Pacote',
+              subtitle: 'Um alimento em tamanho fixo - o pacote '
+                  'inteiro, sem pesar',
+            ),
+            _buildOption(
+              context,
+              kind: _EntryKind.recipe,
+              icon: Icons.menu_book_outlined,
+              title: 'Receita',
+              subtitle: 'Vários ingredientes num prato só',
+            ),
+            const Divider(height: 24),
+            _buildOption(
+              context,
+              kind: _EntryKind.manage,
+              icon: Icons.library_books_outlined,
+              title: 'Gerenciar receitas e pacotes',
+              subtitle: 'Criar ou editar, usando os alimentos que '
+                  'você já tem',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOption(
+    BuildContext context, {
+    required _EntryKind kind,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        onTap: () => Navigator.pop(context, kind),
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusSmall),
+                ),
+                child:
+                    Icon(icon, size: 20, color: AppTheme.primaryOrange),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: AppTheme.valueBold),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: AppTheme.caption
+                            .copyWith(fontWeight: FontWeight.w400)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _FoodEntrySheetState extends State<_FoodEntrySheet> {
+/// One selectable line of [_EntrySheet], plus what saving it does.
+///
+/// The three kinds of entry only differ in what one unit of the typed
+/// amount means - a gram of an ingredient, a whole pack, a gram of a
+/// finished dish - so the sheet itself doesn't know which it is showing.
+class _LogOption {
+  final String title;
+  final String subtitle;
+
+  /// Label of the amount field: "Quantidade" reads right for packs,
+  /// while grams are just an amount.
+  final String amountLabel;
+
+  /// Suffix of the amount field: 'g', 'ml' or 'un'.
+  final String unitSuffix;
+  final double defaultAmount;
+
+  /// Calories in one unit of the amount field, for the live preview.
+  final double kcalPerUnit;
+
+  /// Writes the log row for [amount] units.
+  final Future<void> Function(String entryDate, double amount) save;
+
+  const _LogOption({
+    required this.title,
+    required this.subtitle,
+    this.amountLabel = 'Quantidade',
+    required this.unitSuffix,
+    required this.defaultAmount,
+    required this.kcalPerUnit,
+    required this.save,
+  });
+}
+
+/// Search, pick one, type how much of it was eaten. Pops `true` after a
+/// successful save.
+class _EntrySheet extends StatefulWidget {
+  final String title;
+  final List<_LogOption> options;
+  final String entryDate;
+
+  const _EntrySheet({
+    required this.title,
+    required this.options,
+    required this.entryDate,
+  });
+
+  @override
+  State<_EntrySheet> createState() => _EntrySheetState();
+}
+
+class _EntrySheetState extends State<_EntrySheet> {
   final TextEditingController _amountController =
       TextEditingController();
   String _query = '';
-  Food? _selected;
+  _LogOption? _selected;
   bool _isSaving = false;
 
   @override
@@ -808,22 +1135,20 @@ class _FoodEntrySheetState extends State<_FoodEntrySheet> {
     super.dispose();
   }
 
+  double? get _amount => double.tryParse(
+      _amountController.text.trim().replaceAll(',', '.'));
+
   Future<void> _save() async {
-    final food = _selected;
-    final amount = double.tryParse(
-        _amountController.text.trim().replaceAll(',', '.'));
-    if (food == null || amount == null || amount <= 0) {
+    final option = _selected;
+    final amount = _amount;
+    if (option == null || amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Escolha um alimento e uma quantidade.')));
+          content: Text('Escolha um item e uma quantidade.')));
       return;
     }
     setState(() => _isSaving = true);
     try {
-      await SupabaseService.addFoodEntry(
-        entryDate: widget.entryDate,
-        foodId: food.id,
-        amount: amount,
-      );
+      await option.save(widget.entryDate, amount);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -838,9 +1163,9 @@ class _FoodEntrySheetState extends State<_FoodEntrySheet> {
   Widget build(BuildContext context) {
     final query = _query.trim().toLowerCase();
     final matches = query.isEmpty
-        ? widget.foods.take(30).toList()
-        : widget.foods
-            .where((f) => f.label.toLowerCase().contains(query))
+        ? widget.options.take(30).toList()
+        : widget.options
+            .where((o) => o.title.toLowerCase().contains(query))
             .toList();
     final selected = _selected;
 
@@ -851,14 +1176,14 @@ class _FoodEntrySheetState extends State<_FoodEntrySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Adicionar alimento', style: AppTheme.headingMedium),
+          Text(widget.title, style: AppTheme.headingMedium),
           const SizedBox(height: 16),
           if (selected == null) ...[
             TextField(
               autofocus: true,
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
-                hintText: 'Buscar alimento',
+                hintText: 'Buscar',
                 prefixIcon: const Icon(Icons.search,
                     color: AppTheme.mediumBrown),
                 filled: true,
@@ -877,7 +1202,7 @@ class _FoodEntrySheetState extends State<_FoodEntrySheet> {
               child: matches.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text('Nenhum alimento encontrado.',
+                      child: Text('Nada encontrado.',
                           style: AppTheme.caption
                               .copyWith(fontWeight: FontWeight.w400)),
                     )
@@ -885,21 +1210,17 @@ class _FoodEntrySheetState extends State<_FoodEntrySheet> {
                       shrinkWrap: true,
                       itemCount: matches.length,
                       itemBuilder: (context, index) {
-                        final food = matches[index];
+                        final option = matches[index];
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text(food.label,
+                          title: Text(option.title,
                               style: AppTheme.bodyText),
-                          subtitle: Text(
-                            '${food.get(NutrientId.calories).round()} kcal '
-                            'por ${formatNutrientAmount(food.baseAmount)} '
-                            '${food.baseUnit}',
-                            style: AppTheme.caption,
-                          ),
+                          subtitle: Text(option.subtitle,
+                              style: AppTheme.caption),
                           onTap: () => setState(() {
-                            _selected = food;
+                            _selected = option;
                             _amountController.text =
-                                formatNutrientAmount(food.baseAmount);
+                                formatQuantity(option.defaultAmount);
                           }),
                         );
                       },
@@ -909,7 +1230,7 @@ class _FoodEntrySheetState extends State<_FoodEntrySheet> {
             Row(
               children: [
                 Expanded(
-                  child: Text(selected.label, style: AppTheme.valueBold),
+                  child: Text(selected.title, style: AppTheme.valueBold),
                 ),
                 TextButton(
                   onPressed: () => setState(() => _selected = null),
@@ -924,9 +1245,10 @@ class _FoodEntrySheetState extends State<_FoodEntrySheet> {
               autofocus: true,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: 'Quantidade',
-                suffixText: selected.baseUnit,
+                labelText: selected.amountLabel,
+                suffixText: selected.unitSuffix,
                 filled: true,
                 fillColor: AppTheme.white,
                 border: OutlineInputBorder(
@@ -943,6 +1265,13 @@ class _FoodEntrySheetState extends State<_FoodEntrySheet> {
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 14),
               ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _amount != null && _amount! > 0
+                  ? '≈ ${(_amount! * selected.kcalPerUnit).round()} kcal'
+                  : selected.subtitle,
+              style: AppTheme.caption,
             ),
             const SizedBox(height: 20),
             SizedBox(

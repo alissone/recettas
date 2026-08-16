@@ -26,6 +26,7 @@ Future<void> _openPicker(
   WidgetTester tester,
   List<Food> foods, {
   Set<String> disabledIds = const {},
+  Future<List<Food>> Function()? onReload,
   required void Function(Food?) onPicked,
 }) async {
   await tester.pumpWidget(MaterialApp(
@@ -34,7 +35,7 @@ Future<void> _openPicker(
         builder: (context) => ElevatedButton(
           onPressed: () async {
             onPicked(await showFoodPicker(context, foods,
-                disabledIds: disabledIds));
+                disabledIds: disabledIds, onReload: onReload));
           },
           child: const Text('abrir'),
         ),
@@ -114,6 +115,98 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Nenhum alimento encontrado.'), findsOneWidget);
+    });
+  });
+
+  group('showFoodPicker reload', () {
+    testWidgets('there is no reload button without a way to reload',
+        (tester) async {
+      await _openPicker(tester, foods, onPicked: (_) {});
+
+      expect(find.byIcon(Icons.refresh), findsNothing);
+    });
+
+    testWidgets('reloading picks up a food added meanwhile',
+        (tester) async {
+      await _openPicker(
+        tester,
+        foods,
+        onReload: () async => [
+          ...foods,
+          _food('f4', 'Quiabo', calories: 33),
+        ],
+        onPicked: (_) {},
+      );
+
+      expect(find.text('Quiabo'), findsNothing);
+
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quiabo'), findsOneWidget);
+      expect(find.text('33 kcal por 100 g'), findsOneWidget);
+    });
+
+    testWidgets('the search survives a reload', (tester) async {
+      await _openPicker(
+        tester,
+        foods,
+        onReload: () async => [
+          ...foods,
+          _food('f4', 'Leite condensado', calories: 321),
+        ],
+        onPicked: (_) {},
+      );
+
+      await tester.enterText(find.byType(TextField), 'leite');
+      await tester.pumpAndSettle();
+      expect(find.text('Leite condensado'), findsNothing);
+
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pumpAndSettle();
+
+      // Still filtered, now with the new match in it.
+      expect(find.text('Leite integral'), findsOneWidget);
+      expect(find.text('Leite condensado'), findsOneWidget);
+      expect(find.text('Farinha de trigo'), findsNothing);
+    });
+
+    testWidgets('a failed reload keeps the list it had', (tester) async {
+      await _openPicker(
+        tester,
+        foods,
+        onReload: () async => throw Exception('offline'),
+        onPicked: (_) {},
+      );
+
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Falha ao recarregar'), findsOneWidget);
+      expect(find.text('Farinha de trigo'), findsOneWidget);
+      // The button is usable again rather than stuck spinning.
+      expect(find.byIcon(Icons.refresh), findsOneWidget);
+    });
+
+    testWidgets('a food picked after reloading is the fresh one',
+        (tester) async {
+      Food? picked;
+      await _openPicker(
+        tester,
+        foods,
+        onReload: () async => [
+          ...foods,
+          _food('f4', 'Quiabo', calories: 33),
+        ],
+        onPicked: (f) => picked = f,
+      );
+
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Quiabo'));
+      await tester.pumpAndSettle();
+
+      expect(picked?.id, 'f4');
     });
   });
 }

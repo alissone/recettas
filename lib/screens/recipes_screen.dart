@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../models/food.dart';
+import '../models/nutrient.dart';
 import '../models/recipe.dart';
 import '../services/supabase_service.dart';
 import '../recipe_view.dart';
+import 'recipe_editor_screen.dart';
 
 class RecipesScreen extends StatefulWidget {
   const RecipesScreen({super.key});
@@ -13,6 +16,10 @@ class RecipesScreen extends StatefulWidget {
 
 class _RecipesScreenState extends State<RecipesScreen> {
   List<Recipe> _recipes = [];
+
+  /// The food catalog: it resolves the ingredients' nutrient values and
+  /// is what the editor picks new ingredients from.
+  List<Food> _foods = [];
   bool _isLoading = true;
   String? _error;
 
@@ -28,12 +35,18 @@ class _RecipesScreenState extends State<RecipesScreen> {
         _isLoading = true;
         _error = null;
       });
-      final recipes = await SupabaseService.getRecipes();
+      final catalogList = await SupabaseService.getNutrientCatalog();
+      final catalog = {for (final n in catalogList) n.id: n};
+      final foods = await SupabaseService.getFoods(catalog);
+      final recipes = await SupabaseService.getRecipes(catalog);
+      if (!mounted) return;
       setState(() {
+        _foods = foods;
         _recipes = recipes;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -41,22 +54,82 @@ class _RecipesScreenState extends State<RecipesScreen> {
     }
   }
 
+  /// Shared recipes (seeded in SQL, user_id null) are read-only - RLS
+  /// would refuse the write anyway.
+  bool _isOwn(Recipe recipe) =>
+      recipe.userId != null &&
+      recipe.userId == SupabaseService.currentUser?.id;
+
+  Future<void> _createRecipe() async {
+    if (SupabaseService.currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Entre na sua conta para criar receitas.')));
+      return;
+    }
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => RecipeEditorScreen(foods: _foods),
+      ),
+    );
+    if (saved == true) await _loadRecipes();
+  }
+
+  /// Opens the editor for [recipe] and reports back what it became, so
+  /// the open detail view can refresh itself.
+  Future<Recipe?> _editRecipe(Recipe recipe) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => RecipeEditorScreen(foods: _foods, recipe: recipe),
+      ),
+    );
+    if (saved != true || !mounted) return null;
+    await _loadRecipes();
+    if (!mounted) return null;
+
+    final updated =
+        _recipes.where((r) => r.id == recipe.id).firstOrNull;
+    if (updated == null) {
+      // It was deleted: close the detail view, which is the top route
+      // now that the editor has popped.
+      Navigator.of(context).pop();
+    }
+    return updated;
+  }
+
+  void _openRecipe(Recipe recipe) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RecipeView(
+          recipe: recipe,
+          onEdit: _isOwn(recipe) ? _editRecipe : null,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
+      floatingActionButton: _isLoading
+          ? null
+          : FloatingActionButton(
+              onPressed: _createRecipe,
+              tooltip: 'Nova receita',
+              child: const Icon(Icons.add),
+            ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
-              child: Text('Recipes', style: AppTheme.headingLarge),
+              child: Text('Receitas', style: AppTheme.headingLarge),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: Text(
-                'Discover delicious meals',
+                'O que fazer, e o que isso rende',
                 style:
                     AppTheme.bodyText.copyWith(color: AppTheme.mediumBrown),
               ),
@@ -87,7 +160,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
       onRefresh: _loadRecipes,
       color: AppTheme.primaryOrange,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 96),
         itemCount: _recipes.length,
         itemBuilder: (context, index) => _buildRecipeCard(_recipes[index]),
       ),
@@ -102,9 +175,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.cloud_off_outlined,
-                size: 64, color: AppTheme.primaryOrange.withValues(alpha:0.4)),
+                size: 64,
+                color: AppTheme.primaryOrange.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
-            const Text('Could not load recipes',
+            const Text('Não deu para carregar as receitas',
                 style: AppTheme.sectionTitle),
             const SizedBox(height: 8),
             Text(
@@ -118,7 +192,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
             ElevatedButton.icon(
               onPressed: _loadRecipes,
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Retry'),
+              label: const Text('Tentar de novo'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryOrange,
                 foregroundColor: AppTheme.white,
@@ -138,38 +212,41 @@ class _RecipesScreenState extends State<RecipesScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.restaurant_menu,
-              size: 64, color: AppTheme.primaryOrange.withValues(alpha:0.3)),
-          const SizedBox(height: 16),
-          const Text('No recipes yet', style: AppTheme.sectionTitle),
-          const SizedBox(height: 8),
-          const Text('Check back later!', style: AppTheme.caption),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.restaurant_menu,
+                size: 64,
+                color: AppTheme.primaryOrange.withValues(alpha: 0.3)),
+            const SizedBox(height: 16),
+            const Text('Nenhuma receita ainda',
+                style: AppTheme.sectionTitle),
+            const SizedBox(height: 8),
+            Text(
+              'Toque em + para escrever a primeira. Com a lista de '
+              'ingredientes preenchida, ela também pode ser registrada '
+              'em "Nutrição".',
+              textAlign: TextAlign.center,
+              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildRecipeCard(Recipe recipe) {
+    final weight = recipe.weight;
+    final per100 = recipe.isLoggable
+        ? (recipe.nutrients[NutrientId.calories]?.amount ?? 0) *
+            100 /
+            weight
+        : null;
+
     return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => RecipeView(
-              recipeData: {
-                'name': recipe.name,
-                'image': recipe.image,
-                'prep_time': recipe.prepTime,
-                'total_time': recipe.totalTime,
-                'sections':
-                    recipe.sections.map((s) => s.toMap()).toList(),
-              },
-            ),
-          ),
-        );
-      },
+      onTap: () => _openRecipe(recipe),
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
         decoration: AppTheme.cardDecoration,
@@ -183,19 +260,33 @@ class _RecipesScreenState extends State<RecipesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    recipe.name,
-                    style: AppTheme.sectionTitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          recipe.name,
+                          style: AppTheme.sectionTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (!_isOwn(recipe)) _buildBadge('Modelo'),
+                    ],
                   ),
-                  if (recipe.sections.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      '${recipe.sections.length} sections',
-                      style: AppTheme.caption,
-                    ),
-                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    [
+                      if (recipe.ingredients.isNotEmpty)
+                        '${recipe.ingredients.length} '
+                            '${recipe.ingredients.length == 1 ? 'ingrediente' : 'ingredientes'}',
+                      if (recipe.sections.isNotEmpty)
+                        '${recipe.sections.length} '
+                            '${recipe.sections.length == 1 ? 'seção' : 'seções'}',
+                      if (per100 != null)
+                        '${per100.round()} kcal por 100 g',
+                    ].join(' · '),
+                    style: AppTheme.caption,
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -229,8 +320,26 @@ class _RecipesScreenState extends State<RecipesScreen> {
     );
   }
 
+  Widget _buildBadge(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppTheme.mediumBrown.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusTiny),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.mediumBrown,
+        ),
+      ),
+    );
+  }
+
   Widget _buildCardImage(Recipe recipe) {
-    if (recipe.image != null) {
+    if (recipe.image != null && recipe.image!.isNotEmpty) {
       return SizedBox(
         width: double.infinity,
         height: 180,
@@ -251,8 +360,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryOrange.withValues(alpha:0.15),
-            AppTheme.lightOrange.withValues(alpha:0.15),
+            AppTheme.primaryOrange.withValues(alpha: 0.15),
+            AppTheme.lightOrange.withValues(alpha: 0.15),
           ],
         ),
       ),
@@ -267,7 +376,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.primaryOrange.withValues(alpha:0.1),
+        color: AppTheme.primaryOrange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusXSmall),
       ),
       child: Row(

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recettas/models/food.dart';
 import 'package:recettas/models/nutrient.dart';
+import 'package:recettas/models/recipe.dart';
 
 Nutrient _n(NutrientId id, double amount,
     {NutrientUnit unit = NutrientUnit.g}) {
@@ -31,20 +32,22 @@ Food _food(
   );
 }
 
-FoodRecipe _recipe(
-  List<(Food, double)> items, {
+Recipe _recipe(
+  List<(Food, double)> ingredients, {
   double? yieldAmount,
+  List<RecipeSection> sections = const [],
 }) {
-  return FoodRecipe(
+  return Recipe(
     id: 'r1',
     name: 'Panqueca',
     yieldAmount: yieldAmount,
-    items: [
-      for (var i = 0; i < items.length; i++)
-        FoodRecipeItem(
+    sections: sections,
+    ingredients: [
+      for (var i = 0; i < ingredients.length; i++)
+        RecipeIngredient(
           id: 'i$i',
-          food: items[i].$1,
-          amount: items[i].$2,
+          food: ingredients[i].$1,
+          amount: ingredients[i].$2,
           sortOrder: i,
         ),
     ],
@@ -67,7 +70,7 @@ void main() {
   // 200 g flour + 300 ml milk.
   List<(Food, double)> ingredients() => [(flour, 200), (milk, 300)];
 
-  group('FoodRecipe', () {
+  group('Recipe', () {
     test('weighs the sum of its ingredients when there is no yield', () {
       final recipe = _recipe(ingredients());
       expect(recipe.ingredientsAmount, 500);
@@ -122,9 +125,47 @@ void main() {
       expect(recipe.nutrients[NutrientId.calories]!.amount,
           closeTo(364, 1e-9));
     });
+
+    test('only a recipe with an ingredient list can be logged', () {
+      expect(_recipe(ingredients()).isLoggable, isTrue);
+      // A method with no ingredients is a fine recipe, just not a
+      // measurable meal.
+      expect(
+        _recipe([], sections: const [
+          RecipeSection(title: 'Modo de preparo', items: ['Misture tudo']),
+        ]).isLoggable,
+        isFalse,
+      );
+    });
+
+    test('sections stay free-form alongside the fixed ingredients', () {
+      final recipe = _recipe(ingredients(), sections: const [
+        RecipeSection(title: 'Modo de preparo', items: ['Misture', 'Frite']),
+        RecipeSection(title: 'Dicas', items: ['Sirva quente']),
+      ]);
+      expect(recipe.sections.map((s) => s.title).toList(),
+          ['Modo de preparo', 'Dicas']);
+      expect(recipe.sections.first.items.length, 2);
+      // Sections never touch the nutrition side.
+      expect(recipe.weight, 500);
+    });
   });
 
-  group('FoodRecipe.asFood', () {
+  group('RecipeIngredient', () {
+    test('reads as a shopping line', () {
+      final recipe = _recipe(ingredients());
+      expect(recipe.ingredients.first.label, '200 g de flour');
+      expect(recipe.ingredients.last.label, '300 ml de milk');
+    });
+
+    test('contributes its own share of a nutrient', () {
+      final recipe = _recipe(ingredients());
+      expect(recipe.ingredients.first.nutrient(NutrientId.calories),
+          closeTo(728, 1e-9));
+    });
+  });
+
+  group('Recipe.asFood', () {
     test('behaves like any other food in the log', () {
       final entry = FoodEntry(
         id: 'e1',
@@ -220,14 +261,14 @@ void main() {
     });
   });
 
-  group('FoodRecipe.fromJson', () {
+  group('Recipe.fromJson', () {
     final catalog = {
       NutrientId.calories:
           _n(NutrientId.calories, 0, unit: NutrientUnit.kcal),
       NutrientId.protein: _n(NutrientId.protein, 0),
     };
 
-    Map<String, dynamic> itemJson(
+    Map<String, dynamic> ingredientJson(
         String id, String foodId, String amount, int sortOrder,
         {required String calories}) {
       return {
@@ -247,18 +288,18 @@ void main() {
     }
 
     test('reads the embedded ingredients and their foods', () {
-      final recipe = FoodRecipe.fromJson({
+      final recipe = Recipe.fromJson({
         'id': 'r1',
         'user_id': 'u1',
         'name': 'Panqueca',
         'yield_amount': '400.000',
-        'items': [
-          itemJson('i1', 'flour', '200.000', 0, calories: '364'),
-          itemJson('i2', 'milk', '300.000', 1, calories: '64'),
+        'ingredients': [
+          ingredientJson('i1', 'flour', '200.000', 0, calories: '364'),
+          ingredientJson('i2', 'milk', '300.000', 1, calories: '64'),
         ],
       }, catalog);
 
-      expect(recipe.items.length, 2);
+      expect(recipe.ingredients.length, 2);
       expect(recipe.yieldAmount, 400);
       expect(recipe.weight, 400);
       expect(recipe.nutrients[NutrientId.calories]!.amount,
@@ -266,26 +307,63 @@ void main() {
     });
 
     test('orders ingredients by sort_order, not by how they arrived', () {
-      final recipe = FoodRecipe.fromJson({
+      final recipe = Recipe.fromJson({
         'id': 'r1',
         'name': 'Panqueca',
-        'items': [
-          itemJson('i2', 'milk', '300.000', 1, calories: '64'),
-          itemJson('i1', 'flour', '200.000', 0, calories: '364'),
+        'ingredients': [
+          ingredientJson('i2', 'milk', '300.000', 1, calories: '64'),
+          ingredientJson('i1', 'flour', '200.000', 0, calories: '364'),
         ],
       }, catalog);
 
-      expect(recipe.items.map((i) => i.food.name).toList(),
+      expect(recipe.ingredients.map((i) => i.food.name).toList(),
           ['flour', 'milk']);
     });
 
+    test('reads the free-form sections next to them', () {
+      final recipe = Recipe.fromJson({
+        'id': 'r1',
+        'name': 'Panqueca',
+        'prep_time': '10 min',
+        'total_time': '25 min',
+        'sections': [
+          {
+            'title': 'Modo de preparo',
+            'items': ['Misture', 'Frite dos dois lados'],
+          },
+        ],
+        'ingredients': [
+          ingredientJson('i1', 'flour', '200.000', 0, calories: '364'),
+        ],
+      }, catalog);
+
+      expect(recipe.prepTime, '10 min');
+      expect(recipe.totalTime, '25 min');
+      expect(recipe.sections.single.title, 'Modo de preparo');
+      expect(recipe.sections.single.items.length, 2);
+    });
+
+    test('a recipe with no ingredient rows still parses', () {
+      final recipe = Recipe.fromJson({
+        'id': 'r1',
+        'name': 'Pão',
+        'sections': [
+          {'title': 'Ingredients', 'items': ['500g flour']},
+        ],
+      }, catalog);
+
+      expect(recipe.ingredients, isEmpty);
+      expect(recipe.isLoggable, isFalse);
+      expect(recipe.sections.single.items.single, '500g flour');
+    });
+
     test('a null yield means the sum of the ingredients', () {
-      final recipe = FoodRecipe.fromJson({
+      final recipe = Recipe.fromJson({
         'id': 'r1',
         'name': 'Panqueca',
         'yield_amount': null,
-        'items': [
-          itemJson('i1', 'flour', '200.000', 0, calories: '364'),
+        'ingredients': [
+          ingredientJson('i1', 'flour', '200.000', 0, calories: '364'),
         ],
       }, catalog);
 
@@ -311,7 +389,7 @@ void main() {
         'recipe': {
           'id': 'r1',
           'name': 'Panqueca',
-          'items': [
+          'ingredients': [
             {
               'id': 'i1',
               'amount': '500.000',

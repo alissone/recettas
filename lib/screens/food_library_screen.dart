@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/food.dart';
 import '../models/nutrient.dart';
+import '../models/recipe.dart';
 import '../services/supabase_service.dart';
 import '../widgets/food_picker_sheet.dart';
-import 'food_recipe_editor_screen.dart';
+import 'recipe_editor_screen.dart';
 
 /// Manages the two things that can be logged besides a plain ingredient:
 /// recipes (several ingredients with their weights) and packages (one
 /// ingredient in a fixed size).
 ///
-/// Both are built out of foods that are already catalogued, so nothing
-/// here ever asks for a nutrient value. Pops `true` when anything was
-/// created, edited or deleted.
+/// The recipes are the ones on the "Receitas" tab - this is the same
+/// list, reachable from the screen that needs them. Both are built out
+/// of foods that are already catalogued, so nothing here ever asks for a
+/// nutrient value. Pops `true` when anything was created, edited or
+/// deleted.
 class FoodLibraryScreen extends StatefulWidget {
   const FoodLibraryScreen({super.key});
 
@@ -27,7 +30,7 @@ class _FoodLibraryScreenState extends State<FoodLibraryScreen>
   bool _isLoading = true;
   List<Food> _foods = [];
   Map<String, Food> _foodsById = {};
-  List<FoodRecipe> _recipes = [];
+  List<Recipe> _recipes = [];
   List<FoodPackage> _packages = [];
 
   /// True once anything was written, so the nutrition screen reloads.
@@ -51,7 +54,7 @@ class _FoodLibraryScreenState extends State<FoodLibraryScreen>
       final catalogList = await SupabaseService.getNutrientCatalog();
       final catalog = {for (final n in catalogList) n.id: n};
       final foods = await SupabaseService.getFoods(catalog);
-      final recipes = await SupabaseService.getFoodRecipes(catalog);
+      final recipes = await SupabaseService.getRecipes(catalog);
       final packages = await SupabaseService.getFoodPackages();
       if (!mounted) return;
       setState(() {
@@ -75,7 +78,7 @@ class _FoodLibraryScreenState extends State<FoodLibraryScreen>
   bool _isOwn(String? userId) =>
       userId != null && userId == SupabaseService.currentUser?.id;
 
-  Future<void> _openRecipe([FoodRecipe? recipe]) async {
+  Future<void> _openRecipe([Recipe? recipe]) async {
     if (_foods.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Cadastre alimentos antes de montar receitas.')));
@@ -84,8 +87,7 @@ class _FoodLibraryScreenState extends State<FoodLibraryScreen>
     final saved = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            FoodRecipeEditorScreen(foods: _foods, recipe: recipe),
+        builder: (_) => RecipeEditorScreen(foods: _foods, recipe: recipe),
       ),
     );
     if (saved != true || !mounted) return;
@@ -233,7 +235,7 @@ class _FoodLibraryScreenState extends State<FoodLibraryScreen>
     );
   }
 
-  Widget _buildRecipeCard(FoodRecipe recipe) {
+  Widget _buildRecipeCard(Recipe recipe) {
     final weight = recipe.weight;
     final totalKcal = recipe.nutrients[NutrientId.calories]?.amount ?? 0;
     final per100 = weight > 0 ? totalKcal * 100 / weight : 0.0;
@@ -274,16 +276,20 @@ class _FoodLibraryScreenState extends State<FoodLibraryScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${recipe.items.length} '
-                  '${recipe.items.length == 1 ? 'ingrediente' : 'ingredientes'}'
-                  ' · ${formatNutrientAmount(weight)} g · '
-                  '${per100.round()} kcal por 100 g',
+                  recipe.isLoggable
+                      ? '${recipe.ingredients.length} '
+                          '${recipe.ingredients.length == 1 ? 'ingrediente' : 'ingredientes'}'
+                          ' · ${formatQuantity(weight)} g · '
+                          '${per100.round()} kcal por 100 g'
+                      // Written before the ingredient list existed, or
+                      // still only a method: there is nothing to score.
+                      : 'Sem ingredientes — não dá para registrar',
                   style: AppTheme.caption,
                 ),
-                if (recipe.items.isNotEmpty) ...[
+                if (recipe.ingredients.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    recipe.items.map((i) => i.food.name).join(', '),
+                    recipe.ingredients.map((i) => i.food.name).join(', '),
                     style: AppTheme.caption
                         .copyWith(fontWeight: FontWeight.w400),
                     maxLines: 2,
@@ -468,6 +474,10 @@ class _PackageSheetState extends State<_PackageSheet> {
   );
 
   late Food? _food = widget.food;
+
+  /// Replaced by the picker's reload button, same as in the recipe
+  /// editor: a food can be added in Supabase mid-edit.
+  late List<Food> _foods = widget.foods;
   bool _isSaving = false;
 
   @override
@@ -478,10 +488,22 @@ class _PackageSheetState extends State<_PackageSheet> {
   }
 
   Future<void> _pickFood() async {
-    final food = await showFoodPicker(context, widget.foods,
-        title: 'Alimento do pacote');
+    final food = await showFoodPicker(
+      context,
+      _foods,
+      title: 'Alimento do pacote',
+      onReload: _reloadFoods,
+    );
     if (food == null || !mounted) return;
     setState(() => _food = food);
+  }
+
+  Future<List<Food>> _reloadFoods() async {
+    final catalogList = await SupabaseService.getNutrientCatalog();
+    final catalog = {for (final n in catalogList) n.id: n};
+    final foods = await SupabaseService.getFoods(catalog);
+    if (mounted) setState(() => _foods = foods);
+    return foods;
   }
 
   Future<void> _save() async {

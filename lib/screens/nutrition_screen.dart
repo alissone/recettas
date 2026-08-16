@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/food.dart';
 import '../models/nutrient.dart';
+import '../models/recipe.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
 import 'food_library_screen.dart';
@@ -24,11 +25,12 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   /// Static reference data, fetched once. Packages and recipes are built
   /// on top of [_foods] and are what the "pacote" and "receita" entry
-  /// flows pick from.
+  /// flows pick from; the recipes are the ones on the "Receitas" tab,
+  /// minus any that have no ingredient list to score.
   Map<NutrientId, Nutrient> _catalog = {};
   List<Food> _foods = [];
   List<FoodPackage> _packages = [];
-  List<FoodRecipe> _recipes = [];
+  List<Recipe> _recipes = [];
 
   /// Daily targets from whichever set the profile points at. Which set
   /// that is - and what's in it - is owned by NutrientTargetsScreen.
@@ -76,7 +78,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
       final catalog = {for (final n in catalogList) n.id: n};
       final foods = await SupabaseService.getFoods(catalog);
       final packages = await SupabaseService.getFoodPackages();
-      final recipes = await SupabaseService.getFoodRecipes(catalog);
+      final recipes = await _loggableRecipes(catalog);
       final sets = await SupabaseService.getRecommendationSets();
 
       String? activeSetId;
@@ -109,6 +111,15 @@ class _NutritionScreenState extends State<NutritionScreen> {
             SnackBar(content: Text('Falha ao carregar: $e')));
       }
     }
+  }
+
+  /// A recipe with no ingredient list - only a method, or one written
+  /// before the list existed - has nothing to add up, so it is left out
+  /// of the picker rather than offered as a zero-calorie meal.
+  Future<List<Recipe>> _loggableRecipes(
+      Map<NutrientId, Nutrient> catalog) async {
+    final recipes = await SupabaseService.getRecipes(catalog);
+    return recipes.where((r) => r.isLoggable).toList();
   }
 
   Future<void> _loadTargets(String? setId) async {
@@ -235,7 +246,9 @@ class _NutritionScreenState extends State<NutritionScreen> {
         await _addFromOptions('Adicionar pacote', _packageOptions());
       case _EntryKind.recipe:
         if (_recipes.isEmpty) {
-          _promptLibrary('Nenhuma receita cadastrada ainda.');
+          // Recipes with no ingredient list were filtered out, so this
+          // covers both "none written" and "none measurable yet".
+          _promptLibrary('Nenhuma receita com lista de ingredientes.');
           return;
         }
         await _addFromOptions('Adicionar receita', _recipeOptions());
@@ -338,8 +351,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
               recipe.nutrients[NutrientId.calories]?.amount ?? 0;
           return _LogOption(
             title: recipe.name,
-            subtitle: '${recipe.items.length} ingredientes · '
-                '${formatNutrientAmount(weight)} g · '
+            subtitle: '${recipe.ingredients.length} ingredientes · '
+                '${formatQuantity(weight)} g · '
                 '${weight > 0 ? (kcal * 100 / weight).round() : 0} kcal '
                 'por 100 g',
             unitSuffix: 'g',
@@ -365,7 +378,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     if (changed != true || !mounted) return;
     try {
       final packages = await SupabaseService.getFoodPackages();
-      final recipes = await SupabaseService.getFoodRecipes(_catalog);
+      final recipes = await _loggableRecipes(_catalog);
       if (!mounted) return;
       setState(() {
         _packages = packages;

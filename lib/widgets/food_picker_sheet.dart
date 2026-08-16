@@ -17,6 +17,10 @@ Future<Food?> showFoodPicker(
   /// Already used by whatever is being edited; shown greyed out so it is
   /// obvious why tapping does nothing.
   Set<String> disabledIds = const {},
+
+  /// Re-reads the catalog, for when a food was added in Supabase while
+  /// the recipe was being written. Null hides the reload button.
+  Future<List<Food>> Function()? onReload,
 }) {
   return showModalBottomSheet<Food>(
     context: context,
@@ -30,6 +34,7 @@ Future<Food?> showFoodPicker(
       foods: foods,
       title: title,
       disabledIds: disabledIds,
+      onReload: onReload,
     ),
   );
 }
@@ -38,11 +43,13 @@ class _FoodPickerSheet extends StatefulWidget {
   final List<Food> foods;
   final String title;
   final Set<String> disabledIds;
+  final Future<List<Food>> Function()? onReload;
 
   const _FoodPickerSheet({
     required this.foods,
     required this.title,
     required this.disabledIds,
+    this.onReload,
   });
 
   @override
@@ -50,14 +57,34 @@ class _FoodPickerSheet extends StatefulWidget {
 }
 
 class _FoodPickerSheetState extends State<_FoodPickerSheet> {
+  /// Starts as what the caller had; the reload button replaces it.
+  late List<Food> _foods = widget.foods;
   String _query = '';
+  bool _isReloading = false;
+
+  Future<void> _reload() async {
+    setState(() => _isReloading = true);
+    try {
+      final foods = await widget.onReload!();
+      if (!mounted) return;
+      setState(() {
+        _foods = foods;
+        _isReloading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isReloading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao recarregar: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final query = _query.trim().toLowerCase();
     final matches = query.isEmpty
-        ? widget.foods.take(30).toList()
-        : widget.foods
+        ? _foods.take(30).toList()
+        : _foods
             .where((f) => f.label.toLowerCase().contains(query))
             .toList();
 
@@ -68,7 +95,28 @@ class _FoodPickerSheetState extends State<_FoodPickerSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.title, style: AppTheme.headingMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text(widget.title, style: AppTheme.headingMedium),
+              ),
+              if (widget.onReload != null)
+                IconButton(
+                  onPressed: _isReloading ? null : _reload,
+                  icon: _isReloading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primaryOrange),
+                        )
+                      : const Icon(Icons.refresh),
+                  color: AppTheme.primaryOrange,
+                  tooltip: 'Recarregar alimentos',
+                ),
+            ],
+          ),
           const SizedBox(height: 16),
           TextField(
             autofocus: true,

@@ -8,10 +8,32 @@
 -- remembers which package it came from so the log can say "1 x Pacote
 -- pequeno" instead of a bare 140 g.
 --
--- A recipe ("receita") is several ingredients, each with its own weight.
--- Its nutrients are the sum of the ingredients', spread over the weight
--- of the finished dish, so a recipe entry stores the recipe id and how
--- much of the dish was eaten.
+-- A recipe ("receita") is the one already on the "Receitas" tab. Its
+-- ingredient list stops being free text inside sections and becomes
+-- rows in public.recipe_ingredients, each pointing at a catalogued
+-- food with a weight - which is exactly what the nutrition log needs to
+-- score a plate of it. One recipe, written once, read by both screens.
+--
+-- Only the ingredient list is fixed; everything else about a recipe
+-- stays a free-form section in recipes.sections, titled however the
+-- cook likes.
+--
+-- An earlier version of this file gave the nutrition side its own
+-- food_recipes table. Those are gone, and the drops below make this
+-- file safe to run whether or not that version was ever applied.
+drop table if exists public.food_recipe_items;
+drop table if exists public.food_recipes;
+
+alter table public.food_entries
+  drop constraint if exists food_entries_source_check,
+  drop constraint if exists food_entries_package_needs_food_check;
+
+alter table public.food_entries
+  drop column if exists recipe_id,
+  drop column if exists package_id;
+
+drop table if exists public.food_packages;
+
 create table public.food_packages (
   id uuid default gen_random_uuid() primary key,
   -- Null for shared packages seeded in SQL; set for a user's own.
@@ -46,51 +68,43 @@ create policy "Users can delete their own food packages"
   on public.food_packages for delete
   using (auth.uid() = user_id);
 
--- Named public.food_recipes, not public.recipes: that name is taken by
--- the cooking recipes (free-text sections, no nutrient data) the app
--- shows on the "Receitas" tab. The two are deliberately unrelated.
-create table public.food_recipes (
-  id uuid default gen_random_uuid() primary key,
-  -- Null for shared recipes seeded in SQL; set for a user's own.
-  user_id uuid references public.profiles(id) on delete cascade,
-  name text not null,
-  -- Weight of the finished dish when it differs from the sum of the
-  -- ingredients - water boils off, dough loses moisture. Null means
-  -- "nothing was lost", i.e. the sum of the ingredients. It never
-  -- changes how much of each nutrient the recipe holds, only how
-  -- concentrated they are per gram served.
-  yield_amount numeric(10, 3) check (yield_amount > 0),
-  -- Object key inside the "habits" storage bucket.
-  image_path text,
-  created_at timestamptz default now()
-);
+-- Recipes were seeded by hand and read-only until now. Ownership works
+-- like the food and exercise catalogs: a null user_id is a shared row
+-- nobody can edit, anything else belongs to the user who wrote it.
+alter table public.recipes
+  add column if not exists user_id uuid references public.profiles(id) on delete cascade;
 
-create index food_recipes_name_idx on public.food_recipes (lower(name));
+-- Weight of the finished dish when it differs from the sum of the
+-- ingredients - water boils off, dough loses moisture. Null means
+-- "nothing was lost", i.e. the sum of the ingredients. It never changes
+-- how much of each nutrient a recipe holds, only how concentrated they
+-- are per gram served.
+alter table public.recipes
+  add column if not exists yield_amount numeric(10, 3) check (yield_amount > 0);
 
-alter table public.food_recipes enable row level security;
+drop policy if exists "Users can create their own recipes" on public.recipes;
+drop policy if exists "Users can update their own recipes" on public.recipes;
+drop policy if exists "Users can delete their own recipes" on public.recipes;
 
-create policy "Food recipes are viewable by everyone"
-  on public.food_recipes for select
-  using (true);
-
-create policy "Users can create their own food recipes"
-  on public.food_recipes for insert
+create policy "Users can create their own recipes"
+  on public.recipes for insert
   with check (auth.uid() = user_id);
 
-create policy "Users can update their own food recipes"
-  on public.food_recipes for update
+create policy "Users can update their own recipes"
+  on public.recipes for update
   using (auth.uid() = user_id);
 
-create policy "Users can delete their own food recipes"
-  on public.food_recipes for delete
+create policy "Users can delete their own recipes"
+  on public.recipes for delete
   using (auth.uid() = user_id);
 
--- One row per ingredient. amount is in the ingredient's own base_unit;
--- as everywhere else in the nutrition schema, ml and g are added up as
--- if they were the same thing rather than converted by density.
-create table public.food_recipe_items (
+-- The ingredient list, one row per ingredient. amount is in the
+-- ingredient's own base_unit; as everywhere else in the nutrition
+-- schema, ml and g are added up as if they were the same thing rather
+-- than converted by density.
+create table public.recipe_ingredients (
   id uuid default gen_random_uuid() primary key,
-  recipe_id uuid references public.food_recipes(id) on delete cascade not null,
+  recipe_id uuid references public.recipes(id) on delete cascade not null,
   food_id uuid references public.foods(id) on delete cascade not null,
   amount numeric(10, 3) not null check (amount > 0),
   sort_order integer not null default 0,
@@ -99,39 +113,39 @@ create table public.food_recipe_items (
 
 -- An ingredient appears once per recipe: listing flour twice would be a
 -- data entry slip, not two different things to sum.
-create unique index food_recipe_items_recipe_food_idx
-  on public.food_recipe_items (recipe_id, food_id);
+create unique index recipe_ingredients_recipe_food_idx
+  on public.recipe_ingredients (recipe_id, food_id);
 
-alter table public.food_recipe_items enable row level security;
+alter table public.recipe_ingredients enable row level security;
 
-create policy "Food recipe items are viewable by everyone"
-  on public.food_recipe_items for select
+create policy "Recipe ingredients are viewable by everyone"
+  on public.recipe_ingredients for select
   using (true);
 
-create policy "Users can create their own food recipe items"
-  on public.food_recipe_items for insert
+create policy "Users can create their own recipe ingredients"
+  on public.recipe_ingredients for insert
   with check (
     exists (
-      select 1 from public.food_recipes r
-      where r.id = food_recipe_items.recipe_id and r.user_id = auth.uid()
+      select 1 from public.recipes r
+      where r.id = recipe_ingredients.recipe_id and r.user_id = auth.uid()
     )
   );
 
-create policy "Users can update their own food recipe items"
-  on public.food_recipe_items for update
+create policy "Users can update their own recipe ingredients"
+  on public.recipe_ingredients for update
   using (
     exists (
-      select 1 from public.food_recipes r
-      where r.id = food_recipe_items.recipe_id and r.user_id = auth.uid()
+      select 1 from public.recipes r
+      where r.id = recipe_ingredients.recipe_id and r.user_id = auth.uid()
     )
   );
 
-create policy "Users can delete their own food recipe items"
-  on public.food_recipe_items for delete
+create policy "Users can delete their own recipe ingredients"
+  on public.recipe_ingredients for delete
   using (
     exists (
-      select 1 from public.food_recipes r
-      where r.id = food_recipe_items.recipe_id and r.user_id = auth.uid()
+      select 1 from public.recipes r
+      where r.id = recipe_ingredients.recipe_id and r.user_id = auth.uid()
     )
   );
 
@@ -142,7 +156,7 @@ alter table public.food_entries
   alter column food_id drop not null;
 
 alter table public.food_entries
-  add column recipe_id uuid references public.food_recipes(id) on delete cascade,
+  add column recipe_id uuid references public.recipes(id) on delete cascade,
   -- Which package the amount came from, for display only - the nutrients
   -- come from food_id either way. Nulled rather than cascaded when the
   -- package definition is deleted, so the entry keeps its weight.

@@ -59,10 +59,97 @@ class SupabaseService {
     await _client.auth.signOut();
   }
 
-  // Recipes
-  static Future<List<Recipe>> getRecipes() async {
-    final data = await _client.from('recipes').select().order('created_at');
-    return data.map<Recipe>((json) => Recipe.fromJson(json)).toList();
+  // Recipes (shared rows have a null user_id and are read-only; the
+  // ingredient list is what the nutrition log scores a portion by)
+
+  /// Every recipe with its ingredient list, in one request. [catalog]
+  /// resolves the ingredients' nutrient values - pass it empty when only
+  /// the names and weights are needed.
+  static Future<List<Recipe>> getRecipes(
+      [Map<NutrientId, Nutrient> catalog = const {}]) async {
+    final data = await _client
+        .from('recipes')
+        .select('*, ingredients:recipe_ingredients(*, '
+            'food:foods(*, food_nutrients(nutrient_id, amount)))')
+        .order('created_at');
+    return data
+        .map<Recipe>((json) => Recipe.fromJson(json, catalog))
+        .toList();
+  }
+
+  /// [ingredients] is a list of `{food_id, amount}` in the order they
+  /// should be shown. Returns the new recipe's id.
+  static Future<String> createRecipe({
+    required String name,
+    String? image,
+    String? prepTime,
+    String? totalTime,
+    double? yieldAmount,
+    required List<RecipeSection> sections,
+    required List<Map<String, dynamic>> ingredients,
+  }) async {
+    final data = await _client
+        .from('recipes')
+        .insert({
+          'user_id': currentUser!.id,
+          'name': name,
+          'image': image,
+          'prep_time': prepTime,
+          'total_time': totalTime,
+          'yield_amount': yieldAmount,
+          'sections': [for (final s in sections) s.toMap()],
+        })
+        .select('id')
+        .single();
+    final id = data['id'] as String;
+    await _replaceRecipeIngredients(id, ingredients);
+    return id;
+  }
+
+  static Future<void> updateRecipe(
+    String id, {
+    required String name,
+    String? image,
+    String? prepTime,
+    String? totalTime,
+    double? yieldAmount,
+    required List<RecipeSection> sections,
+    required List<Map<String, dynamic>> ingredients,
+  }) async {
+    await _client.from('recipes').update({
+      'name': name,
+      'image': image,
+      'prep_time': prepTime,
+      'total_time': totalTime,
+      'yield_amount': yieldAmount,
+      'sections': [for (final s in sections) s.toMap()],
+    }).eq('id', id);
+    await _replaceRecipeIngredients(id, ingredients);
+  }
+
+  /// The ingredient list is small and always edited as a whole, so it is
+  /// rewritten rather than diffed. Past log entries are unaffected: they
+  /// point at the recipe, not at its rows.
+  static Future<void> _replaceRecipeIngredients(
+      String recipeId, List<Map<String, dynamic>> ingredients) async {
+    await _client
+        .from('recipe_ingredients')
+        .delete()
+        .eq('recipe_id', recipeId);
+    if (ingredients.isEmpty) return;
+    await _client.from('recipe_ingredients').insert([
+      for (var i = 0; i < ingredients.length; i++)
+        {
+          'recipe_id': recipeId,
+          'food_id': ingredients[i]['food_id'],
+          'amount': ingredients[i]['amount'],
+          'sort_order': i,
+        }
+    ]);
+  }
+
+  static Future<void> deleteRecipe(String id) async {
+    await _client.from('recipes').delete().eq('id', id);
   }
 
   // Purchases
@@ -453,80 +540,6 @@ class SupabaseService {
     await _client.from('food_packages').delete().eq('id', id);
   }
 
-  /// Every recipe with its ingredients and their nutrient values, in one
-  /// request - a recipe is useless without them, since its own values are
-  /// nothing but the sum.
-  static Future<List<FoodRecipe>> getFoodRecipes(
-      Map<NutrientId, Nutrient> catalog) async {
-    final data = await _client
-        .from('food_recipes')
-        .select('*, items:food_recipe_items(*, '
-            'food:foods(*, food_nutrients(nutrient_id, amount)))')
-        .order('name');
-    return data
-        .map<FoodRecipe>((json) => FoodRecipe.fromJson(json, catalog))
-        .toList();
-  }
-
-  /// [items] is a list of `{food_id, amount}` in the order they should be
-  /// shown. Returns the new recipe's id.
-  static Future<String> createFoodRecipe({
-    required String name,
-    double? yieldAmount,
-    required List<Map<String, dynamic>> items,
-  }) async {
-    final data = await _client
-        .from('food_recipes')
-        .insert({
-          'user_id': currentUser!.id,
-          'name': name,
-          'yield_amount': yieldAmount,
-        })
-        .select('id')
-        .single();
-    final id = data['id'] as String;
-    await _replaceFoodRecipeItems(id, items);
-    return id;
-  }
-
-  static Future<void> updateFoodRecipe(
-    String id, {
-    required String name,
-    double? yieldAmount,
-    required List<Map<String, dynamic>> items,
-  }) async {
-    await _client.from('food_recipes').update({
-      'name': name,
-      'yield_amount': yieldAmount,
-    }).eq('id', id);
-    await _replaceFoodRecipeItems(id, items);
-  }
-
-  /// The ingredient list is small and always edited as a whole, so it is
-  /// rewritten rather than diffed. Past log entries are unaffected: they
-  /// point at the recipe, not at its rows.
-  static Future<void> _replaceFoodRecipeItems(
-      String recipeId, List<Map<String, dynamic>> items) async {
-    await _client
-        .from('food_recipe_items')
-        .delete()
-        .eq('recipe_id', recipeId);
-    if (items.isEmpty) return;
-    await _client.from('food_recipe_items').insert([
-      for (var i = 0; i < items.length; i++)
-        {
-          'recipe_id': recipeId,
-          'food_id': items[i]['food_id'],
-          'amount': items[i]['amount'],
-          'sort_order': i,
-        }
-    ]);
-  }
-
-  static Future<void> deleteFoodRecipe(String id) async {
-    await _client.from('food_recipes').delete().eq('id', id);
-  }
-
   /// Food log between two YYYY-MM-DD dates, [toDateExclusive] excluded.
   static Future<List<FoodEntry>> getFoodEntries({
     required String fromDate,
@@ -537,7 +550,7 @@ class SupabaseService {
         .from('food_entries')
         .select('*, food:foods(*, food_nutrients(nutrient_id, amount)), '
             'package:food_packages(*), '
-            'recipe:food_recipes(*, items:food_recipe_items(*, '
+            'recipe:recipes(*, ingredients:recipe_ingredients(*, '
             'food:foods(*, food_nutrients(nutrient_id, amount))))')
         .gte('entry_date', fromDate)
         .lt('entry_date', toDateExclusive)

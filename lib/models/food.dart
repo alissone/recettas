@@ -1,4 +1,5 @@
 import 'nutrient.dart';
+import 'recipe.dart';
 
 /// A catalogued food. Nutrient values are stored per [baseAmount] of
 /// [baseUnit] - usually 100 g, but 100 ml for liquids. No ml/g density
@@ -107,144 +108,6 @@ class FoodPackage {
   }
 }
 
-/// One ingredient of a [FoodRecipe], with how much of it goes in.
-class FoodRecipeItem {
-  final String id;
-  final Food food;
-
-  /// In the ingredient's [Food.baseUnit].
-  final double amount;
-  final int sortOrder;
-
-  const FoodRecipeItem({
-    required this.id,
-    required this.food,
-    required this.amount,
-    this.sortOrder = 0,
-  });
-
-  /// How much of [id] this ingredient brings to the whole recipe.
-  double nutrient(NutrientId id) => food.baseAmount <= 0
-      ? 0
-      : food.get(id) * amount / food.baseAmount;
-
-  /// Expects `.select('*, food:foods(*, food_nutrients(...))')`.
-  factory FoodRecipeItem.fromJson(
-      Map<String, dynamic> json, Map<NutrientId, Nutrient> catalog) {
-    return FoodRecipeItem(
-      id: json['id'],
-      food: Food.fromJson(json['food'] ?? const {}, catalog),
-      amount: double.tryParse(json['amount'].toString()) ?? 0,
-      sortOrder: json['sort_order'] ?? 0,
-    );
-  }
-}
-
-/// Several ingredients cooked into one dish. Nutrient values are the sum
-/// of the ingredients' spread over [weight], which lets a recipe be
-/// logged exactly like a food: "300 g of this".
-class FoodRecipe {
-  final String id;
-
-  /// Null for shared recipes seeded in SQL.
-  final String? userId;
-  final String name;
-
-  /// Weight of the finished dish when it differs from the sum of the
-  /// ingredients - null means nothing was lost to cooking.
-  final double? yieldAmount;
-  final String? imagePath;
-  final List<FoodRecipeItem> items;
-  final DateTime? createdAt;
-
-  const FoodRecipe({
-    required this.id,
-    this.userId,
-    required this.name,
-    this.yieldAmount,
-    this.imagePath,
-    this.items = const [],
-    this.createdAt,
-  });
-
-  /// Everything that went in, ml counted as g - the same non-conversion
-  /// the rest of the nutrition schema makes.
-  double get ingredientsAmount =>
-      items.fold<double>(0, (sum, item) => sum + item.amount);
-
-  /// What a portion is measured against. Cooking losses only make the
-  /// dish denser, never less nutritious, so they divide here and are
-  /// absent from [nutrients].
-  double get weight =>
-      yieldAmount != null && yieldAmount! > 0
-          ? yieldAmount!
-          : ingredientsAmount;
-
-  /// Whether the finished dish weighs less than what went into it.
-  bool get hasYield => yieldAmount != null && yieldAmount! > 0;
-
-  /// Totals for the whole recipe, keyed by nutrient. An ingredient that
-  /// says nothing about a nutrient simply doesn't contribute to it -
-  /// which does mean a recipe is only as complete as its ingredients.
-  Map<NutrientId, Nutrient> get nutrients {
-    final totals = <NutrientId, Nutrient>{};
-    for (final item in items) {
-      if (item.food.baseAmount <= 0) continue;
-      for (final nutrient in item.food.nutrients.values) {
-        final contribution =
-            nutrient.amount * item.amount / item.food.baseAmount;
-        final running = totals[nutrient.id];
-        totals[nutrient.id] = (running ?? nutrient).copyWith(
-          amount: (running?.amount ?? 0) + contribution,
-        );
-      }
-    }
-    return totals;
-  }
-
-  /// The recipe seen as a single ingredient weighing [weight]. Every
-  /// chart, total and target comparison then works on it unchanged.
-  Food asFood() => Food(
-        id: id,
-        userId: userId,
-        name: name,
-        baseAmount: weight,
-        baseUnit: 'g',
-        imagePath: imagePath,
-        nutrients: nutrients,
-      );
-
-  /// Expects `.select('*, items:food_recipe_items(*, food:foods(*,
-  /// food_nutrients(nutrient_id, amount))))'`.
-  factory FoodRecipe.fromJson(
-      Map<String, dynamic> json, Map<NutrientId, Nutrient> catalog) {
-    final rows = json['items'];
-    final items = <FoodRecipeItem>[];
-    if (rows is List) {
-      for (final row in rows) {
-        items.add(FoodRecipeItem.fromJson(row, catalog));
-      }
-    }
-    items.sort((a, b) {
-      final order = a.sortOrder.compareTo(b.sortOrder);
-      return order != 0 ? order : a.food.name.compareTo(b.food.name);
-    });
-    final yieldAmount = json['yield_amount'];
-    return FoodRecipe(
-      id: json['id'],
-      userId: json['user_id'],
-      name: json['name'] ?? '',
-      yieldAmount:
-          yieldAmount == null ? null : double.tryParse(yieldAmount.toString()),
-      imagePath: json['image_path'],
-      items: items,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'])
-          : null,
-    );
-  }
-}
-
 /// One portion eaten on one day.
 class FoodEntry {
   final String id;
@@ -254,11 +117,12 @@ class FoodEntry {
   final String entryDate;
 
   /// What was eaten, always as a single ingredient: a recipe entry
-  /// carries the recipe flattened by [FoodRecipe.asFood].
+  /// carries the recipe flattened by [Recipe.asFood].
   final Food food;
 
-  /// Set when this entry logs a recipe rather than an ingredient.
-  final FoodRecipe? recipe;
+  /// Set when this entry logs a recipe rather than an ingredient - the
+  /// same recipe the "Receitas" tab shows.
+  final Recipe? recipe;
 
   /// Set when the amount was entered as "N packs of it". Display only -
   /// the nutrients come from [food] either way.
@@ -295,13 +159,13 @@ class FoodEntry {
   }
 
   /// Expects `.select('*, food:foods(*, food_nutrients(...)),
-  /// recipe:food_recipes(...), package:food_packages(*))'`. Rows carry
+  /// recipe:recipes(...), package:food_packages(*))'`. Rows carry
   /// either a food or a recipe, never both.
   factory FoodEntry.fromJson(
       Map<String, dynamic> json, Map<NutrientId, Nutrient> catalog) {
     final recipeJson = json['recipe'];
     final recipe = recipeJson is Map<String, dynamic>
-        ? FoodRecipe.fromJson(recipeJson, catalog)
+        ? Recipe.fromJson(recipeJson, catalog)
         : null;
     final packageJson = json['package'];
     return FoodEntry(

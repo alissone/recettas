@@ -2,6 +2,10 @@ import 'exercise.dart';
 
 // Based on MuscleWiki Exercise Database
 
+/// "60", "62.5" - drops the trailing ".0" that numeric(6,2) round-trips.
+String formatWeight(double v) =>
+    v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
+
 /// One exercise done on one day: [sets] x [reps] at a single [weight].
 /// Drop sets are out of scope, so the weight applies to every set.
 class GymEntry {

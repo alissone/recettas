@@ -604,6 +604,20 @@ class SupabaseService {
     await _client.from('gym_entries').delete().eq('id', id);
   }
 
+  /// The whole training log, newest first, with each entry's exercise
+  /// joined. The history screen groups it per exercise client-side: the
+  /// table holds one row per exercise per day, so even years of training
+  /// is a few thousand rows - cheaper than a query per exercise.
+  static Future<List<GymEntry>> getAllGymEntries() async {
+    final data = await _client
+        .from('gym_entries')
+        .select('*, exercise:exercises(*)')
+        .eq('user_id', currentUser!.id)
+        .order('entry_date', ascending: false)
+        .order('created_at', ascending: false);
+    return data.map<GymEntry>((json) => GymEntry.fromJson(json)).toList();
+  }
+
   /// Most recently logged weight per exercise, for the "latest PR" line in
   /// the exercise gallery. Entries come back newest-first, so the first
   /// weighted row seen per exercise is the one kept.

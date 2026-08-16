@@ -6,7 +6,8 @@ import '../models/exercise.dart';
 import '../models/gym_entry.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
-import '../widgets/remote_image.dart';
+import '../widgets/exercise_thumb.dart';
+import 'gym_history_screen.dart';
 
 /// One day of training at a time: which exercises were done, how many
 /// sets and reps, and at what weight. The exercise catalog itself is
@@ -143,7 +144,20 @@ class _GymScreenState extends State<GymScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
-      appBar: AppBar(title: const Text('Academia')),
+      appBar: AppBar(
+        title: const Text('Academia'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Histórico',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const GymHistoryScreen()),
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addEntry,
         child: const Icon(Icons.add),
@@ -284,7 +298,7 @@ class _GymScreenState extends State<GymScreen> {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                _ExerciseThumb(exercise: exercise, size: 52),
+                ExerciseThumb(exercise: exercise, size: 52),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -299,7 +313,7 @@ class _GymScreenState extends State<GymScreen> {
                         [
                           entry.setsLabel,
                           if (weight != null && weight > 0)
-                            '${_trimWeight(weight)} kg',
+                            '${formatWeight(weight)} kg',
                           if (exercise?.muscleGroup != null)
                             exercise!.muscleGroup!,
                         ].join(' · '),
@@ -335,9 +349,6 @@ class _GymScreenState extends State<GymScreen> {
     );
   }
 }
-
-String _trimWeight(double v) =>
-    v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
 
 // ---------------------------------------------------------------------------
 // Sheets
@@ -695,7 +706,7 @@ class _ExerciseGalleryCard extends StatelessWidget {
                 if (weight != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'PR: ${_trimWeight(weight)} kg',
+                    'PR: ${formatWeight(weight)} kg',
                     style: AppTheme.caption
                         .copyWith(color: AppTheme.primaryOrange),
                     maxLines: 1,
@@ -862,7 +873,7 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
   /// Still frame for this exercise, pre-extracted from the video with
   /// ffmpeg into assets/exercise_posters/ (same basename, .jpg).
   Widget _buildPoster() {
-    final poster = _posterPath(widget.path);
+    final poster = exercisePosterPath(widget.path);
     if (poster == null) return _buildPlaceholder();
     return Image.asset(
       poster,
@@ -877,50 +888,6 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
       alignment: Alignment.center,
       child: Icon(Icons.fitness_center,
           color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
-    );
-  }
-}
-
-/// 'assets/exercises/Foo.mp4' -> 'assets/exercise_posters/Foo.jpg'. The
-/// posters are generated from the videos themselves, so deriving the path
-/// keeps them in sync without a second database column.
-String? _posterPath(String? videoPath) {
-  if (videoPath == null || !videoPath.endsWith('.mp4')) return null;
-  final name = videoPath.split('/').last;
-  final base = name.substring(0, name.length - 4);
-  return 'assets/exercise_posters/$base.jpg';
-}
-
-/// Square thumbnail for one exercise: the poster frame pulled from its
-/// video, falling back to the hand-uploaded photo in the "habits" bucket
-/// and then to a placeholder icon. The seeded catalog has videos but no
-/// image_path, so without the poster these all render as bare icons.
-class _ExerciseThumb extends StatelessWidget {
-  final Exercise? exercise;
-  final double size;
-
-  const _ExerciseThumb({required this.exercise, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    final fallback = RemoteImage(
-      path: exercise?.imagePath,
-      width: size,
-      height: size,
-      placeholder: Icons.fitness_center,
-    );
-    final poster = _posterPath(exercise?.videoPath);
-    if (poster == null) return fallback;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppTheme.radiusXSmall),
-      child: Image.asset(
-        poster,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => fallback,
-      ),
     );
   }
 }
@@ -957,7 +924,7 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
     _reps = existing?.reps ?? 12;
     _weightController = TextEditingController(
         text: existing?.weight != null
-            ? _trimWeight(existing!.weight!)
+            ? formatWeight(existing!.weight!)
             : '');
     _notesController =
         TextEditingController(text: existing?.notes ?? '');
@@ -1004,7 +971,7 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
         children: [
           Row(
             children: [
-              _ExerciseThumb(exercise: widget.exercise, size: 48),
+              ExerciseThumb(exercise: widget.exercise, size: 48),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(widget.exercise.name,

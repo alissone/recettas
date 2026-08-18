@@ -405,6 +405,40 @@ class _NutritionScreenState extends State<NutritionScreen> {
     }
   }
 
+  /// Easter egg: tapping a logged food shows what a similar number of
+  /// calories looks like as a healthy alternative, picked at random on
+  /// every tap so the comparison stays fresh.
+  void _showCalorieEquivalent(FoodEntry entry) {
+    final kcal = entry.nutrient(NutrientId.calories);
+    if (kcal <= 0) return;
+    final ref = _healthyFoodRefs[math.Random().nextInt(_healthyFoodRefs.length)];
+    final count = kcal / ref.kcal;
+    final rounded = double.parse(count.toStringAsFixed(1));
+    final label = rounded == 1.0 ? ref.singular : ref.plural;
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.creamBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        ),
+        title: const Text('🍉 Você sabia?'),
+        content: Text(
+          'Essas ${kcal.round()} calorias equivalem a '
+          'aproximadamente ${formatNutrientAmount(count)} $label.',
+          style: AppTheme.bodyText,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar',
+                style: TextStyle(color: AppTheme.primaryOrange)),
+          ),
+        ],
+      ),
+    );
+  }
+
   // --- Derived data ---
 
   /// Rows for the selected category: everything with a target or an
@@ -829,6 +863,17 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         '${nutrient.unitLabel}'
                     : '—',
               ),
+              const SizedBox(width: 24),
+              _buildStat(
+                '% Meta',
+                () {
+                  final value =
+                      selectedDay != null ? (totals[selectedDay] ?? 0) : average;
+                  final hasValue = selectedDay != null || logged > 0;
+                  if (target == null || target <= 0 || !hasValue) return '—';
+                  return '${(value / target * 100).round()}%';
+                }(),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -910,34 +955,46 @@ class _NutritionScreenState extends State<NutritionScreen> {
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  // A recipe and a package look nothing alike once
-                  // logged - both end up as "name + weight" - so the
-                  // icon is what says where a row came from.
-                  if (entry.recipe != null || entry.package != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Icon(
-                        entry.recipe != null
-                            ? Icons.menu_book_outlined
-                            : Icons.inventory_2_outlined,
-                        size: 16,
-                        color: AppTheme.primaryOrange,
-                      ),
-                    ),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(entry.food.label,
-                            style: AppTheme.bodyText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                        Text(
-                          '${entry.amountLabel} · '
-                          '${entry.nutrient(NutrientId.calories).round()} kcal',
-                          style: AppTheme.caption,
-                        ),
-                      ],
+                    child: InkWell(
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusTiny),
+                      onTap: () => _showCalorieEquivalent(entry),
+                      child: Row(
+                        children: [
+                          // A recipe and a package look nothing alike
+                          // once logged - both end up as "name +
+                          // weight" - so the icon is what says where a
+                          // row came from.
+                          if (entry.recipe != null || entry.package != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Icon(
+                                entry.recipe != null
+                                    ? Icons.menu_book_outlined
+                                    : Icons.inventory_2_outlined,
+                                size: 16,
+                                color: AppTheme.primaryOrange,
+                              ),
+                            ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(entry.food.label,
+                                    style: AppTheme.bodyText,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                  '${entry.amountLabel} · '
+                                  '${entry.nutrient(NutrientId.calories).round()} kcal',
+                                  style: AppTheme.caption,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   IconButton(
@@ -956,6 +1013,56 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 }
+
+/// One unit of a healthy reference food, for the "what else could this be"
+/// easter egg on the entry list. Amounts are rough, well-known portions
+/// (a whole egg, a slice of watermelon, a handful of nuts) rather than
+/// precise weights - the point is a fun comparison, not a diet plan.
+class _HealthyFoodRef {
+  final String singular;
+  final String plural;
+  final double kcal;
+
+  const _HealthyFoodRef(this.singular, this.plural, this.kcal);
+}
+
+/// Fruits, vegetables, legumes and the like, each with an approximate
+/// calorie count per common portion (based on typical Brazilian food
+/// composition figures, e.g. TACO).
+const List<_HealthyFoodRef> _healthyFoodRefs = [
+  _HealthyFoodRef('banana', 'bananas', 90),
+  _HealthyFoodRef('maçã', 'maçãs', 78),
+  _HealthyFoodRef('laranja', 'laranjas', 65),
+  _HealthyFoodRef('pera', 'peras', 70),
+  _HealthyFoodRef('manga', 'mangas', 100),
+  _HealthyFoodRef('ovo cozido', 'ovos cozidos', 74),
+  _HealthyFoodRef(
+      'pedaço de melancia (≈300 g)', 'pedaços de melancia (≈300 g)', 90),
+  _HealthyFoodRef('kiwi', 'kiwis', 42),
+  _HealthyFoodRef('pêssego', 'pêssegos', 51),
+  _HealthyFoodRef('fatia de abacaxi', 'fatias de abacaxi', 42),
+  _HealthyFoodRef('punhado de uvas', 'punhados de uvas', 53),
+  _HealthyFoodRef('xícara de morangos', 'xícaras de morangos', 48),
+  _HealthyFoodRef('cenoura crua', 'cenouras cruas', 20),
+  _HealthyFoodRef('tomate médio', 'tomates médios', 15),
+  _HealthyFoodRef('pepino inteiro', 'pepinos inteiros', 26),
+  _HealthyFoodRef(
+      'porção de brócolis cozido (100 g)',
+      'porções de brócolis cozido (100 g)',
+      25),
+  _HealthyFoodRef(
+      'inhame cozido (porção de 100 g)', 'inhames cozidos (porção de 100 g)', 97),
+  _HealthyFoodRef(
+      'batata doce cozida (porção de 100 g)',
+      'batatas doces cozidas (porção de 100 g)',
+      77),
+  _HealthyFoodRef('batata inglesa cozida', 'batatas inglesas cozidas', 97),
+  _HealthyFoodRef(
+      'concha de feijão cozido', 'conchas de feijão cozido', 77),
+  _HealthyFoodRef('punhado de amêndoas (10 un.)',
+      'punhados de amêndoas (10 un.)', 70),
+  _HealthyFoodRef('abacate', 'abacates', 320),
+];
 
 /// One line of the daily chart.
 class _NutrientRow {

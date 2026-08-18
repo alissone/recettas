@@ -898,8 +898,76 @@ class _NutritionScreenState extends State<NutritionScreen> {
               );
             },
           ),
+          if (nutrient.id == NutrientId.calories &&
+              target != null &&
+              target > 0 &&
+              logged > 0)
+            _buildProjectionCard(average - target),
         ],
       ),
+    );
+  }
+
+  /// Weight-change projection: at ~7700 kcal per kg of body fat, a daily
+  /// surplus or deficit held for a while adds up to a certain number of
+  /// kg. Only makes sense for calories, and only once there's an average
+  /// and a target to compare it against - both already guaranteed by the
+  /// caller.
+  static const double _kcalPerKg = 7700;
+
+  static const _projectionPeriods = [
+    (label: '2 meses', days: 61),
+    (label: '6 meses', days: 182),
+    (label: '2 anos', days: 730),
+  ];
+
+  Widget _buildProjectionCard(double dailyDiff) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.creamBackground,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Mantendo essa média, projeção de peso '
+            '(≈${_kcalPerKg.round()} kcal/kg):',
+            style: AppTheme.caption.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              for (final period in _projectionPeriods)
+                Expanded(
+                  child: _buildProjectionStat(
+                      period.label, dailyDiff, period.days),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectionStat(String label, double dailyDiff, int days) {
+    final kg = dailyDiff * days / _kcalPerKg;
+    final sign = kg > 0.05 ? '+' : '';
+    final color = kg > 0.05
+        ? AppTheme.primaryOrange
+        : kg < -0.05
+            ? const Color(0xFF81C784)
+            : AppTheme.mediumBrown;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTheme.caption),
+        const SizedBox(height: 2),
+        Text('$sign${formatNutrientAmount(kg)} kg',
+            style: AppTheme.valueBold.copyWith(color: color)),
+      ],
     );
   }
 

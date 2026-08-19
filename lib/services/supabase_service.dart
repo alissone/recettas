@@ -925,10 +925,16 @@ class SupabaseService {
   }
 
   static Future<void> updateProfile(
-      {String? displayName, String? avatarUrl}) async {
+      {String? displayName,
+      String? avatarUrl,
+      double? heightCm,
+      double? weightKg}) async {
     final updates = <String, dynamic>{};
     if (displayName != null) updates['display_name'] = displayName;
     if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
+    if (heightCm != null) updates['height_cm'] = heightCm;
+    if (weightKg != null) updates['weight_kg'] = weightKg;
+    if (updates.isEmpty) return;
 
     await _client
         .from('profiles')

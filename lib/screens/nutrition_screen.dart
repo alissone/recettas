@@ -36,6 +36,11 @@ class _NutritionScreenState extends State<NutritionScreen> {
   /// that is - and what's in it - is owned by NutrientTargetsScreen.
   Map<NutrientId, double> _targets = {};
 
+  /// Height and current weight from the profile, for the weight/BMI
+  /// projection under the calorie trend. Null until set on Profile.
+  double? _heightCm;
+  double? _weightKg;
+
   /// Entries for the whole visible range; the day's list is filtered out
   /// of this so paging a day never costs a second request.
   List<FoodEntry> _rangeEntries = [];
@@ -82,9 +87,17 @@ class _NutritionScreenState extends State<NutritionScreen> {
       final sets = await SupabaseService.getRecommendationSets();
 
       String? activeSetId;
+      double? heightCm;
+      double? weightKg;
       try {
         final profile = await SupabaseService.getProfile();
         activeSetId = profile?['active_recommendation_set_id'];
+        heightCm = profile?['height_cm'] != null
+            ? double.tryParse(profile!['height_cm'].toString())
+            : null;
+        weightKg = profile?['weight_kg'] != null
+            ? double.tryParse(profile!['weight_kg'].toString())
+            : null;
       } catch (_) {
         // Profile row missing: just run without targets.
       }
@@ -101,6 +114,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
         _foods = foods;
         _packages = packages;
         _recipes = recipes;
+        _heightCm = heightCm;
+        _weightKg = weightKg;
       });
       await _loadTargets(activeSetId);
       await _load();
@@ -922,6 +937,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
   ];
 
   Widget _buildProjectionCard(double dailyDiff) {
+    final weight = _weightKg;
+    final height = _heightCm;
     return Container(
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(12),
@@ -947,6 +964,46 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 ),
             ],
           ),
+          if (weight != null) ...[
+            const SizedBox(height: 16),
+            Text('Peso previsto',
+                style:
+                    AppTheme.caption.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                for (final period in _projectionPeriods)
+                  Expanded(
+                    child: _buildWeightStat(
+                        period.label, weight, dailyDiff, period.days),
+                  ),
+              ],
+            ),
+          ],
+          if (weight != null && height != null && height > 0) ...[
+            const SizedBox(height: 16),
+            Text('IMC previsto',
+                style:
+                    AppTheme.caption.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                for (final period in _projectionPeriods)
+                  Expanded(
+                    child: _buildBmiStat(period.label, weight, height,
+                        dailyDiff, period.days),
+                  ),
+              ],
+            ),
+          ],
+          if (weight == null || height == null || height <= 0) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Informe altura e peso no seu perfil para ver o peso e o '
+              'IMC previstos.',
+              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+            ),
+          ],
         ],
       ),
     );
@@ -969,6 +1026,55 @@ class _NutritionScreenState extends State<NutritionScreen> {
             style: AppTheme.valueBold.copyWith(color: color)),
       ],
     );
+  }
+
+  Widget _buildWeightStat(
+      String label, double weight, double dailyDiff, int days) {
+    final projected = weight + dailyDiff * days / _kcalPerKg;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTheme.caption),
+        const SizedBox(height: 2),
+        Text('${formatNutrientAmount(projected)} kg',
+            style: AppTheme.valueBold),
+      ],
+    );
+  }
+
+  Widget _buildBmiStat(String label, double weight, double heightCm,
+      double dailyDiff, int days) {
+    final projectedWeight = weight + dailyDiff * days / _kcalPerKg;
+    final heightM = heightCm / 100;
+    final bmi = projectedWeight / (heightM * heightM);
+    final classification = _classifyBmi(bmi);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTheme.caption),
+        const SizedBox(height: 2),
+        Text(formatNutrientAmount(bmi),
+            style: AppTheme.valueBold
+                .copyWith(color: classification.$2)),
+        Text(classification.$1,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.caption.copyWith(
+                color: classification.$2, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+
+  /// WHO adult BMI bands. Same orange used for both "abaixo do peso" and
+  /// "sobrepeso" - both read as "not the target band" - with green
+  /// reserved for the ideal range and red shades for the obesity classes.
+  (String, Color) _classifyBmi(double bmi) {
+    if (bmi < 18.5) return ('Abaixo do peso', AppTheme.primaryOrange);
+    if (bmi < 25) return ('Peso ideal', const Color(0xFF81C784));
+    if (bmi < 30) return ('Sobrepeso', AppTheme.primaryOrange);
+    if (bmi < 35) return ('Obesidade grau I', Colors.red.shade400);
+    if (bmi < 40) return ('Obesidade grau II', Colors.red.shade600);
+    return ('Obesidade grau III', Colors.red.shade800);
   }
 
   void _selectTrendDay(

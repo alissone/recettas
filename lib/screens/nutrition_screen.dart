@@ -5,6 +5,7 @@ import '../app_theme.dart';
 import '../models/energy_estimate.dart';
 import '../models/food.dart';
 import '../models/nutrient.dart';
+import '../models/nutrient_daily_values.dart';
 import '../models/nutrient_risks.dart';
 import '../models/recipe.dart';
 import '../models/weight_entry.dart';
@@ -475,15 +476,50 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   // --- Derived data ---
 
+  /// The value to compare intake against for [id]: the active
+  /// recommendation set's number when it has one, otherwise the FDA Daily
+  /// Value (nutrient_daily_values.dart) - which is how nutrients absent
+  /// from the shared ANVISA preset (most vitamins and trace minerals)
+  /// still get a Meta/% Meta and can be checked for alerts.
+  double? _effectiveTarget(NutrientId id) {
+    if (id == NutrientId.calories) {
+      return _energyEstimate?.goalCalories ?? _targets[id];
+    }
+    if (id == NutrientId.addedSugar) return _addedSugarLimitG;
+    final manual = _targets[id];
+    if (manual != null && manual > 0) return manual;
+    return fdaDailyValues[id];
+  }
+
+  /// FDA guidance is added sugar under 10% of total calories, not a fixed
+  /// gram number - so this converts that percentage (at 4 kcal/g) using
+  /// whichever calorie target is available, falling back to the flat 50g
+  /// label figure (10% of a 2000 kcal diet) only when no calorie target
+  /// exists at all.
+  double? get _addedSugarLimitG {
+    final calorieRef = _effectiveTarget(NutrientId.calories);
+    if (calorieRef == null || calorieRef <= 0) {
+      return fdaDailyValues[NutrientId.addedSugar];
+    }
+    return calorieRef * 0.10 / 4;
+  }
+
   /// Rows for the selected category: everything with a target or an
-  /// actual intake. Nutrients nobody tracks stay out of the way.
+  /// actual intake. Nutrients nobody tracks stay out of the way. The
+  /// visibility check stays keyed to the manually-set target only - an
+  /// FDA fallback shouldn't make every untracked vitamin appear at zero -
+  /// but a row that's shown this way still gets the fuller target so its
+  /// bar reads as a percentage instead of a bare number.
   List<_NutrientRow> _rowsFor(Map<NutrientId, double> totals) {
     final rows = <_NutrientRow>[];
     for (final nutrient in _catalog.values) {
       if (nutrient.category != _category) continue;
       final intake = totals[nutrient.id] ?? 0;
-      final target = _targets[nutrient.id];
-      if (intake <= 0 && (target == null || target <= 0)) continue;
+      final manualTarget = _targets[nutrient.id];
+      if (intake <= 0 && (manualTarget == null || manualTarget <= 0)) {
+        continue;
+      }
+      final target = _effectiveTarget(nutrient.id);
       rows.add(_NutrientRow(
         nutrient: nutrient,
         intake: intake,
@@ -802,11 +838,12 @@ class _NutritionScreenState extends State<NutritionScreen> {
     // For calories, an estimated goal from the body-profile form (RMR +
     // activity + exercise + TEF, adjusted for the stated goal/rate) takes
     // over from the manually-set recommendation, once there's enough
-    // profile data to compute one. Every other nutrient keeps the manual
-    // target as before.
+    // profile data to compute one. Every other nutrient falls back to the
+    // FDA Daily Value when the active recommendation set has nothing to
+    // say about it - see _effectiveTarget.
     final isCalories = nutrient.id == NutrientId.calories;
     final energyEstimate = isCalories ? _energyEstimate : null;
-    final target = energyEstimate?.goalCalories ?? _targets[nutrient.id];
+    final target = _effectiveTarget(nutrient.id);
     // The projection below has to compare intake against true maintenance
     // (TDEE), not the goal-adjusted target - otherwise a deliberate
     // deficit/surplus baked into the goal would cancel itself out of the
@@ -1431,47 +1468,82 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  /// Flags today's intake far below or above its daily target, against the
-  /// reference texts in [nutrientRisks]. A target has to be set (from the
-  /// active recommendation set) and something has to have actually been
-  /// logged for that nutrient - most foods carry data for only a fraction
-  /// of the catalog, so treating an untracked zero as a deficiency would
-  /// flood the card with noise from nutrients nobody measured today.
+  /// Nutrients whose target is a ceiling ("less than X") rather than a
+  /// minimum to reach. Going under is fine - even ideal - so only
+  /// exceeding 100% of the target is ever worth flagging; the usual
+  /// "only alarm at double the target" leniency (see below) doesn't apply
+  /// either, since clearing a "less than" limit at all is already the
+  /// thing being warned about.
+  static const Set<NutrientId> _ceilingNutrients = {
+    NutrientId.fat,
+    NutrientId.saturatedFat,
+    NutrientId.transFat,
+    NutrientId.cholesterol,
+    NutrientId.sodium,
+    NutrientId.addedSugar,
+  };
+
+  /// Flags today's intake against its target ([_effectiveTarget]: the
+  /// active recommendation set's number, or the FDA Daily Value fallback)
+  /// using the reference texts in [nutrientRisks]. Something has to have
+  /// actually been logged for the nutrient - most foods carry data for
+  /// only a fraction of the catalog, so treating an untracked zero as a
+  /// deficiency would flood the card with noise from nutrients nobody
+  /// measured today.
   List<_NutrientAlert> get _nutrientAlerts {
     final totals = calculateTotals(_dayEntries);
     final alerts = <_NutrientAlert>[];
     for (final nutrient in _catalog.values) {
-      final target = _targets[nutrient.id];
-      if (target == null || target <= 0) continue;
       final intake = totals[nutrient.id] ?? 0;
       if (intake <= 0) continue;
+      final target = _effectiveTarget(nutrient.id);
+      if (target == null || target <= 0) continue;
       final risk = nutrientRisksById[nutrient.id.name];
       if (risk == null) continue;
       final ratio = intake / target;
-      // Thresholds are deliberately loose - half the target for a
-      // deficiency, double for an excess - so a single day a bit off
-      // target doesn't trigger a false alarm (see nutrient_risks.dart's
-      // notes on excessoReferencia doses).
-      if (ratio < 0.5 && risk.deficiencia != null) {
+      final isCeiling = _ceilingNutrients.contains(nutrient.id);
+
+      if (ratio > 1 && risk.excesso != null) {
+        // A ceiling nutrient (sodium, added sugar, ...) is flagged the
+        // moment it clears its limit; every other nutrient only once
+        // intake doubles its target, per nutrient_risks.dart's own
+        // dosing notes - a mild overage of an RDA rarely means anything,
+        // the toxicity references there are usually several times over.
+        if (isCeiling || ratio >= 2.0) {
+          alerts.add(_NutrientAlert(
+            nutrient: nutrient,
+            risk: risk,
+            kind: _AlertKind.excess,
+            severity: _severityFor(ratio - 1),
+            ratio: ratio,
+          ));
+        }
+      } else if (ratio < 1 && !isCeiling && risk.deficiencia != null) {
         alerts.add(_NutrientAlert(
           nutrient: nutrient,
           risk: risk,
           kind: _AlertKind.deficiency,
-          ratio: ratio,
-        ));
-      } else if (ratio >= 2.0 && risk.excesso != null) {
-        alerts.add(_NutrientAlert(
-          nutrient: nutrient,
-          risk: risk,
-          kind: _AlertKind.excess,
+          severity: _severityFor(1 - ratio),
           ratio: ratio,
         ));
       }
     }
-    // Farthest from the target leads.
-    alerts.sort(
-        (a, b) => (b.ratio - 1).abs().compareTo((a.ratio - 1).abs()));
+    // Most severe first; farthest from the target breaks ties.
+    alerts.sort((a, b) {
+      final bySeverity = b.severity.index.compareTo(a.severity.index);
+      if (bySeverity != 0) return bySeverity;
+      return (b.ratio - 1).abs().compareTo((a.ratio - 1).abs());
+    });
     return alerts;
+  }
+
+  /// Icon/color tier for how far intake sits from the target: within 20%
+  /// reads as a mild heads-up, within 50% as a warning, beyond that as
+  /// critical.
+  _AlertSeverity _severityFor(double deviation) {
+    if (deviation <= 0.19) return _AlertSeverity.info;
+    if (deviation <= 0.50) return _AlertSeverity.warning;
+    return _AlertSeverity.critical;
   }
 
   Widget _buildNutrientAlertsCard() {
@@ -1520,7 +1592,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   Widget _buildAlertRow(_NutrientAlert alert) {
     final isExcess = alert.kind == _AlertKind.excess;
-    final color = isExcess ? Colors.red.shade400 : AppTheme.primaryOrange;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: InkWell(
@@ -1529,8 +1600,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(isExcess ? Icons.arrow_upward : Icons.arrow_downward,
-                size: 16, color: color),
+            Icon(alert.icon, size: 18, color: alert.color),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -1797,12 +1867,17 @@ const List<_HealthyFoodRef> _healthyFoodRefs = [
 
 enum _AlertKind { deficiency, excess }
 
+/// How far intake sits from the target, from a mild heads-up to a
+/// SOS-worthy extreme. Drives both the row's icon and its color.
+enum _AlertSeverity { info, warning, critical }
+
 /// A nutrient whose intake today landed far enough from its target to
 /// surface the matching [NutrientRisk] text on the alerts card.
 class _NutrientAlert {
   final Nutrient nutrient;
   final NutrientRisk risk;
   final _AlertKind kind;
+  final _AlertSeverity severity;
 
   /// Intake divided by target, e.g. 0.3 for 30% of the target.
   final double ratio;
@@ -1811,11 +1886,24 @@ class _NutrientAlert {
     required this.nutrient,
     required this.risk,
     required this.kind,
+    required this.severity,
     required this.ratio,
   });
 
   String get text =>
       (kind == _AlertKind.deficiency ? risk.deficiencia : risk.excesso)!;
+
+  IconData get icon => switch (severity) {
+        _AlertSeverity.info => Icons.info_outline,
+        _AlertSeverity.warning => Icons.warning_amber_rounded,
+        _AlertSeverity.critical => Icons.sos_rounded,
+      };
+
+  Color get color => switch (severity) {
+        _AlertSeverity.info => AppTheme.mediumBrown,
+        _AlertSeverity.warning => AppTheme.primaryOrange,
+        _AlertSeverity.critical => Colors.red.shade400,
+      };
 }
 
 /// One line of the daily chart.

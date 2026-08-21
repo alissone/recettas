@@ -15,6 +15,7 @@ import '../models/recipe.dart';
 import '../models/shopping_item.dart';
 import '../models/sleep_event.dart';
 import '../models/weight_entry.dart';
+import 'product_page_parser.dart';
 
 class SupabaseService {
   static SupabaseClient get _client => Supabase.instance.client;
@@ -539,6 +540,40 @@ class SupabaseService {
 
   static Future<void> deleteFoodPackage(String id) async {
     await _client.from('food_packages').delete().eq('id', id);
+  }
+
+  /// Inserts or updates a food this user scanned (product_scanner_screen.dart)
+  /// plus its recognized nutrients, as one call. [foodId] is the uuid5 from
+  /// ProductPageParser.foodUuidFor - re-scanning the same product updates
+  /// this user's own row instead of duplicating it. Throws
+  /// [PostgrestException] with code '42501' if [foodId] belongs to the
+  /// shared catalog or another user, since foods RLS only allows updating
+  /// rows this user owns.
+  static Future<void> upsertScannedFood({
+    required String foodId,
+    required String name,
+    String? brand,
+    required double baseAmount,
+    required String baseUnit,
+    required List<ParsedNutritionRow> nutrients,
+  }) async {
+    await _client.from('foods').upsert({
+      'id': foodId,
+      'user_id': currentUser!.id,
+      'name': name,
+      'brand': brand,
+      'base_amount': baseAmount,
+      'base_unit': baseUnit,
+    });
+    if (nutrients.isEmpty) return;
+    await _client.from('food_nutrients').upsert([
+      for (final n in nutrients)
+        {
+          'food_id': foodId,
+          'nutrient_id': n.nutrientId.name,
+          'amount': n.amount,
+        },
+    ], onConflict: 'food_id,nutrient_id');
   }
 
   /// Food log between two YYYY-MM-DD dates, [toDateExclusive] excluded.

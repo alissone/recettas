@@ -10,6 +10,7 @@ import 'date_calculator_screen.dart';
 import 'gps_tracker_screen.dart';
 import 'harpa_screen.dart';
 import 'home_shell.dart' show showNoInternetBanner;
+import 'product_scanner_screen.dart';
 import 'profile_screen.dart';
 import 'report_screen.dart';
 import 'sleep_screen.dart';
@@ -88,6 +89,12 @@ class _MoreScreenState extends State<MoreScreen> {
               title: 'Relatório de gastos',
               subtitle: 'Gráficos mensais das compras',
               screen: const ReportScreen(),
+            ),
+            _buildUtilityTile(
+              icon: Icons.qr_code_scanner,
+              title: 'Escanear produto',
+              subtitle: 'Importe a tabela nutricional de um site',
+              screen: const ProductScannerScreen(),
             ),
             _buildUtilityTile(
               icon: Icons.calendar_month_outlined,

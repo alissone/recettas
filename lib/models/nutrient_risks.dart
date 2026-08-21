@@ -695,7 +695,8 @@ final List<NutrientRisk> nutrientRisks = [
   NutrientRisk(
     id: 'vitaminK',
     nutrient: 'Vitamina K (Filoquinona)',
-    deficiencia: 'Sangramento excessivo, coagulação prejudicada.',
+    deficiencia: 'Sangramento excessivo, coagulação prejudicada, especialmente '
+    'durante menstruação.',
     excesso: 'Sem toxicidade estabelecida pela forma alimentar (K1); '
         'principal cuidado é interação com anticoagulantes como varfarina, '
         'reduzindo seu efeito.',

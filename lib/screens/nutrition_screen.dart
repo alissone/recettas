@@ -1325,43 +1325,12 @@ class _NutritionScreenState extends State<NutritionScreen> {
   Future<void> _quickWeightCheckIn() async {
     final latest =
         _weightHistory.isNotEmpty ? _weightHistory.last.weightKg : _weightKg;
-    final controller = TextEditingController(
-        text: latest != null ? formatQuantity(latest) : '');
-    final saved = await showDialog<bool>(
+    final result = await showDialog<_QuickWeightResult>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.creamBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        ),
-        title: const Text('Registrar peso'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(suffixText: 'kg'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar',
-                style: TextStyle(color: AppTheme.mediumBrown)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Salvar',
-                style: TextStyle(
-                    color: AppTheme.primaryOrange,
-                    fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
+      builder: (_) => _QuickWeightDialog(initialWeight: latest),
     );
-    final weight =
-        double.tryParse(controller.text.trim().replaceAll(',', '.'));
-    controller.dispose();
-    if (saved != true || !mounted) return;
-    if (weight == null || weight <= 0) return;
+    if (result == null || !mounted) return;
+    final weight = result.weight;
 
     try {
       await SupabaseService.addWeightEntry(weight);
@@ -1514,7 +1483,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
             nutrient: nutrient,
             risk: risk,
             kind: _AlertKind.excess,
-            severity: _severityFor(ratio - 1),
             ratio: ratio,
           ));
         }
@@ -1523,27 +1491,13 @@ class _NutritionScreenState extends State<NutritionScreen> {
           nutrient: nutrient,
           risk: risk,
           kind: _AlertKind.deficiency,
-          severity: _severityFor(1 - ratio),
           ratio: ratio,
         ));
       }
     }
-    // Most severe first; farthest from the target breaks ties.
-    alerts.sort((a, b) {
-      final bySeverity = b.severity.index.compareTo(a.severity.index);
-      if (bySeverity != 0) return bySeverity;
-      return (b.ratio - 1).abs().compareTo((a.ratio - 1).abs());
-    });
+    // Most severe (reddest) first.
+    alerts.sort((a, b) => b._severity.compareTo(a._severity));
     return alerts;
-  }
-
-  /// Icon/color tier for how far intake sits from the target: within 20%
-  /// reads as a mild heads-up, within 50% as a warning, beyond that as
-  /// critical.
-  _AlertSeverity _severityFor(double deviation) {
-    if (deviation <= 0.19) return _AlertSeverity.info;
-    if (deviation <= 0.50) return _AlertSeverity.warning;
-    return _AlertSeverity.critical;
   }
 
   Widget _buildNutrientAlertsCard() {
@@ -1660,6 +1614,97 @@ class _NutritionScreenState extends State<NutritionScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _QuickWeightResult {
+  final double weight;
+
+  const _QuickWeightResult(this.weight);
+}
+
+/// Owns its own controller so it gets disposed by the framework once the
+/// dialog route is actually removed from the tree - popping the route and
+/// disposing the controller right away, from the caller, races the
+/// closing fade animation and disposes it while still in use.
+class _QuickWeightDialog extends StatefulWidget {
+  final double? initialWeight;
+
+  const _QuickWeightDialog({this.initialWeight});
+
+  @override
+  State<_QuickWeightDialog> createState() => _QuickWeightDialogState();
+}
+
+class _QuickWeightDialogState extends State<_QuickWeightDialog> {
+  late final TextEditingController _controller;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+        text: widget.initialWeight != null
+            ? formatQuantity(widget.initialWeight!)
+            : '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final weight =
+        double.tryParse(_controller.text.trim().replaceAll(',', '.'));
+    if (weight == null || weight <= 0) {
+      setState(() => _error = 'Digite um peso válido.');
+      return;
+    }
+    Navigator.pop(context, _QuickWeightResult(weight));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.creamBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      ),
+      title: const Text('Registrar peso'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(_error!,
+                  style: TextStyle(color: Colors.red.shade700)),
+            ),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(suffixText: 'kg'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar',
+              style: TextStyle(color: AppTheme.mediumBrown)),
+        ),
+        TextButton(
+          onPressed: _submit,
+          child: const Text('Salvar',
+              style: TextStyle(
+                  color: AppTheme.primaryOrange, fontWeight: FontWeight.w700)),
+        ),
+      ],
     );
   }
 }
@@ -1867,17 +1912,12 @@ const List<_HealthyFoodRef> _healthyFoodRefs = [
 
 enum _AlertKind { deficiency, excess }
 
-/// How far intake sits from the target, from a mild heads-up to a
-/// SOS-worthy extreme. Drives both the row's icon and its color.
-enum _AlertSeverity { info, warning, critical }
-
 /// A nutrient whose intake today landed far enough from its target to
 /// surface the matching [NutrientRisk] text on the alerts card.
 class _NutrientAlert {
   final Nutrient nutrient;
   final NutrientRisk risk;
   final _AlertKind kind;
-  final _AlertSeverity severity;
 
   /// Intake divided by target, e.g. 0.3 for 30% of the target.
   final double ratio;
@@ -1886,24 +1926,34 @@ class _NutrientAlert {
     required this.nutrient,
     required this.risk,
     required this.kind,
-    required this.severity,
     required this.ratio,
   });
 
   String get text =>
       (kind == _AlertKind.deficiency ? risk.deficiencia : risk.excesso)!;
 
-  IconData get icon => switch (severity) {
-        _AlertSeverity.info => Icons.info_outline,
-        _AlertSeverity.warning => Icons.warning_amber_rounded,
-        _AlertSeverity.critical => Icons.sos_rounded,
-      };
+  bool get _isExcess => kind == _AlertKind.excess;
 
-  Color get color => switch (severity) {
-        _AlertSeverity.info => AppTheme.mediumBrown,
-        _AlertSeverity.warning => AppTheme.primaryOrange,
-        _AlertSeverity.critical => Colors.red.shade400,
-      };
+  IconData get icon => _isExcess
+      ? Icons.arrow_circle_up_rounded
+      : Icons.arrow_circle_down_rounded;
+
+  /// How far off target intake is, 0 (barely) to 1 (as bad as it gets).
+  /// The 1.0 end is calibrated to double the target for an excess and a
+  /// tenth of it for a deficiency - the two reference points the color
+  /// scale was tuned against. Drives both [color] and the alert list's
+  /// sort order.
+  double get _severity {
+    final cap = _isExcess ? 1.0 : 0.9;
+    final deviation = _isExcess ? (ratio - 1) : (1 - ratio);
+    return (deviation / cap).clamp(0.0, 1.0);
+  }
+
+  /// A continuous heatmap instead of stepped severity tiers: orange at
+  /// the mild end, deepening to a saturated red as intake gets further
+  /// from target.
+  Color get color =>
+      Color.lerp(AppTheme.primaryOrange, Colors.red.shade900, _severity)!;
 }
 
 /// One line of the daily chart.

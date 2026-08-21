@@ -1104,3 +1104,9 @@ final List<NutrientRisk> nutrientRisks = [
         '<250mg).',
   ),
 ];
+
+/// [nutrientRisks] indexed by id, for a direct lookup instead of a linear
+/// scan every time a nutrient's alert text is needed.
+final Map<String, NutrientRisk> nutrientRisksById = {
+  for (final risk in nutrientRisks) risk.id: risk,
+};

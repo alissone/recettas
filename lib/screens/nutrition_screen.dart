@@ -5,6 +5,7 @@ import '../app_theme.dart';
 import '../models/energy_estimate.dart';
 import '../models/food.dart';
 import '../models/nutrient.dart';
+import '../models/nutrient_risks.dart';
 import '../models/recipe.dart';
 import '../models/weight_entry.dart';
 import '../services/supabase_service.dart';
@@ -597,6 +598,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
                       _buildEntryList(),
                       const SizedBox(height: 20),
                       _buildWeightHistoryCard(),
+                      const SizedBox(height: 20),
+                      _buildNutrientAlertsCard(),
                     ],
                   ),
       ),
@@ -1279,6 +1282,68 @@ class _NutritionScreenState extends State<NutritionScreen> {
     return averages;
   }
 
+  /// Quick check-in for the "Peso corporal" card: logs a new weight-history
+  /// entry and updates the profile's current weight, without leaving the
+  /// Nutrition tab for the full body-profile form.
+  Future<void> _quickWeightCheckIn() async {
+    final latest =
+        _weightHistory.isNotEmpty ? _weightHistory.last.weightKg : _weightKg;
+    final controller = TextEditingController(
+        text: latest != null ? formatQuantity(latest) : '');
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.creamBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        ),
+        title: const Text('Registrar peso'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(suffixText: 'kg'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar',
+                style: TextStyle(color: AppTheme.mediumBrown)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Salvar',
+                style: TextStyle(
+                    color: AppTheme.primaryOrange,
+                    fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    final weight =
+        double.tryParse(controller.text.trim().replaceAll(',', '.'));
+    controller.dispose();
+    if (saved != true || !mounted) return;
+    if (weight == null || weight <= 0) return;
+
+    try {
+      await SupabaseService.addWeightEntry(weight);
+      await SupabaseService.updateProfile(weightKg: weight);
+      final weightHistory = await SupabaseService.getWeightEntries(
+          from: DateTime.now().subtract(const Duration(days: 182)));
+      if (!mounted) return;
+      setState(() {
+        _weightHistory = weightHistory;
+        _profile = {...?_profile, 'weight_kg': weight};
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Falha ao registrar peso: $e')));
+      }
+    }
+  }
+
   Widget _buildWeightHistoryCard() {
     final weekCutoff = DateTime.now().subtract(const Duration(days: 7));
     final weekPoints = _weightHistory
@@ -1298,7 +1363,20 @@ class _NutritionScreenState extends State<NutritionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Peso corporal', style: AppTheme.sectionTitle),
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Peso corporal', style: AppTheme.sectionTitle),
+              ),
+              IconButton(
+                onPressed: _quickWeightCheckIn,
+                icon: const Icon(Icons.monitor_weight_outlined),
+                color: AppTheme.primaryOrange,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Registrar peso',
+              ),
+            ],
+          ),
           if (_weightHistory.isEmpty) ...[
             const SizedBox(height: 8),
             Text(
@@ -1349,6 +1427,168 @@ class _NutritionScreenState extends State<NutritionScreen> {
               ? (d) => kWeekdaysShort[d.weekday - 1]
               : formatDayMonth,
         ),
+      ),
+    );
+  }
+
+  /// Flags today's intake far below or above its daily target, against the
+  /// reference texts in [nutrientRisks]. A target has to be set (from the
+  /// active recommendation set) and something has to have actually been
+  /// logged for that nutrient - most foods carry data for only a fraction
+  /// of the catalog, so treating an untracked zero as a deficiency would
+  /// flood the card with noise from nutrients nobody measured today.
+  List<_NutrientAlert> get _nutrientAlerts {
+    final totals = calculateTotals(_dayEntries);
+    final alerts = <_NutrientAlert>[];
+    for (final nutrient in _catalog.values) {
+      final target = _targets[nutrient.id];
+      if (target == null || target <= 0) continue;
+      final intake = totals[nutrient.id] ?? 0;
+      if (intake <= 0) continue;
+      final risk = nutrientRisksById[nutrient.id.name];
+      if (risk == null) continue;
+      final ratio = intake / target;
+      // Thresholds are deliberately loose - half the target for a
+      // deficiency, double for an excess - so a single day a bit off
+      // target doesn't trigger a false alarm (see nutrient_risks.dart's
+      // notes on excessoReferencia doses).
+      if (ratio < 0.5 && risk.deficiencia != null) {
+        alerts.add(_NutrientAlert(
+          nutrient: nutrient,
+          risk: risk,
+          kind: _AlertKind.deficiency,
+          ratio: ratio,
+        ));
+      } else if (ratio >= 2.0 && risk.excesso != null) {
+        alerts.add(_NutrientAlert(
+          nutrient: nutrient,
+          risk: risk,
+          kind: _AlertKind.excess,
+          ratio: ratio,
+        ));
+      }
+    }
+    // Farthest from the target leads.
+    alerts.sort(
+        (a, b) => (b.ratio - 1).abs().compareTo((a.ratio - 1).abs()));
+    return alerts;
+  }
+
+  Widget _buildNutrientAlertsCard() {
+    final alerts = _nutrientAlerts;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  size: 18, color: AppTheme.primaryOrange),
+              SizedBox(width: 6),
+              Text('Alertas nutricionais', style: AppTheme.sectionTitle),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (alerts.isEmpty)
+            Text(
+              'Nada fora do esperado hoje, com base nos alimentos '
+              'registrados e nas suas metas diárias.',
+              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+            )
+          else
+            for (final alert in alerts) _buildAlertRow(alert),
+          const SizedBox(height: 12),
+          Text(
+            'Estes alertas são informativos e não substituem orientação '
+            'de um médico ou nutricionista.',
+            style: AppTheme.caption.copyWith(
+              fontWeight: FontWeight.w400,
+              fontStyle: FontStyle.italic,
+              color: AppTheme.mediumBrown.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlertRow(_NutrientAlert alert) {
+    final isExcess = alert.kind == _AlertKind.excess;
+    final color = isExcess ? Colors.red.shade400 : AppTheme.primaryOrange;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusTiny),
+        onTap: () => _showAlertDetails(alert),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(isExcess ? Icons.arrow_upward : Icons.arrow_downward,
+                size: 16, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(alert.nutrient.name,
+                      style: AppTheme.bodyText
+                          .copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    '${(alert.ratio * 100).round()}% da meta · '
+                    '${isExcess ? 'acima do esperado' : 'abaixo do esperado'}',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right,
+                size: 18, color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAlertDetails(_NutrientAlert alert) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.creamBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        ),
+        title: Text(alert.nutrient.name),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(alert.text, style: AppTheme.bodyText),
+              if (alert.kind == _AlertKind.excess &&
+                  alert.risk.excessoReferencia != null) ...[
+                const SizedBox(height: 12),
+                Text('Referência do estudo',
+                    style: AppTheme.caption
+                        .copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(alert.risk.excessoReferencia!, style: AppTheme.caption),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar',
+                style: TextStyle(color: AppTheme.primaryOrange)),
+          ),
+        ],
       ),
     );
   }
@@ -1554,6 +1794,29 @@ const List<_HealthyFoodRef> _healthyFoodRefs = [
       'porções de castanha-do-pará', 65),
   _HealthyFoodRef('abacate', 'abacates', 320),
 ];
+
+enum _AlertKind { deficiency, excess }
+
+/// A nutrient whose intake today landed far enough from its target to
+/// surface the matching [NutrientRisk] text on the alerts card.
+class _NutrientAlert {
+  final Nutrient nutrient;
+  final NutrientRisk risk;
+  final _AlertKind kind;
+
+  /// Intake divided by target, e.g. 0.3 for 30% of the target.
+  final double ratio;
+
+  const _NutrientAlert({
+    required this.nutrient,
+    required this.risk,
+    required this.kind,
+    required this.ratio,
+  });
+
+  String get text =>
+      (kind == _AlertKind.deficiency ? risk.deficiencia : risk.excesso)!;
+}
 
 /// One line of the daily chart.
 class _NutrientRow {

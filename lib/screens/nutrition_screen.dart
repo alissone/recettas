@@ -5,6 +5,7 @@ import '../app_theme.dart';
 import '../models/food.dart';
 import '../models/nutrient.dart';
 import '../models/recipe.dart';
+import '../models/weight_entry.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
 import 'food_library_screen.dart';
@@ -40,6 +41,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
   /// projection under the calorie trend. Null until set on Profile.
   double? _heightCm;
   double? _weightKg;
+
+  /// Check-ins from the last ~6 months, for the body weight card. Both its
+  /// charts are sliced out of this one list rather than queried twice.
+  List<WeightEntry> _weightHistory = [];
 
   /// Entries for the whole visible range; the day's list is filtered out
   /// of this so paging a day never costs a second request.
@@ -85,6 +90,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
       final packages = await SupabaseService.getFoodPackages();
       final recipes = await _loggableRecipes(catalog);
       final sets = await SupabaseService.getRecommendationSets();
+      final weightHistory = await SupabaseService.getWeightEntries(
+          from: DateTime.now().subtract(const Duration(days: 182)));
 
       String? activeSetId;
       double? heightCm;
@@ -116,6 +123,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
         _recipes = recipes;
         _heightCm = heightCm;
         _weightKg = weightKg;
+        _weightHistory = weightHistory;
       });
       await _loadTargets(activeSetId);
       await _load();
@@ -577,6 +585,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
                       ],
                       const SizedBox(height: 20),
                       _buildEntryList(),
+                      const SizedBox(height: 20),
+                      _buildWeightHistoryCard(),
                     ],
                   ),
       ),
@@ -1183,6 +1193,104 @@ class _NutritionScreenState extends State<NutritionScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// Monday at midnight of the week [d] falls in - the bucket key for the
+  /// weekly-average chart.
+  DateTime _weekStart(DateTime d) {
+    final date = DateTime(d.year, d.month, d.day);
+    return date.subtract(Duration(days: date.weekday - 1));
+  }
+
+  /// One average per week that has at least one check-in; weeks with none
+  /// are simply absent rather than interpolated or shown as zero.
+  List<MapEntry<DateTime, double>> get _weeklyWeightAverages {
+    final sums = <DateTime, double>{};
+    final counts = <DateTime, int>{};
+    for (final entry in _weightHistory) {
+      final week = _weekStart(entry.recordedAt);
+      sums[week] = (sums[week] ?? 0) + entry.weightKg;
+      counts[week] = (counts[week] ?? 0) + 1;
+    }
+    final averages = [
+      for (final week in sums.keys) MapEntry(week, sums[week]! / counts[week]!),
+    ];
+    averages.sort((a, b) => a.key.compareTo(b.key));
+    return averages;
+  }
+
+  Widget _buildWeightHistoryCard() {
+    final weekCutoff = DateTime.now().subtract(const Duration(days: 7));
+    final weekPoints = _weightHistory
+        .where((e) => e.recordedAt.isAfter(weekCutoff))
+        .map((e) => MapEntry(e.recordedAt, e.weightKg))
+        .toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final monthPoints = _weeklyWeightAverages;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Peso corporal', style: AppTheme.sectionTitle),
+          if (_weightHistory.isEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Nenhum peso registrado ainda. Informe seu peso no perfil '
+              'para acompanhar aqui.',
+              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+            ),
+          ] else ...[
+            const SizedBox(height: 16),
+            Text('Esta semana',
+                style:
+                    AppTheme.caption.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            _buildWeightChart(weekPoints, weekView: true),
+            const SizedBox(height: 20),
+            Text('Últimos meses (média semanal)',
+                style:
+                    AppTheme.caption.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            _buildWeightChart(monthPoints, weekView: false),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeightChart(List<MapEntry<DateTime, double>> points,
+      {required bool weekView}) {
+    if (points.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: Text(
+            weekView
+                ? 'Nenhum peso registrado nos últimos 7 dias.'
+                : 'Ainda não há semanas com peso registrado.',
+            style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+          ),
+        ),
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) => CustomPaint(
+        size: Size(constraints.maxWidth, 140),
+        painter: _WeightLinePainter(
+          points: points,
+          labelForX: weekView
+              ? (d) => kWeekdaysShort[d.weekday - 1]
+              : formatDayMonth,
+        ),
       ),
     );
   }
@@ -1944,4 +2052,133 @@ class _NutrientTrendPainter extends CustomPainter {
         oldDelegate.weekView != weekView ||
         oldDelegate.selectedDay != selectedDay;
   }
+}
+
+/// A simple connected-dot line for the body weight card - one series,
+/// no target line, no day selection. [points] must be sorted ascending by
+/// date and non-empty.
+class _WeightLinePainter extends CustomPainter {
+  final List<MapEntry<DateTime, double>> points;
+  final String Function(DateTime) labelForX;
+
+  _WeightLinePainter({required this.points, required this.labelForX});
+
+  static const _leftLabelWidth = 40.0;
+  static const _bottomAxisHeight = 18.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final plotLeft = _leftLabelWidth;
+    final plotWidth = size.width - plotLeft - 4;
+    final plotBottom = size.height - _bottomAxisHeight;
+    if (plotWidth <= 0 || plotBottom <= 0) return;
+
+    var minY = points.first.value;
+    var maxY = points.first.value;
+    for (final p in points) {
+      minY = math.min(minY, p.value);
+      maxY = math.max(maxY, p.value);
+    }
+    if (minY == maxY) {
+      minY -= 1;
+      maxY += 1;
+    } else {
+      final pad = (maxY - minY) * 0.15;
+      minY -= pad;
+      maxY += pad;
+    }
+
+    final gridPaint = Paint()
+      ..color = AppTheme.mediumBrown.withValues(alpha: 0.12)
+      ..strokeWidth = 1;
+    for (final fraction in [0.0, 0.5, 1.0]) {
+      final y = plotBottom - plotBottom * fraction;
+      canvas.drawLine(
+          Offset(plotLeft, y), Offset(size.width, y), gridPaint);
+      _paintText(
+        canvas,
+        formatNutrientAmount(minY + (maxY - minY) * fraction),
+        Offset(plotLeft - 6, y),
+        anchorRight: true,
+        style: TextStyle(
+          fontSize: 9,
+          color: AppTheme.mediumBrown.withValues(alpha: 0.7),
+        ),
+      );
+    }
+
+    double xFor(int i) => points.length == 1
+        ? plotLeft + plotWidth / 2
+        : plotLeft + plotWidth * i / (points.length - 1);
+    double yFor(double value) => plotBottom -
+        plotBottom * ((value - minY) / (maxY - minY)).clamp(0.0, 1.0);
+
+    if (points.length > 1) {
+      final path = Path();
+      for (var i = 0; i < points.length; i++) {
+        final offset = Offset(xFor(i), yFor(points[i].value));
+        if (i == 0) {
+          path.moveTo(offset.dx, offset.dy);
+        } else {
+          path.lineTo(offset.dx, offset.dy);
+        }
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = AppTheme.primaryOrange
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke,
+      );
+    }
+
+    final dotPaint = Paint()..color = AppTheme.primaryOrange;
+    // At most ~6 x-axis labels, evenly spread, always including the ends -
+    // one per point would collide once a range has more than a handful.
+    final labelEvery = math.max(1, (points.length / 6).ceil());
+    for (var i = 0; i < points.length; i++) {
+      final x = xFor(i);
+      final y = yFor(points[i].value);
+      canvas.drawCircle(Offset(x, y), 3, dotPaint);
+
+      final isLast = i == points.length - 1;
+      if (i % labelEvery == 0 || isLast) {
+        _paintText(
+          canvas,
+          labelForX(points[i].key),
+          Offset(x, plotBottom + _bottomAxisHeight / 2),
+          anchorCenter: true,
+          style: TextStyle(
+            fontSize: 9,
+            color: AppTheme.mediumBrown.withValues(alpha: 0.7),
+          ),
+        );
+      }
+    }
+  }
+
+  void _paintText(
+    Canvas canvas,
+    String text,
+    Offset position, {
+    required TextStyle style,
+    bool anchorRight = false,
+    bool anchorCenter = false,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    var offset = Offset(position.dx, position.dy - painter.height / 2);
+    if (anchorRight) {
+      offset = offset.translate(-painter.width, 0);
+    } else if (anchorCenter) {
+      offset = offset.translate(-painter.width / 2, 0);
+    }
+    painter.paint(canvas, offset);
+  }
+
+  @override
+  bool shouldRepaint(_WeightLinePainter oldDelegate) =>
+      oldDelegate.points != points;
 }

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_theme.dart';
 import '../models/nutrient.dart' show formatQuantity;
 import '../services/supabase_service.dart';
+import 'body_profile_screen.dart';
 import 'home_shell.dart' show homeShellKey, showNoInternetBanner;
 
 class ProfileScreen extends StatefulWidget {
@@ -170,9 +171,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         _buildProfileCard(
           Icons.straighten,
-          'Altura e peso',
+          'Perfil físico',
           _bodyMetricsLabel(),
-          onTap: _editBodyMetrics,
+          onTap: _openBodyProfile,
         ),
         const SizedBox(height: 32),
         SizedBox(
@@ -266,32 +267,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return 'Toque para informar';
   }
 
-  Future<void> _editBodyMetrics() async {
-    final height = _profile?['height_cm'] != null
-        ? double.tryParse(_profile!['height_cm'].toString())
-        : null;
-    final weight = _profile?['weight_kg'] != null
-        ? double.tryParse(_profile!['weight_kg'].toString())
-        : null;
-
-    final result = await showDialog<_BodyMetricsResult>(
-      context: context,
-      builder: (_) =>
-          _BodyMetricsDialog(initialHeight: height, initialWeight: weight),
+  Future<void> _openBodyProfile() async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+          builder: (_) => BodyProfileScreen(profile: _profile)),
     );
-    if (result == null || !mounted) return;
-    if (result.height == null && result.weight == null) return;
-
-    try {
-      await SupabaseService.updateProfile(
-          heightCm: result.height, weightKg: result.weight);
-      await _loadProfile();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Falha ao salvar: $e')));
-      }
-    }
+    if (changed == true) await _loadProfile();
   }
 
   String _formatDate(DateTime date) {
@@ -451,115 +433,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               horizontal: 16, vertical: 16),
         ),
       ),
-    );
-  }
-}
-
-class _BodyMetricsResult {
-  final double? height;
-  final double? weight;
-
-  const _BodyMetricsResult(this.height, this.weight);
-}
-
-/// Owns its own controllers so they get disposed by the framework once the
-/// dialog route is actually removed from the tree - popping the route and
-/// disposing the controllers right away, from the caller, races the
-/// closing fade animation and disposes them while still in use.
-class _BodyMetricsDialog extends StatefulWidget {
-  final double? initialHeight;
-  final double? initialWeight;
-
-  const _BodyMetricsDialog({this.initialHeight, this.initialWeight});
-
-  @override
-  State<_BodyMetricsDialog> createState() => _BodyMetricsDialogState();
-}
-
-class _BodyMetricsDialogState extends State<_BodyMetricsDialog> {
-  late final TextEditingController _heightController;
-  late final TextEditingController _weightController;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _heightController = TextEditingController(
-        text: widget.initialHeight != null
-            ? formatQuantity(widget.initialHeight!)
-            : '');
-    _weightController = TextEditingController(
-        text: widget.initialWeight != null
-            ? formatQuantity(widget.initialWeight!)
-            : '');
-  }
-
-  @override
-  void dispose() {
-    _heightController.dispose();
-    _weightController.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final heightText = _heightController.text.trim().replaceAll(',', '.');
-    final weightText = _weightController.text.trim().replaceAll(',', '.');
-    final height = heightText.isEmpty ? null : double.tryParse(heightText);
-    final weight = weightText.isEmpty ? null : double.tryParse(weightText);
-    if ((heightText.isNotEmpty && height == null) ||
-        (weightText.isNotEmpty && weight == null)) {
-      setState(() => _error = 'Digite números válidos para altura e peso.');
-      return;
-    }
-    Navigator.pop(context, _BodyMetricsResult(height, weight));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppTheme.creamBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-      ),
-      title: const Text('Altura e peso'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(_error!,
-                  style: TextStyle(color: Colors.red.shade700)),
-            ),
-          TextField(
-            controller: _heightController,
-            autofocus: true,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-                labelText: 'Altura', suffixText: 'cm'),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _weightController,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-                labelText: 'Peso', suffixText: 'kg'),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: _submit,
-          child: const Text('Salvar',
-              style: TextStyle(color: AppTheme.primaryOrange)),
-        ),
-      ],
     );
   }
 }

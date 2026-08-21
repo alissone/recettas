@@ -14,6 +14,7 @@ import '../models/receipt_job.dart';
 import '../models/recipe.dart';
 import '../models/shopping_item.dart';
 import '../models/sleep_event.dart';
+import '../models/weight_entry.dart';
 
 class SupabaseService {
   static SupabaseClient get _client => Supabase.instance.client;
@@ -924,21 +925,99 @@ class SupabaseService {
     return data;
   }
 
-  static Future<void> updateProfile(
-      {String? displayName,
-      String? avatarUrl,
-      double? heightCm,
-      double? weightKg}) async {
+  static Future<void> updateProfile({
+    String? displayName,
+    String? avatarUrl,
+    double? heightCm,
+    double? weightKg,
+    String? sex,
+    int? age,
+    String? goal,
+    String? goalRate,
+    int? weightliftingDaysPerWeek,
+    int? weightliftingMinutesPerSession,
+    int? cardioDaysPerWeek,
+    String? cardioType,
+    int? cardioMinutesPerSession,
+    int? averageDailySteps,
+    String? occupationActivity,
+    double? bodyFatPercent,
+    String? cardioIntensity,
+    int? cardioHeartRate,
+    String? liftingIntensity,
+  }) async {
     final updates = <String, dynamic>{};
     if (displayName != null) updates['display_name'] = displayName;
     if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
     if (heightCm != null) updates['height_cm'] = heightCm;
     if (weightKg != null) updates['weight_kg'] = weightKg;
+    if (sex != null) updates['sex'] = sex;
+    if (age != null) updates['age'] = age;
+    if (goal != null) updates['goal'] = goal;
+    if (goalRate != null) updates['goal_rate'] = goalRate;
+    if (weightliftingDaysPerWeek != null) {
+      updates['weightlifting_days_per_week'] = weightliftingDaysPerWeek;
+    }
+    if (weightliftingMinutesPerSession != null) {
+      updates['weightlifting_minutes_per_session'] =
+          weightliftingMinutesPerSession;
+    }
+    if (cardioDaysPerWeek != null) {
+      updates['cardio_days_per_week'] = cardioDaysPerWeek;
+    }
+    if (cardioType != null) updates['cardio_type'] = cardioType;
+    if (cardioMinutesPerSession != null) {
+      updates['cardio_minutes_per_session'] = cardioMinutesPerSession;
+    }
+    if (averageDailySteps != null) {
+      updates['average_daily_steps'] = averageDailySteps;
+    }
+    if (occupationActivity != null) {
+      updates['occupation_activity'] = occupationActivity;
+    }
+    if (bodyFatPercent != null) {
+      updates['body_fat_percent'] = bodyFatPercent;
+    }
+    if (cardioIntensity != null) {
+      updates['cardio_intensity'] = cardioIntensity;
+    }
+    if (cardioHeartRate != null) {
+      updates['cardio_heart_rate'] = cardioHeartRate;
+    }
+    if (liftingIntensity != null) {
+      updates['lifting_intensity'] = liftingIntensity;
+    }
     if (updates.isEmpty) return;
 
     await _client
         .from('profiles')
         .update(updates)
         .eq('id', currentUser!.id);
+  }
+
+  // Weight history
+  static Future<List<WeightEntry>> getWeightEntries(
+      {required DateTime from, DateTime? to}) async {
+    var query = _client
+        .from('weight_entries')
+        .select()
+        .eq('user_id', currentUser!.id)
+        .gte('recorded_at', from.toUtc().toIso8601String());
+    if (to != null) {
+      query = query.lt('recorded_at', to.toUtc().toIso8601String());
+    }
+    final data = await query.order('recorded_at', ascending: true);
+    return data
+        .map<WeightEntry>((json) => WeightEntry.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> addWeightEntry(double weightKg,
+      {DateTime? recordedAt}) async {
+    await _client.from('weight_entries').insert({
+      'user_id': currentUser!.id,
+      'weight_kg': weightKg,
+      'recorded_at': (recordedAt ?? DateTime.now()).toUtc().toIso8601String(),
+    });
   }
 }

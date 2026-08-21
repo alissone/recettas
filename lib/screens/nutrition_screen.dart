@@ -12,6 +12,9 @@ import '../utils/dates.dart';
 import 'food_library_screen.dart';
 import 'nutrient_targets_screen.dart';
 
+/// Granularity of the nutrient trend chart's x-axis.
+enum _TrendRange { day, week, month }
+
 /// Nutrition log: pick a food and an amount, and see the day's nutrient
 /// intake against the active recommendation set. The food catalog is
 /// seeded in SQL; this screen only reads it.
@@ -63,13 +66,17 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   /// Last day of the visible range, and the day the totals are for.
   DateTime _day = today();
-  bool _weekView = true;
+  _TrendRange _trendRange = _TrendRange.week;
   NutrientCategory _category = NutrientCategory.macronutrient;
   NutrientId? _selectedNutrient;
   DateTime? _selectedTrendDay;
   int _loadSeq = 0;
 
-  int get _rangeDays => _weekView ? 7 : 30;
+  int get _rangeDays => switch (_trendRange) {
+        _TrendRange.day => 1,
+        _TrendRange.week => 7,
+        _TrendRange.month => 30,
+      };
 
   bool get _isAtToday => !_day.isBefore(today());
 
@@ -827,15 +834,17 @@ class _NutritionScreenState extends State<NutritionScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
               ),
-              SegmentedButton<bool>(
+              SegmentedButton<_TrendRange>(
                 segments: const [
-                  ButtonSegment(value: true, label: Text('Semana')),
-                  ButtonSegment(value: false, label: Text('Mês')),
+                  ButtonSegment(value: _TrendRange.day, label: Text('Dia')),
+                  ButtonSegment(
+                      value: _TrendRange.week, label: Text('Semana')),
+                  ButtonSegment(value: _TrendRange.month, label: Text('Mês')),
                 ],
-                selected: {_weekView},
+                selected: {_trendRange},
                 onSelectionChanged: (s) {
                   setState(() {
-                    _weekView = s.first;
+                    _trendRange = s.first;
                     _selectedTrendDay = null;
                     _isLoading = true;
                   });
@@ -843,6 +852,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 },
                 showSelectedIcon: false,
                 style: SegmentedButton.styleFrom(
+                  foregroundColor: AppTheme.mediumBrown,
                   selectedBackgroundColor:
                       AppTheme.primaryOrange.withValues(alpha: 0.15),
                   selectedForegroundColor: AppTheme.primaryOrange,
@@ -864,8 +874,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
               Expanded(
                 child: Center(
                   child: Text(
-                    '${formatDayMonth(days.first)} – '
-                    '${formatDayMonth(days.last)}',
+                    days.first == days.last
+                        ? formatDayMonth(days.first)
+                        : '${formatDayMonth(days.first)} – '
+                            '${formatDayMonth(days.last)}',
                     style: AppTheme.caption
                         .copyWith(fontWeight: FontWeight.w600),
                   ),
@@ -938,7 +950,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                     days: days,
                     values: totals,
                     target: target,
-                    weekView: _weekView,
+                    weekView: _trendRange != _TrendRange.month,
                     selectedDay: selectedDay,
                   ),
                 ),

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../models/energy_estimate.dart';
 import '../models/food.dart';
 import '../models/nutrient.dart';
 import '../models/recipe.dart';
@@ -37,10 +38,20 @@ class _NutritionScreenState extends State<NutritionScreen> {
   /// that is - and what's in it - is owned by NutrientTargetsScreen.
   Map<NutrientId, double> _targets = {};
 
-  /// Height and current weight from the profile, for the weight/BMI
-  /// projection under the calorie trend. Null until set on Profile.
-  double? _heightCm;
-  double? _weightKg;
+  /// The body-profile row from Profile - sex, age, height, weight, goal,
+  /// training volume. Drives the weight/BMI projection and, for calories,
+  /// the computed RMR/TDEE estimate below.
+  Map<String, dynamic>? _profile;
+
+  double? get _heightCm => _profileDouble('height_cm');
+  double? get _weightKg => _profileDouble('weight_kg');
+  double? _profileDouble(String key) {
+    final v = _profile?[key];
+    return v == null ? null : double.tryParse(v.toString());
+  }
+
+  /// Null until sex, age, height and weight are all filled in on Profile.
+  EnergyEstimate? get _energyEstimate => EnergyEstimate.fromProfile(_profile);
 
   /// Check-ins from the last ~6 months, for the body weight card. Both its
   /// charts are sliced out of this one list rather than queried twice.
@@ -94,17 +105,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
           from: DateTime.now().subtract(const Duration(days: 182)));
 
       String? activeSetId;
-      double? heightCm;
-      double? weightKg;
+      Map<String, dynamic>? profile;
       try {
-        final profile = await SupabaseService.getProfile();
+        profile = await SupabaseService.getProfile();
         activeSetId = profile?['active_recommendation_set_id'];
-        heightCm = profile?['height_cm'] != null
-            ? double.tryParse(profile!['height_cm'].toString())
-            : null;
-        weightKg = profile?['weight_kg'] != null
-            ? double.tryParse(profile!['weight_kg'].toString())
-            : null;
       } catch (_) {
         // Profile row missing: just run without targets.
       }
@@ -121,8 +125,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
         _foods = foods;
         _packages = packages;
         _recipes = recipes;
-        _heightCm = heightCm;
-        _weightKg = weightKg;
+        _profile = profile;
         _weightHistory = weightHistory;
       });
       await _loadTargets(activeSetId);
@@ -786,7 +789,19 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
     final days = _rangeDaysList;
     final totals = _trendTotals;
-    final target = _targets[nutrient.id];
+    // For calories, an estimated goal from the body-profile form (RMR +
+    // activity + exercise + TEF, adjusted for the stated goal/rate) takes
+    // over from the manually-set recommendation, once there's enough
+    // profile data to compute one. Every other nutrient keeps the manual
+    // target as before.
+    final isCalories = nutrient.id == NutrientId.calories;
+    final energyEstimate = isCalories ? _energyEstimate : null;
+    final target = energyEstimate?.goalCalories ?? _targets[nutrient.id];
+    // The projection below has to compare intake against true maintenance
+    // (TDEE), not the goal-adjusted target - otherwise a deliberate
+    // deficit/surplus baked into the goal would cancel itself out of the
+    // predicted weight change.
+    final maintenanceCalories = energyEstimate?.tdee ?? target;
     final logged =
         days.where((d) => (totals[d] ?? 0) > 0).length;
     final sum = days.fold<double>(0, (s, d) => s + (totals[d] ?? 0));
@@ -887,6 +902,13 @@ class _NutritionScreenState extends State<NutritionScreen> {
                     ? '${formatNutrientAmount(target)} '
                         '${nutrient.unitLabel}'
                     : '—',
+                trailing: energyEstimate != null
+                    ? GestureDetector(
+                        onTap: () => _showEnergyBreakdown(energyEstimate),
+                        child: const Icon(Icons.info_outline,
+                            size: 14, color: AppTheme.primaryOrange),
+                      )
+                    : null,
               ),
               const SizedBox(width: 24),
               _buildStat(
@@ -923,11 +945,11 @@ class _NutritionScreenState extends State<NutritionScreen> {
               );
             },
           ),
-          if (nutrient.id == NutrientId.calories &&
-              target != null &&
-              target > 0 &&
+          if (isCalories &&
+              maintenanceCalories != null &&
+              maintenanceCalories > 0 &&
               logged > 0)
-            _buildProjectionCard(average - target),
+            _buildProjectionCard(average - maintenanceCalories),
         ],
       ),
     );
@@ -1101,14 +1123,38 @@ class _NutritionScreenState extends State<NutritionScreen> {
     }
   }
 
-  Widget _buildStat(String label, String value) {
+  Widget _buildStat(String label, String value, {Widget? trailing}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTheme.caption),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, style: AppTheme.caption),
+            if (trailing != null) ...[
+              const SizedBox(width: 4),
+              trailing,
+            ],
+          ],
+        ),
         const SizedBox(height: 2),
         Text(value, style: AppTheme.valueBold),
       ],
+    );
+  }
+
+  /// Bottom sheet with the full RMR -> TDEE -> goal-calories breakdown,
+  /// opened from the info icon next to "Meta" once it's computed.
+  void _showEnergyBreakdown(EnergyEstimate estimate) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.creamBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusLarge)),
+      ),
+      builder: (_) => _EnergyBreakdownSheet(estimate: estimate),
     );
   }
 
@@ -1291,6 +1337,125 @@ class _NutritionScreenState extends State<NutritionScreen> {
               ? (d) => kWeekdaysShort[d.weekday - 1]
               : formatDayMonth,
         ),
+      ),
+    );
+  }
+}
+
+/// RMR -> NEAT -> exercise -> TEF -> TDEE -> goal calories, laid out as a
+/// receipt. Every number here is a population-level approximation - the
+/// disclaimer up top says so, since Mifflin-St Jeor (like every predictive
+/// equation) has real individual error.
+class _EnergyBreakdownSheet extends StatelessWidget {
+  final EnergyEstimate estimate;
+
+  const _EnergyBreakdownSheet({required this.estimate});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Estimativa de gasto calórico',
+                  style: AppTheme.headingMedium),
+              const SizedBox(height: 4),
+              Text(
+                'Baseada na fórmula de Mifflin-St Jeor e nos dados do seu '
+                'perfil. É uma aproximação - a taxa metabólica real varia '
+                'de pessoa para pessoa.',
+                style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+              ),
+              const SizedBox(height: 20),
+              _row('Taxa metabólica basal (RMR)', estimate.rmr),
+              _row('Atividade não-exercício (NEAT)', estimate.neat),
+              _row('Musculação', estimate.weightlifting),
+              _row('Cardio', estimate.cardio),
+              _row('Efeito térmico dos alimentos (TEF)', estimate.tef),
+              const Divider(height: 24),
+              _row('Manutenção estimada (TDEE)', estimate.tdee, bold: true),
+              const SizedBox(height: 8),
+              Text(
+                'Faixa prática: ${estimate.rangeLow.round()}–'
+                '${estimate.rangeHigh.round()} kcal',
+                style: AppTheme.caption,
+              ),
+              if (estimate.trainingDaysPerWeek > 0) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Dia de treino (${estimate.trainingDaysPerWeek}x/semana): '
+                  '${estimate.trainingDayCalories.round()} kcal · '
+                  'Dia de descanso: ${estimate.restDayCalories.round()} kcal',
+                  style: AppTheme.caption,
+                ),
+              ],
+              const SizedBox(height: 24),
+              Text('Calorias por objetivo', style: AppTheme.sectionTitle),
+              const SizedBox(height: 8),
+              _goalRow('Manter', estimate.goalOptions['maintain']!),
+              _goalRow(
+                  'Perder 0,25 kg/semana', estimate.goalOptions['lose_slow']!),
+              _goalRow('Perder 0,5 kg/semana',
+                  estimate.goalOptions['lose_moderate']!),
+              _goalRow(
+                  'Perder 0,75 kg/semana', estimate.goalOptions['lose_fast']!),
+              _goalRow(
+                  'Ganhar 0,25 kg/semana', estimate.goalOptions['gain_slow']!),
+              _goalRow('Ganhar 0,5 kg/semana',
+                  estimate.goalOptions['gain_moderate']!),
+              _goalRow(
+                  'Ganhar 0,75 kg/semana', estimate.goalOptions['gain_fast']!),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Fechar',
+                      style: TextStyle(color: AppTheme.primaryOrange)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _row(String label, double value, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(label,
+                style: bold
+                    ? AppTheme.valueBold
+                    : AppTheme.bodyText.copyWith(fontWeight: FontWeight.w400)),
+          ),
+          Text('${value.round()} kcal',
+              style: bold
+                  ? AppTheme.valueBold
+                  : AppTheme.bodyText.copyWith(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  Widget _goalRow(String label, double value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: AppTheme.caption)),
+          Text('${value.round()} kcal',
+              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }

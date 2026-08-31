@@ -77,9 +77,12 @@ class _GymScreenState extends State<GymScreen> {
     _load();
   }
 
-  Future<void> _deleteEntry(GymEntry entry) async {
+  /// Deletes every set group logged for this exercise today.
+  Future<void> _deleteGroup(List<GymEntry> group) async {
     try {
-      await SupabaseService.deleteGymEntry(entry.id);
+      for (final entry in group) {
+        await SupabaseService.deleteGymEntry(entry.id);
+      }
       await _load();
     } catch (e) {
       if (mounted) {
@@ -89,9 +92,20 @@ class _GymScreenState extends State<GymScreen> {
     }
   }
 
+  /// [_entries] grouped by exercise, in the order each exercise was first
+  /// logged today - each group can hold several set groups (e.g. a top
+  /// set plus drop sets).
+  List<List<GymEntry>> get _groupedEntries {
+    final byExercise = <String, List<GymEntry>>{};
+    for (final entry in _entries) {
+      byExercise.putIfAbsent(entry.exerciseId, () => []).add(entry);
+    }
+    return byExercise.values.toList();
+  }
+
   /// Picks an exercise, then collects sets/reps/weight for it. Choosing
-  /// an exercise already logged today pre-fills the sheet and overwrites
-  /// the row on save.
+  /// an exercise already logged today pre-fills the sheet with its
+  /// existing set groups.
   Future<void> _addEntry() async {
     if (_exercises.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -115,12 +129,12 @@ class _GymScreenState extends State<GymScreen> {
     if (exercise == null || !mounted) return;
 
     final existing =
-        _entries.where((e) => e.exerciseId == exercise.id).firstOrNull;
+        _entries.where((e) => e.exerciseId == exercise.id).toList();
     await _showEntrySheet(exercise, existing);
   }
 
   Future<void> _showEntrySheet(
-      Exercise exercise, GymEntry? existing) async {
+      Exercise exercise, List<GymEntry> existing) async {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -199,8 +213,8 @@ class _GymScreenState extends State<GymScreen> {
                           ),
                         )
                       else
-                        for (final entry in _entries)
-                          _buildEntryCard(entry),
+                        for (final group in _groupedEntries)
+                          _buildEntryCard(group),
                     ],
                   ),
       ),
@@ -208,6 +222,7 @@ class _GymScreenState extends State<GymScreen> {
   }
 
   Widget _buildSummaryCard() {
+    final exerciseCount = _entries.map((e) => e.exerciseId).toSet().length;
     final sets = _entries.fold<int>(0, (sum, e) => sum + e.sets);
     final volume = _entries.fold<double>(0, (sum, e) => sum + e.volume);
 
@@ -252,7 +267,7 @@ class _GymScreenState extends State<GymScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildStat('Exercícios', '${_entries.length}'),
+              _buildStat('Exercícios', '$exerciseCount'),
               const SizedBox(width: 24),
               _buildStat('Séries', '$sets'),
               const SizedBox(width: 24),
@@ -276,9 +291,10 @@ class _GymScreenState extends State<GymScreen> {
     );
   }
 
-  Widget _buildEntryCard(GymEntry entry) {
-    final exercise = entry.exercise;
-    final weight = entry.weight;
+  /// One card per exercise logged today, listing every set group done for
+  /// it (e.g. a top set plus drop sets) in a column below the title.
+  Widget _buildEntryCard(List<GymEntry> group) {
+    final exercise = group.first.exercise;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -293,10 +309,11 @@ class _GymScreenState extends State<GymScreen> {
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           onTap: exercise == null
               ? null
-              : () => _showEntrySheet(exercise, entry),
+              : () => _showEntrySheet(exercise, group),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ExerciseThumb(exercise: exercise, size: 52),
                 const SizedBox(width: 14),
@@ -308,33 +325,20 @@ class _GymScreenState extends State<GymScreen> {
                           style: AppTheme.valueBold,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 2),
-                      Text(
-                        [
-                          entry.setsLabel,
-                          if (weight != null && weight > 0)
-                            '${formatWeight(weight)} kg',
-                          if (exercise?.muscleGroup != null)
-                            exercise!.muscleGroup!,
-                        ].join(' · '),
-                        style: AppTheme.caption,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (entry.notes != null &&
-                          entry.notes!.isNotEmpty) ...[
+                      if (exercise?.muscleGroup != null) ...[
                         const SizedBox(height: 2),
-                        Text(entry.notes!,
-                            style: AppTheme.caption.copyWith(
-                                fontWeight: FontWeight.w400),
+                        Text(exercise!.muscleGroup!,
+                            style: AppTheme.caption,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
                       ],
+                      const SizedBox(height: 4),
+                      for (final entry in group) _buildSetLine(entry),
                     ],
                   ),
                 ),
                 IconButton(
-                  onPressed: () => _deleteEntry(entry),
+                  onPressed: () => _deleteGroup(group),
                   icon: Icon(Icons.close,
                       size: 18,
                       color: AppTheme.mediumBrown
@@ -345,6 +349,23 @@ class _GymScreenState extends State<GymScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSetLine(GymEntry entry) {
+    final weight = entry.weight;
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Text(
+        [
+          entry.setsLabel,
+          if (weight != null && weight > 0) '${formatWeight(weight)} kg',
+          if (entry.notes != null && entry.notes!.isNotEmpty) entry.notes!,
+        ].join(' · '),
+        style: AppTheme.caption,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -892,11 +913,37 @@ class _ExerciseVideoThumbnailState extends State<_ExerciseVideoThumbnail>
   }
 }
 
-/// Sets, reps and weight for one exercise on one day. Pops `true` after
-/// a successful save.
+/// One set-group card's mutable form state: [id] is the backing
+/// [GymEntry]'s id for an existing set group, null for one added in this
+/// session that doesn't exist in the database yet.
+class _SetForm {
+  final String? id;
+  int sets;
+  int reps;
+  final TextEditingController weightController;
+  final TextEditingController notesController;
+
+  _SetForm({
+    this.id,
+    required this.sets,
+    required this.reps,
+    String? weight,
+    String? notes,
+  })  : weightController = TextEditingController(text: weight ?? ''),
+        notesController = TextEditingController(text: notes ?? '');
+
+  void dispose() {
+    weightController.dispose();
+    notesController.dispose();
+  }
+}
+
+/// Every set group of one exercise on one day - sets, reps, weight and
+/// notes each - so drop sets can be recorded alongside the main set.
+/// Pops `true` after a successful save.
 class _GymEntrySheet extends StatefulWidget {
   final Exercise exercise;
-  final GymEntry? existing;
+  final List<GymEntry> existing;
   final String entryDate;
 
   const _GymEntrySheet({
@@ -910,46 +957,71 @@ class _GymEntrySheet extends StatefulWidget {
 }
 
 class _GymEntrySheetState extends State<_GymEntrySheet> {
-  late int _sets;
-  late int _reps;
-  late final TextEditingController _weightController;
-  late final TextEditingController _notesController;
+  late List<_SetForm> _forms;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    final existing = widget.existing;
-    _sets = existing?.sets ?? 3;
-    _reps = existing?.reps ?? 12;
-    _weightController = TextEditingController(
-        text: existing?.weight != null
-            ? formatWeight(existing!.weight!)
-            : '');
-    _notesController =
-        TextEditingController(text: existing?.notes ?? '');
+    _forms = widget.existing.isEmpty
+        ? [_SetForm(sets: 3, reps: 12)]
+        : [
+            for (final entry in widget.existing)
+              _SetForm(
+                id: entry.id,
+                sets: entry.sets,
+                reps: entry.reps,
+                weight: entry.weight != null
+                    ? formatWeight(entry.weight!)
+                    : null,
+                notes: entry.notes,
+              ),
+          ];
   }
 
   @override
   void dispose() {
-    _weightController.dispose();
-    _notesController.dispose();
+    for (final form in _forms) {
+      form.dispose();
+    }
     super.dispose();
   }
 
+  void _addSet() {
+    final last = _forms.last;
+    setState(() => _forms.add(_SetForm(sets: last.sets, reps: last.reps)));
+  }
+
+  void _removeSet(int index) {
+    setState(() => _forms.removeAt(index).dispose());
+  }
+
+  /// Saves every set-group card: updates the ones backed by an existing
+  /// row, inserts the ones added this session, and deletes any existing
+  /// row whose card was removed.
   Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
-      final notes = _notesController.text.trim();
-      await SupabaseService.upsertGymEntry(
-        entryDate: widget.entryDate,
-        exerciseId: widget.exercise.id,
-        sets: _sets,
-        reps: _reps,
-        weight: double.tryParse(
-            _weightController.text.trim().replaceAll(',', '.')),
-        notes: notes.isEmpty ? null : notes,
-      );
+      final keptIds = <String>{};
+      for (final form in _forms) {
+        final notes = form.notesController.text.trim();
+        await SupabaseService.saveGymEntrySet(
+          id: form.id,
+          entryDate: widget.entryDate,
+          exerciseId: widget.exercise.id,
+          sets: form.sets,
+          reps: form.reps,
+          weight: double.tryParse(
+              form.weightController.text.trim().replaceAll(',', '.')),
+          notes: notes.isEmpty ? null : notes,
+        );
+        if (form.id != null) keptIds.add(form.id!);
+      }
+      for (final entry in widget.existing) {
+        if (!keptIds.contains(entry.id)) {
+          await SupabaseService.deleteGymEntry(entry.id);
+        }
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -962,65 +1034,111 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-          20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ExerciseThumb(exercise: widget.exercise, size: 48),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(widget.exercise.name,
-                    style: AppTheme.headingMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-              ),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+            20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                ExerciseThumb(exercise: widget.exercise, size: 48),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(widget.exercise.namePt ?? widget.exercise.name,
+                      style: AppTheme.headingMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            for (var i = 0; i < _forms.length; i++) ...[
+              _buildSetCard(i),
+              const SizedBox(height: 12),
             ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _addSet,
+                icon: const Icon(Icons.add),
+                label: const Text('Adicionar série'),
+                style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.primaryOrange),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryOrange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusSmall),
+                  ),
+                ),
+                child: Text(_isSaving ? 'Salvando...' : 'Salvar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// One set group's fields, bordered just enough to read as its own
+  /// card, with a small button at the top-left to remove it.
+  Widget _buildSetCard(int index) {
+    final form = _forms[index];
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(
+            color: AppTheme.mediumBrown.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          InkWell(
+            onTap: () => _removeSet(index),
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.all(2),
+              child: Icon(Icons.close,
+                  size: 18,
+                  color: AppTheme.mediumBrown.withValues(alpha: 0.6)),
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 4),
           _buildStepper(
             label: 'Séries',
-            value: _sets,
-            onChanged: (v) => setState(() => _sets = v),
+            value: form.sets,
+            onChanged: (v) => setState(() => form.sets = v),
           ),
           const SizedBox(height: 12),
           _buildStepper(
             label: 'Repetições',
-            value: _reps,
-            onChanged: (v) => setState(() => _reps = v),
+            value: form.reps,
+            onChanged: (v) => setState(() => form.reps = v),
           ),
           const SizedBox(height: 16),
           TextField(
-            controller: _weightController,
+            controller: form.weightController,
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             decoration: _decoration('Peso em kg (opcional)'),
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: _notesController,
+            controller: form.notesController,
             decoration: _decoration('Observações (opcional)'),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryOrange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusSmall),
-                ),
-              ),
-              child: Text(_isSaving ? 'Salvando...' : 'Salvar'),
-            ),
           ),
         ],
       ),

@@ -515,12 +515,14 @@ class _HabitsScreenState extends State<HabitsScreen> {
           style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400));
     }
 
+    final exerciseCount =
+        todayEntries.map((e) => e.exerciseId).toSet().length;
     final sets = todayEntries.fold<int>(0, (s, e) => s + e.sets);
     final volume = todayEntries.fold<double>(0, (s, e) => s + e.volume);
 
     return Row(
       children: [
-        _buildStat('Exercícios', '${todayEntries.length}'),
+        _buildStat('Exercícios', '$exerciseCount'),
         const SizedBox(width: 24),
         _buildStat('Séries', '$sets'),
         const SizedBox(width: 24),

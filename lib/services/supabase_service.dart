@@ -752,9 +752,12 @@ class SupabaseService {
     return data.map<GymEntry>((json) => GymEntry.fromJson(json)).toList();
   }
 
-  /// One row per (day, exercise): logging the same exercise twice on a
-  /// day overwrites it, via the unique index from migration 017.
-  static Future<void> upsertGymEntry({
+  /// One row per set group (sets x reps at one weight) of one exercise on
+  /// one day - an exercise can have several on the same day, e.g. a top
+  /// set plus lighter drop sets. Pass [id] to update an existing set
+  /// group in place; omit it to add a new one.
+  static Future<void> saveGymEntrySet({
+    String? id,
     required String entryDate,
     required String exerciseId,
     required int sets,
@@ -762,7 +765,7 @@ class SupabaseService {
     double? weight,
     String? notes,
   }) async {
-    await _client.from('gym_entries').upsert({
+    final payload = {
       'user_id': currentUser!.id,
       'entry_date': entryDate,
       'exercise_id': exerciseId,
@@ -770,7 +773,12 @@ class SupabaseService {
       'reps': reps,
       'weight': weight,
       'notes': notes,
-    }, onConflict: 'user_id,entry_date,exercise_id');
+    };
+    if (id == null) {
+      await _client.from('gym_entries').insert(payload);
+    } else {
+      await _client.from('gym_entries').update(payload).eq('id', id);
+    }
   }
 
   static Future<void> deleteGymEntry(String id) async {

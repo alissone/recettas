@@ -62,7 +62,12 @@ class _GymHistoryScreenState extends State<GymHistoryScreen> {
       if (!mounted) return;
       setState(() {
         _logs = logs;
-        _totalSessions = entries.length;
+        // A day can hold several set groups for the same exercise now, so
+        // count distinct (exercise, day) pairs rather than raw rows.
+        _totalSessions = entries
+            .map((e) => '${e.exerciseId}|${e.entryDate}')
+            .toSet()
+            .length;
         _totalDays = entries.map((e) => e.entryDate).toSet().length;
         _totalVolume =
             entries.fold<double>(0, (sum, e) => sum + e.volume);

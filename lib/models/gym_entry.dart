@@ -6,8 +6,9 @@ import 'exercise.dart';
 String formatWeight(double v) =>
     v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
 
-/// One exercise done on one day: [sets] x [reps] at a single [weight].
-/// Drop sets are out of scope, so the weight applies to every set.
+/// One set group of one exercise on one day: [sets] x [reps] at a single
+/// [weight]. An exercise can have several of these on the same day (e.g.
+/// a top set plus lighter drop sets), each its own row.
 class GymEntry {
   final String id;
   final String userId;

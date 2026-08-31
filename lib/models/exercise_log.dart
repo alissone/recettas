@@ -1,22 +1,34 @@
 import 'exercise.dart';
 import 'gym_entry.dart';
 
-/// Every session ever logged for a single exercise, newest first, plus
+/// Every set group ever logged for a single exercise, newest first, plus
 /// the aggregates the history screens show.
 ///
 /// Built client-side from the whole training log (see
-/// SupabaseService.getAllGymEntries): the log is one row per exercise per
-/// day, so even years of training is a few thousand rows - far cheaper to
-/// group here than to run a query per exercise.
+/// SupabaseService.getAllGymEntries): a day can hold several set groups
+/// for the same exercise (e.g. a top set plus drop sets), but even years
+/// of training is a few thousand rows - far cheaper to group here than to
+/// run a query per exercise.
 class ExerciseLog {
   final Exercise exercise;
 
-  /// Newest session first.
+  /// Newest set group first; several can share a day.
   final List<GymEntry> entries;
 
   const ExerciseLog({required this.exercise, required this.entries});
 
-  int get sessions => entries.length;
+  /// Entries grouped by day - a day can hold several set groups (e.g. a
+  /// top set plus drop sets), so "sessions" and "best day" are counted
+  /// per day rather than per row.
+  Map<DateTime, List<GymEntry>> get byDay {
+    final map = <DateTime, List<GymEntry>>{};
+    for (final entry in entries) {
+      map.putIfAbsent(DateTime.parse(entry.entryDate), () => []).add(entry);
+    }
+    return map;
+  }
+
+  int get sessions => byDay.length;
 
   GymEntry get lastEntry => entries.first;
   DateTime get lastDate => DateTime.parse(entries.first.entryDate);
@@ -58,8 +70,13 @@ class ExerciseLog {
   double get totalVolume =>
       entries.fold<double>(0, (sum, e) => sum + e.volume);
 
-  double get bestVolume =>
-      entries.fold<double>(0, (m, e) => e.volume > m ? e.volume : m);
+  /// Heaviest single day's total volume - a day's sets are summed first
+  /// since a day can hold several set groups.
+  double get bestVolume => byDay.values.fold<double>(0, (m, dayEntries) {
+        final dayVolume =
+            dayEntries.fold<double>(0, (sum, e) => sum + e.volume);
+        return dayVolume > m ? dayVolume : m;
+      });
 
   /// Weight of the most recent weighted session minus the first, i.e. how
   /// much heavier the exercise got. Null when there are fewer than two
@@ -87,8 +104,17 @@ class ExerciseLog {
     for (final group in byExercise.entries) {
       final exercise = exercises[group.key];
       if (exercise == null) continue;
+      // Same-day set groups break the tie by creation order (newest
+      // first) so the sort is deterministic - a day can hold several now.
       final entries = group.value
-        ..sort((a, b) => b.entryDate.compareTo(a.entryDate));
+        ..sort((a, b) {
+          final byDate = b.entryDate.compareTo(a.entryDate);
+          if (byDate != 0) return byDate;
+          final aCreated = a.createdAt;
+          final bCreated = b.createdAt;
+          if (aCreated == null || bCreated == null) return 0;
+          return bCreated.compareTo(aCreated);
+        });
       logs.add(ExerciseLog(exercise: exercise, entries: entries));
     }
     logs.sort((a, b) => b.lastDate.compareTo(a.lastDate));

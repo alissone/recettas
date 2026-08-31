@@ -44,7 +44,7 @@ class _GymExerciseHistoryScreenState
   late DateTime _month;
   DateTime? _selectedDay;
 
-  late final Map<DateTime, GymEntry> _byDay;
+  late final Map<DateTime, List<GymEntry>> _byDay;
   late final double _maxVolume;
 
   ExerciseLog get _log => widget.log;
@@ -52,10 +52,7 @@ class _GymExerciseHistoryScreenState
   @override
   void initState() {
     super.initState();
-    _byDay = {
-      for (final entry in _log.entries)
-        DateTime.parse(entry.entryDate): entry,
-    };
+    _byDay = _log.byDay;
     _maxVolume = _log.bestVolume;
     final last = _log.lastDate;
     _month = DateTime(last.year, last.month);
@@ -309,7 +306,7 @@ class _GymExerciseHistoryScreenState
         .where((d) => d.year == _month.year && d.month == _month.month)
         .length;
     final selected = _selectedDay;
-    final selectedEntry = selected == null ? null : _byDay[selected];
+    final selectedEntries = selected == null ? null : _byDay[selected];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -367,21 +364,25 @@ class _GymExerciseHistoryScreenState
                     'em ${formatMonthYear(_month).toLowerCase()}.',
             style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
           ),
-          if (selectedEntry != null) ...[
+          if (selectedEntries != null && selectedEntries.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(
-              [
-                formatDayMonth(selected!),
-                selectedEntry.setsLabel,
-                if (selectedEntry.weight != null &&
-                    selectedEntry.weight! > 0)
-                  '${formatWeight(selectedEntry.weight!)} kg',
-                if (selectedEntry.notes != null &&
-                    selectedEntry.notes!.isNotEmpty)
-                  selectedEntry.notes!,
-              ].join(' · '),
-              style: AppTheme.caption,
-            ),
+            Text(formatDayMonth(selected!),
+                style:
+                    AppTheme.caption.copyWith(fontWeight: FontWeight.w600)),
+            for (final entry in selectedEntries)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  [
+                    entry.setsLabel,
+                    if (entry.weight != null && entry.weight! > 0)
+                      '${formatWeight(entry.weight!)} kg',
+                    if (entry.notes != null && entry.notes!.isNotEmpty)
+                      entry.notes!,
+                  ].join(' · '),
+                  style: AppTheme.caption,
+                ),
+              ),
           ],
         ],
       ),
@@ -770,7 +771,7 @@ int _daysInMonth(DateTime month) =>
 /// month is visible at a glance.
 class _ExerciseCalendar extends StatelessWidget {
   final DateTime month;
-  final Map<DateTime, GymEntry> byDay;
+  final Map<DateTime, List<GymEntry>> byDay;
   final double maxVolume;
   final DateTime? selected;
   final ValueChanged<DateTime> onDayTap;
@@ -869,7 +870,7 @@ class _CalendarLegend extends StatelessWidget {
 
 class _ExerciseCalendarPainter extends CustomPainter {
   final DateTime month;
-  final Map<DateTime, GymEntry> byDay;
+  final Map<DateTime, List<GymEntry>> byDay;
   final double maxVolume;
   final DateTime? selected;
 
@@ -931,13 +932,17 @@ class _ExerciseCalendarPainter extends CustomPainter {
           RRect.fromRectAndRadius(rect, Radius.circular(cell * 0.22));
 
       final day = DateTime(month.year, month.month, dayNumber);
-      final entry = byDay[day];
+      final dayEntries = byDay[day];
 
-      // A trained day always reads as trained, even at zero volume.
-      final fraction = entry == null
+      // A trained day always reads as trained, even at zero volume. A day
+      // can hold several set groups, so its volume is their sum.
+      final fraction = dayEntries == null
           ? 0.0
           : maxVolume > 0
-              ? math.max(0.3, entry.volume / maxVolume)
+              ? math.max(
+                  0.3,
+                  dayEntries.fold<double>(0, (s, e) => s + e.volume) /
+                      maxVolume)
               : 1.0;
 
       fillPaint.color = shadeFor(fraction);

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -7,6 +9,7 @@ import '../models/gym_entry.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
 import '../widgets/exercise_thumb.dart';
+import 'gym_exercise_history_screen.dart' show formatVolume;
 import 'gym_history_screen.dart';
 
 /// One day of training at a time: which exercises were done, how many
@@ -20,9 +23,17 @@ class GymScreen extends StatefulWidget {
 }
 
 class _GymScreenState extends State<GymScreen> {
+  /// Days shown by the volume trend chart, today included.
+  static const _volumeChartDays = 14;
+
   bool _isLoading = true;
   DateTime _day = today();
   List<GymEntry> _entries = [];
+
+  /// Every entry from the last [_volumeChartDays] days, across all
+  /// exercises - independent of the selected [_day] - feeding the daily
+  /// volume chart.
+  List<GymEntry> _recentEntries = [];
   List<Exercise> _exercises = [];
   Map<String, double> _latestWeights = {};
   int _loadSeq = 0;
@@ -35,6 +46,25 @@ class _GymScreenState extends State<GymScreen> {
 
   bool get _isAtToday => !_day.isBefore(today());
 
+  /// One point per day for the last [_volumeChartDays] days (today
+  /// included), zero-filled for rest days so the trend reads as a
+  /// continuous timeline rather than only the days actually trained.
+  List<MapEntry<DateTime, double>> get _dailyVolumePoints {
+    final volumeByDay = <DateTime, double>{};
+    for (final entry in _recentEntries) {
+      final day = DateTime.parse(entry.entryDate);
+      volumeByDay[day] = (volumeByDay[day] ?? 0) + entry.volume;
+    }
+    final end = today();
+    final start = end.subtract(const Duration(days: _volumeChartDays - 1));
+    return [
+      for (var d = start;
+          !d.isAfter(end);
+          d = d.add(const Duration(days: 1)))
+        MapEntry(d, volumeByDay[d] ?? 0),
+    ];
+  }
+
   Future<void> _load() async {
     if (SupabaseService.currentUser == null) {
       setState(() => _isLoading = false);
@@ -46,14 +76,23 @@ class _GymScreenState extends State<GymScreen> {
       if (_exercises.isEmpty) {
         _exercises = await SupabaseService.getExercises();
       }
-      final entries = await SupabaseService.getGymEntries(
-        fromDate: isoDate(_day),
-        toDateExclusive: isoDate(_day.add(const Duration(days: 1))),
-      );
-      final latestWeights = await SupabaseService.getLatestExerciseWeights();
+      final chartStart = today()
+          .subtract(const Duration(days: _volumeChartDays - 1));
+      final (entries, recentEntries, latestWeights) = await (
+        SupabaseService.getGymEntries(
+          fromDate: isoDate(_day),
+          toDateExclusive: isoDate(_day.add(const Duration(days: 1))),
+        ),
+        SupabaseService.getGymEntries(
+          fromDate: isoDate(chartStart),
+          toDateExclusive: isoDate(today().add(const Duration(days: 1))),
+        ),
+        SupabaseService.getLatestExerciseWeights(),
+      ).wait;
       if (mounted && seq == _loadSeq) {
         setState(() {
           _entries = entries;
+          _recentEntries = recentEntries;
           _latestWeights = latestWeights;
           _isLoading = false;
         });
@@ -198,6 +237,8 @@ class _GymScreenState extends State<GymScreen> {
                     children: [
                       _buildSummaryCard(),
                       const SizedBox(height: 20),
+                      _buildVolumeChartCard(),
+                      const SizedBox(height: 20),
                       if (_entries.isEmpty)
                         Padding(
                           padding:
@@ -288,6 +329,49 @@ class _GymScreenState extends State<GymScreen> {
         const SizedBox(height: 2),
         Text(value, style: AppTheme.headingMedium),
       ],
+    );
+  }
+
+  /// Same look as the "Peso corporal" -> "Últimos meses" chart in
+  /// Nutrição, but one point per day (zero-filled) over the last two
+  /// weeks instead of a weekly average.
+  Widget _buildVolumeChartCard() {
+    final points = _dailyVolumePoints;
+    final hasVolume = points.any((p) => p.value > 0);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Volume diário', style: AppTheme.sectionTitle),
+          const SizedBox(height: 4),
+          Text('Últimas 2 semanas',
+              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 16),
+          if (!hasVolume)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text('Nenhum treino nos últimos 14 dias.',
+                    style: AppTheme.caption
+                        .copyWith(fontWeight: FontWeight.w400)),
+              ),
+            )
+          else
+            LayoutBuilder(
+              builder: (context, constraints) => CustomPaint(
+                size: Size(constraints.maxWidth, 140),
+                painter: _VolumeLinePainter(points: points),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -920,20 +1004,21 @@ class _SetForm {
   final String? id;
   int sets;
   int reps;
-  final TextEditingController weightController;
+
+  /// Kilograms; 0 means no weight (bodyweight work), same as the null
+  /// this saves as.
+  double weight;
   final TextEditingController notesController;
 
   _SetForm({
     this.id,
     required this.sets,
     required this.reps,
-    String? weight,
+    this.weight = 0,
     String? notes,
-  })  : weightController = TextEditingController(text: weight ?? ''),
-        notesController = TextEditingController(text: notes ?? '');
+  }) : notesController = TextEditingController(text: notes ?? '');
 
   void dispose() {
-    weightController.dispose();
     notesController.dispose();
   }
 }
@@ -971,9 +1056,7 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
                 id: entry.id,
                 sets: entry.sets,
                 reps: entry.reps,
-                weight: entry.weight != null
-                    ? formatWeight(entry.weight!)
-                    : null,
+                weight: entry.weight ?? 0,
                 notes: entry.notes,
               ),
           ];
@@ -1011,8 +1094,7 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
           exerciseId: widget.exercise.id,
           sets: form.sets,
           reps: form.reps,
-          weight: double.tryParse(
-              form.weightController.text.trim().replaceAll(',', '.')),
+          weight: form.weight > 0 ? form.weight : null,
           notes: notes.isEmpty ? null : notes,
         );
         if (form.id != null) keptIds.add(form.id!);
@@ -1104,7 +1186,7 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
             onTap: () => _removeSet(index),
@@ -1128,41 +1210,81 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
             value: form.reps,
             onChanged: (v) => setState(() => form.reps = v),
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: form.weightController,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            decoration: _decoration('Peso em kg (opcional)'),
-          ),
           const SizedBox(height: 12),
-          TextField(
-            controller: form.notesController,
-            decoration: _decoration('Observações (opcional)'),
+          _buildWeightStepper(
+            value: form.weight,
+            onChanged: (v) => setState(() => form.weight = v),
           ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => _openNotesScreen(form),
+              icon: const Icon(Icons.add),
+              label: const Text('Adicionar notas'),
+              style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryOrange),
+            ),
+          ),
+          if (form.notesController.text.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(form.notesController.text.trim(),
+                  style: AppTheme.caption
+                      .copyWith(fontWeight: FontWeight.w400),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis),
+            ),
         ],
       ),
     );
   }
 
-  InputDecoration _decoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle:
-          TextStyle(color: AppTheme.mediumBrown.withValues(alpha: 0.8)),
-      filled: true,
-      fillColor: AppTheme.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        borderSide: BorderSide.none,
+  /// Full-screen so notes can run as long as the user wants; edits the
+  /// card's controller directly, since it's the same instance.
+  Future<void> _openNotesScreen(_SetForm form) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => _NotesScreen(
+        exerciseName: widget.exercise.namePt ?? widget.exercise.name,
+        controller: form.notesController,
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        borderSide:
-            const BorderSide(color: AppTheme.primaryOrange, width: 2),
-      ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ));
+    setState(() {});
+  }
+
+  /// Step size in kg for the weight +/- buttons - the smallest plate
+  /// increment lifters typically load per side.
+  static const _weightStep = 2.5;
+
+  Widget _buildWeightStepper({
+    required double value,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Row(
+      children: [
+        const Expanded(child: Text('Peso (kg)', style: AppTheme.bodyText)),
+        IconButton(
+          onPressed: value > 0
+              ? () => onChanged(math.max(0, value - _weightStep))
+              : null,
+          icon: const Icon(Icons.remove_circle_outline),
+          color: AppTheme.mediumBrown,
+        ),
+        SizedBox(
+          width: 56,
+          child: Text(value > 0 ? formatWeight(value) : '—',
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.headingMedium),
+        ),
+        IconButton(
+          onPressed: () => onChanged(value + _weightStep),
+          icon: const Icon(Icons.add_circle_outline),
+          color: AppTheme.primaryOrange,
+        ),
+      ],
     );
   }
 
@@ -1193,4 +1315,172 @@ class _GymEntrySheetState extends State<_GymEntrySheet> {
       ],
     );
   }
+}
+
+/// Full-screen notes editor for one set group, so there's no cramped
+/// single-line field limiting how much the user writes. Edits
+/// [controller] directly - the caller owns it and reads it back after
+/// this pops.
+class _NotesScreen extends StatelessWidget {
+  final String exerciseName;
+  final TextEditingController controller;
+
+  const _NotesScreen({required this.exerciseName, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.creamBackground,
+      appBar: AppBar(
+        title:
+            Text(exerciseName, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: null,
+            expands: true,
+            textAlignVertical: TextAlignVertical.top,
+            style: AppTheme.bodyText,
+            decoration: InputDecoration(
+              hintText: 'Observações...',
+              filled: true,
+              fillColor: AppTheme.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Volume chart
+// ---------------------------------------------------------------------------
+
+/// Same visual recipe as Nutrição's weight trend chart: a light grid, one
+/// orange line through the points, and up to ~6 evenly spread x labels.
+/// Volume is never negative, so the y axis is pinned at zero rather than
+/// padded around the data's own min/max.
+class _VolumeLinePainter extends CustomPainter {
+  final List<MapEntry<DateTime, double>> points;
+
+  _VolumeLinePainter({required this.points});
+
+  static const _leftLabelWidth = 40.0;
+  static const _bottomAxisHeight = 18.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final plotLeft = _leftLabelWidth;
+    final plotWidth = size.width - plotLeft - 4;
+    final plotBottom = size.height - _bottomAxisHeight;
+    if (plotWidth <= 0 || plotBottom <= 0) return;
+
+    const minY = 0.0;
+    final rawMax = points.fold<double>(0, (m, p) => math.max(m, p.value));
+    final maxY = rawMax <= 0 ? 1.0 : rawMax * 1.15;
+
+    final gridPaint = Paint()
+      ..color = AppTheme.mediumBrown.withValues(alpha: 0.12)
+      ..strokeWidth = 1;
+    for (final fraction in [0.0, 0.5, 1.0]) {
+      final y = plotBottom - plotBottom * fraction;
+      canvas.drawLine(
+          Offset(plotLeft, y), Offset(size.width, y), gridPaint);
+      _paintText(
+        canvas,
+        _axisLabel(minY + (maxY - minY) * fraction),
+        Offset(plotLeft - 6, y),
+        anchorRight: true,
+        style: TextStyle(
+          fontSize: 9,
+          color: AppTheme.mediumBrown.withValues(alpha: 0.7),
+        ),
+      );
+    }
+
+    double xFor(int i) => points.length == 1
+        ? plotLeft + plotWidth / 2
+        : plotLeft + plotWidth * i / (points.length - 1);
+    double yFor(double value) => plotBottom -
+        plotBottom * ((value - minY) / (maxY - minY)).clamp(0.0, 1.0);
+
+    if (points.length > 1) {
+      final path = Path();
+      for (var i = 0; i < points.length; i++) {
+        final offset = Offset(xFor(i), yFor(points[i].value));
+        if (i == 0) {
+          path.moveTo(offset.dx, offset.dy);
+        } else {
+          path.lineTo(offset.dx, offset.dy);
+        }
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = AppTheme.primaryOrange
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke,
+      );
+    }
+
+    final dotPaint = Paint()..color = AppTheme.primaryOrange;
+    // At most ~6 x-axis labels, evenly spread, always including the ends.
+    final labelEvery = math.max(1, (points.length / 6).ceil());
+    for (var i = 0; i < points.length; i++) {
+      final x = xFor(i);
+      final y = yFor(points[i].value);
+      canvas.drawCircle(Offset(x, y), 3, dotPaint);
+
+      final isLast = i == points.length - 1;
+      if (i % labelEvery == 0 || isLast) {
+        _paintText(
+          canvas,
+          formatDayMonth(points[i].key),
+          Offset(x, plotBottom + _bottomAxisHeight / 2),
+          anchorCenter: true,
+          style: TextStyle(
+            fontSize: 9,
+            color: AppTheme.mediumBrown.withValues(alpha: 0.7),
+          ),
+        );
+      }
+    }
+  }
+
+  String _axisLabel(double kg) => kg <= 0 ? '0' : formatVolume(kg);
+
+  void _paintText(
+    Canvas canvas,
+    String text,
+    Offset position, {
+    required TextStyle style,
+    bool anchorRight = false,
+    bool anchorCenter = false,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    var offset = Offset(position.dx, position.dy - painter.height / 2);
+    if (anchorRight) {
+      offset = offset.translate(-painter.width, 0);
+    } else if (anchorCenter) {
+      offset = offset.translate(-painter.width / 2, 0);
+    }
+    painter.paint(canvas, offset);
+  }
+
+  @override
+  bool shouldRepaint(_VolumeLinePainter oldDelegate) =>
+      oldDelegate.points != points;
 }

@@ -13,7 +13,7 @@ import 'habit_list_screen.dart';
 import 'home_shell.dart' show homeTabIndex;
 import 'nutrition_screen.dart';
 
-/// "Hábitos" tab: today at a glance across the three trackers. Each card
+/// "Eu" tab: today at a glance across the three trackers. Each card
 /// opens the screen where the actual logging happens.
 class HabitsScreen extends StatefulWidget {
   const HabitsScreen({super.key});
@@ -216,7 +216,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(20),
             children: [
-              const Text('Hábitos', style: AppTheme.headingLarge),
+              const Text('Eu', style: AppTheme.headingLarge),
               const SizedBox(height: 4),
               Text(
                 'Nutrição, academia e rotina',

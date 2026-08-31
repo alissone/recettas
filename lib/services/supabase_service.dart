@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/chat.dart';
 import '../models/exercise.dart';
 import '../models/food.dart';
 import '../models/gym_entry.dart';
@@ -1054,5 +1055,131 @@ class SupabaseService {
       'weight_kg': weightKg,
       'recorded_at': (recordedAt ?? DateTime.now()).toUtc().toIso8601String(),
     });
+  }
+
+  // Chat (migration 031): one-to-one rooms keyed by the two members'
+  // e-mail addresses. RLS scopes every read to rooms the signed-in
+  // address belongs to, which is why the streams below carry no filter
+  // of their own.
+
+  /// Lowercased address of the signed-in account - the key every chat
+  /// row is matched on.
+  static String? get currentEmail => currentUser?.email?.toLowerCase();
+
+  /// The room for [email], opening it on first use. Safe to call
+  /// repeatedly: the unique index on the sorted member pair means a
+  /// concurrent open by the other side is a duplicate-key error, which
+  /// resolves to the row that won.
+  static Future<ChatRoom> openChatRoom(String email) async {
+    final me = currentUser!;
+    final myEmail = me.email!.toLowerCase();
+    final other = email.trim().toLowerCase();
+    if (other.isEmpty) {
+      throw ArgumentError('Informe um e-mail');
+    }
+    if (other == myEmail) {
+      throw ArgumentError('Você não pode conversar consigo mesmo');
+    }
+    final members = [myEmail, other]..sort();
+
+    final existing = await _findChatRoom(members);
+    if (existing != null) return existing;
+
+    try {
+      final data = await _client
+          .from('chat_rooms')
+          .insert({'created_by': me.id, 'member_emails': members})
+          .select()
+          .single();
+      return ChatRoom.fromJson(data);
+    } on PostgrestException catch (e) {
+      // 23505: the other side opened the same room first.
+      if (e.code != '23505') rethrow;
+      final raced = await _findChatRoom(members);
+      if (raced == null) rethrow;
+      return raced;
+    }
+  }
+
+  /// `contains` is an exact match here: rooms always have exactly the
+  /// two members the trigger normalized them down to.
+  static Future<ChatRoom?> _findChatRoom(List<String> members) async {
+    final data = await _client
+        .from('chat_rooms')
+        .select()
+        .contains('member_emails', members)
+        .limit(1);
+    if (data.isEmpty) return null;
+    return ChatRoom.fromJson(data.first);
+  }
+
+  /// The inbox, newest activity first, updating as messages land. No
+  /// `.eq()` filter: RLS already limits the rows to this account's
+  /// rooms, and the pair of members isn't a single-column match.
+  static Stream<List<ChatRoom>> streamChatRooms() {
+    return _client
+        .from('chat_rooms')
+        .stream(primaryKey: ['id'])
+        .map((rows) {
+      final rooms = rows.map<ChatRoom>(ChatRoom.fromJson).toList()
+        ..sort((a, b) => b.sortTime.compareTo(a.sortTime));
+      return rooms;
+    });
+  }
+
+  /// One room's messages, oldest first, updating as they arrive.
+  ///
+  /// The sort is redone here rather than left to the builder: its
+  /// `order()` defaults to *descending*, and realtime inserts arrive in
+  /// delivery order regardless. The id breaks ties so two messages
+  /// written in the same millisecond keep a stable position instead of
+  /// swapping places on every rebuild.
+  static Stream<List<ChatMessage>> streamChatMessages(String roomId) {
+    return _client
+        .from('chat_messages')
+        .stream(primaryKey: ['id'])
+        .eq('room_id', roomId)
+        .order('created_at', ascending: true)
+        .map((rows) {
+      final messages = rows.map<ChatMessage>(ChatMessage.fromJson).toList()
+        ..sort((a, b) {
+          final byTime = a.createdAt.compareTo(b.createdAt);
+          return byTime != 0 ? byTime : a.id.compareTo(b.id);
+        });
+      return messages;
+    });
+  }
+
+  static Future<void> sendChatMessage(
+      String roomId, String content) async {
+    final me = currentUser!;
+    await _client.from('chat_messages').insert({
+      'room_id': roomId,
+      'sender_id': me.id,
+      'sender_email': me.email!.toLowerCase(),
+      'content': content,
+    });
+  }
+
+  /// Display names for the given addresses. Only chat partners are
+  /// readable (migration 031's profiles policy), and an address with no
+  /// account yet simply has no entry - the UI shows the address.
+  static Future<Map<String, String>> getChatPartnerNames(
+      Iterable<String> emails) async {
+    final wanted = emails.map((e) => e.toLowerCase()).toSet().toList();
+    if (wanted.isEmpty) return {};
+    final data = await _client
+        .from('profiles')
+        .select('email, display_name')
+        .inFilter('email', wanted);
+    final names = <String, String>{};
+    for (final row in data) {
+      final email = (row['email'] as String?)?.toLowerCase();
+      final name = row['display_name'] as String?;
+      if (email != null && name != null && name.trim().isNotEmpty) {
+        names[email] = name.trim();
+      }
+    }
+    return names;
   }
 }

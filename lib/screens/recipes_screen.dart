@@ -122,9 +122,20 @@ class _RecipesScreenState extends State<RecipesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
-              child: Text('Receitas', style: AppTheme.headingLarge),
+            // Pushed from "Mais" rather than being a tab of its own,
+            // so the heading carries the way back.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 12, 20, 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    color: AppTheme.darkBrown,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Text('Receitas', style: AppTheme.headingLarge),
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),

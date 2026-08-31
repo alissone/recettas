@@ -12,6 +12,7 @@ import 'harpa_screen.dart';
 import 'home_shell.dart' show showNoInternetBanner;
 import 'product_scanner_screen.dart';
 import 'profile_screen.dart';
+import 'recipes_screen.dart';
 import 'report_screen.dart';
 import 'sleep_screen.dart';
 import 'time_calculator_screen.dart';
@@ -84,6 +85,12 @@ class _MoreScreenState extends State<MoreScreen> {
             const SizedBox(height: 20),
             _buildProfileCard(),
             const SizedBox(height: 24),
+            _buildUtilityTile(
+              icon: Icons.restaurant_menu_outlined,
+              title: 'Receitas',
+              subtitle: 'O que fazer, e o que isso rende',
+              screen: const RecipesScreen(),
+            ),
             _buildUtilityTile(
               icon: Icons.insert_chart_outlined,
               title: 'Relatório de gastos',

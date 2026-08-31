@@ -170,7 +170,11 @@ class Habit {
     final rounded = value == value.roundToDouble()
         ? value.round().toString()
         : value.toStringAsFixed(1);
-    return '$rounded $unitLabel';
+    final unit = goalUnit;
+    final label = unit == null || unit.isEmpty
+        ? (value.round() == 0 || value.round() == 1 ? 'vez' : 'vezes')
+        : unit;
+    return '$rounded $label';
   }
 
   factory Habit.fromJson(Map<String, dynamic> json) {

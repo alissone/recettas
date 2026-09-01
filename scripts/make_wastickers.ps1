@@ -5,7 +5,7 @@
 .DESCRIPTION
     Windows/PowerShell port of make_wastickers.sh.
 
-    Any .m4s, .flv, .webm, .mp4, or .avi files found in the source folder are
+    Any .m4s, .flv, .webm, .mp4, .avi, or .mov files found in the source folder are
     treated as sticker sources too. Each video is probed with ffprobe and
     split EVENLY into segments no longer than -MaxFrames (at the sticker
     output's 12fps) -- e.g. an 11s clip with the default ~5s segment target
@@ -114,7 +114,7 @@ $ErrorActionPreference = "Stop"
 $MaxStickerBytes = 500 * 1024
 $MaxTrayBytes = 50 * 1024
 $Qualities = 75, 60, 45, 30, 20, 12
-$VideoExtensions = ".m4s", ".flv", ".webm", ".mp4", ".avi"
+$VideoExtensions = ".m4s", ".flv", ".webm", ".mp4", ".avi", ".mov"
 $StickerFilter = "fps=12,scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000"
 
 if (-not $FfprobePath) {

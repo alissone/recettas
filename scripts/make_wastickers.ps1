@@ -35,6 +35,11 @@
     to "<OutFile base>_N<OutFile ext>", and its title gets a "(N/total)"
     suffix; with only one pack, -OutFile and -PackTitle are used as-is.
 
+    A non-square source (e.g. a widescreen video) is letterboxed to the
+    required 512x512 canvas with a TRANSPARENT pad, not a solid color --
+    WhatsApp doesn't support a non-512x512 canvas, but a transparent pad
+    reads as a non-square sticker since the letterboxed area is invisible.
+
     Output rules it enforces (WhatsApp sticker spec):
       - each sticker: animated WebP, 512x512, <= 500KB
       - tray icon: PNG, 96x96, <= 50KB
@@ -110,7 +115,7 @@ $MaxStickerBytes = 500 * 1024
 $MaxTrayBytes = 50 * 1024
 $Qualities = 75, 60, 45, 30, 20, 12
 $VideoExtensions = ".m4s", ".flv", ".webm", ".mp4", ".avi"
-$StickerFilter = "fps=12,scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000"
+$StickerFilter = "fps=12,scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000"
 
 if (-not $FfprobePath) {
     $FfprobePath = Join-Path (Split-Path -Parent $FfmpegPath) "ffprobe.exe"
@@ -221,7 +226,7 @@ try {
                 Read-Host "Press Enter once you're done deleting"
             }
 
-            $surviving = $manifest | Where-Object { Test-Path -LiteralPath $_.PreviewPath }
+            $surviving = @($manifest | Where-Object { Test-Path -LiteralPath $_.PreviewPath })
             $removedCount = $manifest.Count - $surviving.Count
             if ($removedCount -gt 0) {
                 Write-Host "$removedCount segment(s) removed by review; keeping $($surviving.Count)."
@@ -357,7 +362,7 @@ try {
             $trayArgs += @('-ss', "$($packItems[0].StartSeconds)")
         }
         $trayArgs += @('-i', $packItems[0].FullName, '-vframes', '1', '-vf', `
-            "scale=96:96:force_original_aspect_ratio=decrease,pad=96:96:(ow-iw)/2:(oh-ih)/2:color=0x00000000", $Tray)
+            "scale=96:96:force_original_aspect_ratio=decrease,format=rgba,pad=96:96:(ow-iw)/2:(oh-ih)/2:color=0x00000000", $Tray)
         & $FfmpegPath @trayArgs
         if ($LASTEXITCODE -ne 0) {
             throw "ffmpeg failed building tray icon"

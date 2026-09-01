@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Convert a folder of GIFs (and video clips) into a WhatsApp .wastickers pack.
+    Convert a folder of GIFs (and video clips) into one or more WhatsApp .wastickers packs.
 
 .DESCRIPTION
     Windows/PowerShell port of make_wastickers.sh.
@@ -28,6 +28,13 @@
     .gif files already in the folder are left alone (no split, no review)
     and go straight into the pack, same as before.
 
+    If, after review, there are more than 30 sticker sources in total, they
+    are split evenly across multiple packs (WhatsApp's limit is 30 stickers
+    per pack) instead of discarding the extras -- e.g. 43 sources become a
+    22 + 21 split, not a 30 + 13 or a 30-and-drop-the-rest. Pack N is written
+    to "<OutFile base>_N<OutFile ext>", and its title gets a "(N/total)"
+    suffix; with only one pack, -OutFile and -PackTitle are used as-is.
+
     Output rules it enforces (WhatsApp sticker spec):
       - each sticker: animated WebP, 512x512, <= 500KB
       - tray icon: PNG, 96x96, <= 50KB
@@ -37,13 +44,14 @@
     Folder containing the source .gif files and/or video clips.
 
 .PARAMETER PackTitle
-    Sticker pack title.
+    Sticker pack title. Gets a "(N/total)" suffix when split into multiple packs.
 
 .PARAMETER PackAuthor
     Sticker pack author name.
 
 .PARAMETER OutFile
     Output .wastickers path. Defaults to pack.wastickers in the current directory.
+    When split into multiple packs, each is named "<base>_N<ext>".
 
 .PARAMETER FfmpegPath
     Path to ffmpeg.exe. Defaults to C:\dev\ffmpeg.exe.
@@ -237,112 +245,158 @@ try {
     }
 
     $sources = @(@($gifSources) + @($videoSources) | Sort-Object Name)
-    $count = $sources.Count
+    $totalCount = $sources.Count
 
-    if ($count -eq 0) {
+    if ($totalCount -eq 0) {
         throw "No .gif files or usable video clips ($($VideoExtensions -join ', ')) found in $SrcDir"
     }
-    if ($count -gt 30) {
-        Write-Warning "WhatsApp allows max 30 stickers per pack; found $count. Trimming to first 30."
-        $sources = $sources[0..29]
-        $count = 30
-    }
-    if ($count -lt 3) {
-        throw "WhatsApp requires at least 3 stickers; found $count."
+    if ($totalCount -lt 3) {
+        throw "WhatsApp requires at least 3 stickers; found $totalCount."
     }
 
-    Write-Host "Converting $count source(s) to animated WebP..."
+    # --- Split into multiple packs of <= 30 if needed, sized evenly so no ---
+    # --- leftover pack ends up under WhatsApp's 3-sticker minimum.        ---
+    $numPacks = [int][Math]::Ceiling($totalCount / 30.0)
+    $baseSize = [int][Math]::Floor($totalCount / $numPacks)
+    $remainder = $totalCount % $numPacks
 
-    $producedCount = 0
-    for ($i = 0; $i -lt $count; $i++) {
-        $src = $sources[$i]
-        $outName = "sticker_{0:D3}.webp" -f ($i + 1)
-        $outPath = Join-Path $WorkDir $outName
+    $packSources = @()
+    $idx = 0
+    for ($p = 0; $p -lt $numPacks; $p++) {
+        $size = $baseSize
+        if ($p -lt $remainder) { $size++ }
+        $packSources += , @($sources[$idx..($idx + $size - 1)])
+        $idx += $size
+    }
 
-        $size = 0
-        $failed = $false
-        foreach ($q in $Qualities) {
-            $ffArgs = @('-y', '-loglevel', 'error', '-i', $src.FullName)
-            if ($src.IsVideo -and $null -ne $src.DurationSeconds) {
-                $ffArgs += @('-ss', "$($src.StartSeconds)", '-t', "$($src.DurationSeconds)")
-            }
-            $ffArgs += @('-vf', $StickerFilter)
-            if ($src.IsVideo -and $null -eq $src.DurationSeconds) {
-                $ffArgs += @('-frames:v', $MaxFrames)
-            }
-            $ffArgs += @('-c:v', 'libwebp_anim', '-lossless', '0', '-q:v', "$q", '-compression_level', '6', '-loop', '0', '-an', '-vsync', '0', $outPath)
+    if ($numPacks -gt 1) {
+        Write-Host "$totalCount sticker sources found; splitting into $numPacks packs (WhatsApp's limit is 30 per pack)."
+    }
 
-            & $FfmpegPath @ffArgs
-            if ($LASTEXITCODE -ne 0) {
-                if ($src.IsVideo) {
-                    Write-Warning "Skipping $($src.Name): ffmpeg could not convert it."
-                    $failed = $true
+    $outDir = Split-Path -Parent $OutFile
+    $outBase = [System.IO.Path]::GetFileNameWithoutExtension($OutFile)
+    $outExt = [System.IO.Path]::GetExtension($OutFile)
+
+    $packResults = @()
+
+    for ($p = 0; $p -lt $numPacks; $p++) {
+        $packItems = $packSources[$p]
+        $packNum = $p + 1
+
+        if ($numPacks -gt 1) {
+            $suffix = "$packNum"
+            if ($numPacks -ge 10) { $suffix = "{0:D2}" -f $packNum }
+            $packOutFile = Join-Path $outDir "${outBase}_${suffix}${outExt}"
+            $packTitleText = "$PackTitle ($packNum/$numPacks)"
+            Write-Host ""
+            Write-Host "--- Pack $packNum/$numPacks ($($packItems.Count) sources) ---"
+        }
+        else {
+            $packOutFile = $OutFile
+            $packTitleText = $PackTitle
+        }
+
+        $PackWorkDir = Join-Path $WorkDir "pack_$packNum"
+        New-Item -ItemType Directory -Path $PackWorkDir | Out-Null
+
+        Write-Host "Converting $($packItems.Count) source(s) to animated WebP..."
+
+        $producedCount = 0
+        for ($i = 0; $i -lt $packItems.Count; $i++) {
+            $src = $packItems[$i]
+            $outName = "sticker_{0:D3}.webp" -f ($i + 1)
+            $outPath = Join-Path $PackWorkDir $outName
+
+            $size = 0
+            $failed = $false
+            foreach ($q in $Qualities) {
+                $ffArgs = @('-y', '-loglevel', 'error', '-i', $src.FullName)
+                if ($src.IsVideo -and $null -ne $src.DurationSeconds) {
+                    $ffArgs += @('-ss', "$($src.StartSeconds)", '-t', "$($src.DurationSeconds)")
+                }
+                $ffArgs += @('-vf', $StickerFilter)
+                if ($src.IsVideo -and $null -eq $src.DurationSeconds) {
+                    $ffArgs += @('-frames:v', $MaxFrames)
+                }
+                $ffArgs += @('-c:v', 'libwebp_anim', '-lossless', '0', '-q:v', "$q", '-compression_level', '6', '-loop', '0', '-an', '-vsync', '0', $outPath)
+
+                & $FfmpegPath @ffArgs
+                if ($LASTEXITCODE -ne 0) {
+                    if ($src.IsVideo) {
+                        Write-Warning "Skipping $($src.Name): ffmpeg could not convert it."
+                        $failed = $true
+                        break
+                    }
+                    throw "ffmpeg failed converting $($src.Name) (quality $q)"
+                }
+                $size = (Get-Item -LiteralPath $outPath).Length
+                if ($size -le $MaxStickerBytes) {
                     break
                 }
-                throw "ffmpeg failed converting $($src.Name) (quality $q)"
             }
-            $size = (Get-Item -LiteralPath $outPath).Length
-            if ($size -le $MaxStickerBytes) {
-                break
+            if ($failed) {
+                continue
             }
+
+            if ($size -gt $MaxStickerBytes) {
+                Write-Warning "$($src.Name) still $size bytes after lowest quality pass -- consider a shorter segment."
+            }
+            Write-Host ("  [{0}/{1}] {2} -> {3} ({4} bytes)" -f ($i + 1), $packItems.Count, $src.Name, $outName, $size)
+            $producedCount++
         }
-        if ($failed) {
-            continue
+
+        if ($producedCount -lt 3) {
+            throw "Pack $packNum only produced $producedCount sticker(s) (WhatsApp requires at least 3); see warnings above."
         }
 
-        if ($size -gt $MaxStickerBytes) {
-            Write-Warning "$($src.Name) still $size bytes after lowest quality pass -- consider a shorter segment."
+        # --- Tray icon: use first frame of the pack's first source, downscaled to 96x96 PNG ---
+        Write-Host "Building tray icon..."
+        $Tray = Join-Path $PackWorkDir "tray.png"
+        $trayArgs = @('-y', '-loglevel', 'error')
+        if ($packItems[0].IsVideo -and $packItems[0].StartSeconds -gt 0) {
+            $trayArgs += @('-ss', "$($packItems[0].StartSeconds)")
         }
-        Write-Host ("  [{0}/{1}] {2} -> {3} ({4} bytes)" -f ($i + 1), $count, $src.Name, $outName, $size)
-        $producedCount++
+        $trayArgs += @('-i', $packItems[0].FullName, '-vframes', '1', '-vf', `
+            "scale=96:96:force_original_aspect_ratio=decrease,pad=96:96:(ow-iw)/2:(oh-ih)/2:color=0x00000000", $Tray)
+        & $FfmpegPath @trayArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "ffmpeg failed building tray icon"
+        }
+        $traySize = (Get-Item -LiteralPath $Tray).Length
+        if ($traySize -gt $MaxTrayBytes) {
+            Write-Warning "tray.png is $traySize bytes (limit ~50KB). It may still be accepted, but consider a simpler image."
+        }
+
+        # --- Metadata (no trailing newline, matching `echo -n`) ---
+        [System.IO.File]::WriteAllText((Join-Path $PackWorkDir "title.txt"), $packTitleText)
+        [System.IO.File]::WriteAllText((Join-Path $PackWorkDir "author.txt"), $PackAuthor)
+
+        # --- Zip it up (flat structure: no folder paths inside the archive) ---
+        # Compress-Archive refuses non-.zip destinations, so build a .zip and
+        # rename it to the requested .wastickers path.
+        Write-Host "Packing $packOutFile..."
+        $stickerFiles = Get-ChildItem -LiteralPath $PackWorkDir -File
+        $items = $stickerFiles.FullName
+        $zipTemp = Join-Path $PackWorkDir "__pack.zip"
+        Compress-Archive -Path $items -DestinationPath $zipTemp -CompressionLevel Optimal
+
+        if (Test-Path -LiteralPath $packOutFile) {
+            Remove-Item -LiteralPath $packOutFile -Force
+        }
+        Move-Item -LiteralPath $zipTemp -Destination $packOutFile
+
+        if (-not (Test-Path -LiteralPath $packOutFile)) {
+            throw "Something went wrong producing $packOutFile"
+        }
+
+        $packResults += [pscustomobject]@{ OutFile = $packOutFile; Count = $producedCount }
     }
 
-    if ($producedCount -lt 3) {
-        throw "Only $producedCount sticker(s) were successfully produced (WhatsApp requires at least 3); see warnings above."
+    Write-Host ""
+    foreach ($result in $packResults) {
+        Write-Host "Done: $($result.OutFile) ($($result.Count) stickers)"
     }
-
-    # --- Tray icon: use first frame of the first source, downscaled to 96x96 PNG ---
-    Write-Host "Building tray icon..."
-    $Tray = Join-Path $WorkDir "tray.png"
-    $trayArgs = @('-y', '-loglevel', 'error')
-    if ($sources[0].IsVideo -and $sources[0].StartSeconds -gt 0) {
-        $trayArgs += @('-ss', "$($sources[0].StartSeconds)")
-    }
-    $trayArgs += @('-i', $sources[0].FullName, '-vframes', '1', '-vf', `
-        "scale=96:96:force_original_aspect_ratio=decrease,pad=96:96:(ow-iw)/2:(oh-ih)/2:color=0x00000000", $Tray)
-    & $FfmpegPath @trayArgs
-    if ($LASTEXITCODE -ne 0) {
-        throw "ffmpeg failed building tray icon"
-    }
-    $traySize = (Get-Item -LiteralPath $Tray).Length
-    if ($traySize -gt $MaxTrayBytes) {
-        Write-Warning "tray.png is $traySize bytes (limit ~50KB). It may still be accepted, but consider a simpler image."
-    }
-
-    # --- Metadata (no trailing newline, matching `echo -n`) ---
-    [System.IO.File]::WriteAllText((Join-Path $WorkDir "title.txt"), $PackTitle)
-    [System.IO.File]::WriteAllText((Join-Path $WorkDir "author.txt"), $PackAuthor)
-
-    # --- Zip it up (flat structure: no folder paths inside the archive) ---
-    # Compress-Archive refuses non-.zip destinations, so build a .zip and
-    # rename it to the requested .wastickers path.
-    Write-Host "Packing $OutFile..."
-    $stickerFiles = Get-ChildItem -LiteralPath $WorkDir -File
-    $items = $stickerFiles.FullName
-    $zipTemp = Join-Path $WorkDir "__pack.zip"
-    Compress-Archive -Path $items -DestinationPath $zipTemp -CompressionLevel Optimal
-
-    if (Test-Path -LiteralPath $OutFile) {
-        Remove-Item -LiteralPath $OutFile -Force
-    }
-    Move-Item -LiteralPath $zipTemp -Destination $OutFile
-
-    if (-not (Test-Path -LiteralPath $OutFile)) {
-        throw "Something went wrong producing $OutFile"
-    }
-
-    Write-Host "Done: $OutFile ($producedCount stickers)"
-    Write-Host "Transfer this file to your phone and open it with the 'Sticker Maker' app to import into WhatsApp."
+    Write-Host "Transfer these file(s) to your phone and open each with the 'Sticker Maker' app to import into WhatsApp."
 }
 finally {
     Remove-Item -LiteralPath $WorkDir -Recurse -Force -ErrorAction SilentlyContinue

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' show Random;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../models/category_base.dart';
@@ -344,9 +345,12 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Future<void> _editTodo(Todo todo) async {
-    final newTitle = await showDialog<String>(
-      context: context,
-      builder: (_) => _EditTodoDialog(initialTitle: todo.title),
+    final newTitle = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _EditTodoScreen(initialTitle: todo.title),
+      ),
     );
     _screenFocusNode.requestFocus();
     final title = newTitle?.trim();
@@ -937,11 +941,11 @@ class _SwipeableTodoItem extends StatelessWidget {
       onCategorizeStart: onCategorizeStart,
       onCategorizeDragUpdate: onCategorizeDragUpdate,
       onCategorizeDragEnd: onCategorizeDragEnd,
-      child: _buildCard(),
+      child: _buildCard(context),
     );
   }
 
-  Widget _buildCard() {
+  Widget _buildCard(BuildContext context) {
     final cat = category;
 
     return ClipRRect(
@@ -990,22 +994,29 @@ class _SwipeableTodoItem extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Title (tap to edit)
+                      // Title (tap to edit). Rendered as markdown so
+                      // multi-line tasks blend together in the card
+                      // instead of looking like a single truncated line.
                       Expanded(
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: onEdit,
-                          child: Text(
-                            todo.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: todo.isCompleted
-                                  ? AppTheme.mediumBrown
-                                  : AppTheme.darkBrown,
-                              decoration: todo.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                              fontWeight: FontWeight.w500,
+                          child: MarkdownBody(
+                            data: todo.title,
+                            selectable: false,
+                            softLineBreak: true,
+                            styleSheet: _todoMarkdownStyleSheet(
+                              context,
+                              TextStyle(
+                                fontSize: 16,
+                                color: todo.isCompleted
+                                    ? AppTheme.mediumBrown
+                                    : AppTheme.darkBrown,
+                                decoration: todo.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),
@@ -1040,22 +1051,63 @@ class _SwipeableTodoItem extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Edit todo title dialog
+// Markdown styling shared by the card preview and the fullscreen editor
 // ---------------------------------------------------------------------------
 
-/// Owns its controller so it is only disposed once the dialog route is
-/// fully gone. Pops with the new title, or null when cancelled.
-class _EditTodoDialog extends StatefulWidget {
-  final String initialTitle;
-
-  const _EditTodoDialog({required this.initialTitle});
-
-  @override
-  State<_EditTodoDialog> createState() => _EditTodoDialogState();
+/// Builds on the theme defaults (so paddings/decorations the package
+/// expects are never null) and overrides just the bits that need to match
+/// [base] — the same style the plain-text title used to render with.
+MarkdownStyleSheet _todoMarkdownStyleSheet(
+    BuildContext context, TextStyle base) {
+  final strikethrough = TextDecoration.combine(
+      [base.decoration ?? TextDecoration.none, TextDecoration.lineThrough]);
+  return MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+    p: base,
+    a: base,
+    listBullet: base,
+    blockSpacing: 4,
+    listIndent: 20,
+    pPadding: EdgeInsets.zero,
+    checkbox: base.copyWith(color: AppTheme.primaryOrange),
+    strong: base.copyWith(fontWeight: FontWeight.bold),
+    em: base.copyWith(fontStyle: FontStyle.italic),
+    del: base.copyWith(decoration: strikethrough),
+    blockquote: base.copyWith(fontStyle: FontStyle.italic),
+    code: base.copyWith(
+      fontFamily: 'monospace',
+      fontSize: (base.fontSize ?? 16) - 1,
+      backgroundColor: AppTheme.lightPeach,
+    ),
+  );
 }
 
-class _EditTodoDialogState extends State<_EditTodoDialog> {
+// ---------------------------------------------------------------------------
+// Fullscreen markdown editor for a todo's title
+// ---------------------------------------------------------------------------
+
+/// Fullscreen editor for a todo's title. Unlike the single-line quick-add
+/// field, Return inserts a newline here instead of submitting — the text is
+/// still stored as plain markdown in the `title` column; only editing and
+/// rendering understand it. Pops with the new text, or null when cancelled.
+class _EditTodoScreen extends StatefulWidget {
+  final String initialTitle;
+
+  const _EditTodoScreen({required this.initialTitle});
+
+  @override
+  State<_EditTodoScreen> createState() => _EditTodoScreenState();
+}
+
+class _EditTodoScreenState extends State<_EditTodoScreen> {
+  static const _baseStyle = TextStyle(
+    fontSize: 16,
+    color: AppTheme.darkBrown,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+  );
+
   late final TextEditingController _controller;
+  bool _showPreview = false;
 
   @override
   void initState() {
@@ -1069,49 +1121,178 @@ class _EditTodoDialogState extends State<_EditTodoDialog> {
     super.dispose();
   }
 
+  /// Wraps the current selection in [marker] (or inserts an empty pair at
+  /// the cursor when nothing is selected), e.g. `**` for bold.
+  void _wrapSelection(String marker) {
+    final text = _controller.text;
+    final sel = _controller.selection;
+    final start = sel.start < 0 ? text.length : sel.start;
+    final end = sel.end < 0 ? text.length : sel.end;
+    final selected = text.substring(start, end);
+    final newText = text.replaceRange(start, end, '$marker$selected$marker');
+    _controller.value = TextEditingValue(
+      text: newText,
+      selection: selected.isEmpty
+          ? TextSelection.collapsed(offset: start + marker.length)
+          : TextSelection(
+              baseOffset: start,
+              extentOffset: start + marker.length * 2 + selected.length),
+    );
+  }
+
+  /// Inserts [prefix] at the start of the line the cursor is on, e.g.
+  /// `- ` for a bullet or `- [ ] ` for a checklist item.
+  void _insertLinePrefix(String prefix) {
+    final text = _controller.text;
+    final sel = _controller.selection;
+    final offset = sel.start < 0 ? text.length : sel.start;
+    final lineStart =
+        offset == 0 ? 0 : text.lastIndexOf('\n', offset - 1) + 1;
+    final newText = text.replaceRange(lineStart, lineStart, prefix);
+    _controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: offset + prefix.length),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return Scaffold(
       backgroundColor: AppTheme.creamBackground,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
-      title: const Text('Editar tarefa'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        textCapitalization: TextCapitalization.sentences,
-        style: AppTheme.bodyText,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: AppTheme.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-            borderSide: const BorderSide(
-                color: AppTheme.primaryOrange, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 14),
-        ),
-        onSubmitted: (value) => Navigator.pop(context, value),
-      ),
-      actions: [
-        TextButton(
+      appBar: AppBar(
+        backgroundColor: AppTheme.creamBackground,
+        elevation: 0,
+        foregroundColor: AppTheme.darkBrown,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
         ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryOrange,
-            foregroundColor: Colors.white,
+        title: const Text('Editar tarefa'),
+        actions: [
+          IconButton(
+            icon: Icon(_showPreview
+                ? Icons.edit_outlined
+                : Icons.visibility_outlined),
+            tooltip: _showPreview ? 'Editar' : 'Visualizar',
+            onPressed: () => setState(() => _showPreview = !_showPreview),
           ),
-          onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Salvar'),
+          TextButton(
+            onPressed: () => Navigator.pop(context, _controller.text),
+            child: const Text(
+              'Salvar',
+              style: TextStyle(
+                  color: AppTheme.primaryOrange,
+                  fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: _showPreview
+              ? SingleChildScrollView(
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: MarkdownBody(
+                      data: _controller.text.trim().isEmpty
+                          ? '_Nada para mostrar_'
+                          : _controller.text,
+                      selectable: false,
+                      softLineBreak: true,
+                      styleSheet:
+                          _todoMarkdownStyleSheet(context, _baseStyle),
+                    ),
+                  ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _EditorToolbarButton(
+                          icon: Icons.format_bold,
+                          tooltip: 'Negrito',
+                          onPressed: () => _wrapSelection('**'),
+                        ),
+                        _EditorToolbarButton(
+                          icon: Icons.format_italic,
+                          tooltip: 'Itálico',
+                          onPressed: () => _wrapSelection('*'),
+                        ),
+                        _EditorToolbarButton(
+                          icon: Icons.format_list_bulleted,
+                          tooltip: 'Lista',
+                          onPressed: () => _insertLinePrefix('- '),
+                        ),
+                        _EditorToolbarButton(
+                          icon: Icons.check_box_outlined,
+                          tooltip: 'Checklist',
+                          onPressed: () => _insertLinePrefix('- [ ] '),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.white,
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMedium),
+                          boxShadow: AppTheme.softShadow,
+                        ),
+                        child: TextField(
+                          controller: _controller,
+                          autofocus: true,
+                          maxLines: null,
+                          expands: true,
+                          textAlignVertical: TextAlignVertical.top,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: _baseStyle,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            isCollapsed: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _EditorToolbarButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  const _EditorToolbarButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: IconButton(
+        icon: Icon(icon, color: AppTheme.mediumBrown),
+        tooltip: tooltip,
+        onPressed: onPressed,
+        style: IconButton.styleFrom(
+          backgroundColor: AppTheme.white,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall)),
+        ),
+      ),
     );
   }
 }

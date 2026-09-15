@@ -7,6 +7,7 @@ class Todo {
   final int sortOrder;
   final bool isArchived;
   final DateTime? createdAt;
+  final DateTime? completedAt;
 
   Todo({
     required this.id,
@@ -17,6 +18,7 @@ class Todo {
     this.sortOrder = 0,
     this.isArchived = false,
     this.createdAt,
+    this.completedAt,
   });
 
   factory Todo.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,9 @@ class Todo {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
           : null,
+      completedAt: json['completed_at'] != null
+          ? DateTime.tryParse(json['completed_at'])
+          : null,
     );
   }
 
@@ -43,6 +48,7 @@ class Todo {
         'sort_order': sortOrder,
         'is_archived': isArchived ? 1 : 0,
         'created_at': createdAt?.toIso8601String(),
+        'completed_at': completedAt?.toIso8601String(),
       };
 
   factory Todo.fromDb(Map<String, dynamic> row) {
@@ -56,6 +62,9 @@ class Todo {
       isArchived: (row['is_archived'] ?? 0) != 0,
       createdAt: row['created_at'] != null
           ? DateTime.tryParse(row['created_at'])
+          : null,
+      completedAt: row['completed_at'] != null
+          ? DateTime.tryParse(row['completed_at'])
           : null,
     );
   }

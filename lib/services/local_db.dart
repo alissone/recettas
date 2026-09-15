@@ -30,7 +30,7 @@ class LocalDb {
     final dir = await getDatabasesPath();
     _db = await openDatabase(
       p.join(dir, 'recettas_cache.db'),
-      version: 3,
+      version: 4,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE todos (
@@ -41,7 +41,8 @@ class LocalDb {
             category_id TEXT,
             sort_order INTEGER NOT NULL DEFAULT 0,
             is_archived INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT
+            created_at TEXT,
+            completed_at TEXT
           )
         ''');
         await db.execute('''
@@ -74,6 +75,9 @@ class LocalDb {
           await db.execute(_createGpsRecordingsSql);
           await db.execute(_createGpsPointsSql);
           await db.execute(_createGpsPointsIndexSql);
+        }
+        if (oldVersion < 4) {
+          await db.execute('ALTER TABLE todos ADD COLUMN completed_at TEXT');
         }
       },
     );

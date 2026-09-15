@@ -76,12 +76,25 @@ class TodoRepository {
     final db = await LocalDb.instance;
     final rows = await db.query(
       'todos',
-      where: 'user_id = ? AND is_archived = 0',
-      whereArgs: [uid],
+      // Completed todos from a previous day stay in the database (and on
+      // the server) but drop out of the list once the day has passed;
+      // legacy rows with no completed_at (completed before this existed)
+      // count as "old" too.
+      where: 'user_id = ? AND is_archived = 0 AND '
+          '(is_completed = 0 OR (completed_at IS NOT NULL AND '
+          "strftime('%s', completed_at) >= strftime('%s', ?)))",
+      whereArgs: [uid, _startOfTodayUtc().toIso8601String()],
       // Completed items sink to the bottom of the list.
       orderBy: 'is_completed ASC, sort_order ASC, created_at DESC',
     );
     return rows.map(Todo.fromDb).toList();
+  }
+
+  /// Midnight in the device's local timezone, expressed in UTC — the
+  /// cutoff below which a completed todo counts as "from a previous day".
+  DateTime _startOfTodayUtc() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day).toUtc();
   }
 
   Future<List<TodoCategory>> getCategories() async {
@@ -118,16 +131,20 @@ class TodoRepository {
   }
 
   Future<void> toggleTodo(String id, bool isCompleted) async {
+    // Recorded so completed todos can be dropped from the list (and from
+    // future fetches) once the day they were completed on has passed.
+    final completedAt =
+        isCompleted ? DateTime.now().toUtc().toIso8601String() : null;
     final db = await LocalDb.instance;
     await db.update(
       'todos',
-      {'is_completed': isCompleted ? 1 : 0},
+      {'is_completed': isCompleted ? 1 : 0, 'completed_at': completedAt},
       where: 'id = ?',
       whereArgs: [id],
     );
     await _enqueue('todo_update', {
       'id': id,
-      'fields': {'is_completed': isCompleted},
+      'fields': {'is_completed': isCompleted, 'completed_at': completedAt},
     });
   }
 
@@ -337,9 +354,13 @@ class TodoRepository {
     final uid = _userId;
     if (uid == null) return;
 
+    // Completed-and-old todos are neither shown nor needed locally, so skip
+    // pulling them down at all rather than fetching and then filtering.
+    final cutoff = _startOfTodayUtc().toIso8601String();
     final todosData = await _client
         .from('todos')
         .select()
+        .or('is_completed.eq.false,completed_at.gte.$cutoff')
         .order('sort_order', ascending: true)
         .order('created_at', ascending: false);
     final catsData =

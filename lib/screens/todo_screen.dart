@@ -966,75 +966,99 @@ class _SwipeableTodoItem extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 12),
-                  child: Row(
+                  // Stack rather than a plain Row so the drag handle
+                  // (a Positioned with top/bottom pinned) can stretch to
+                  // match whatever height the checkbox+title row ends up
+                  // needing, without that height being decided in a
+                  // circular way (Positioned children are ignored for
+                  // intrinsic-size purposes, unlike a Row child would be).
+                  child: Stack(
                     children: [
-                      // Checkbox
-                      GestureDetector(
-                        onTap: onToggle,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: todo.isCompleted
-                                ? AppTheme.primaryOrange
-                                : AppTheme.primaryOrange
-                                    .withValues(alpha: 0.1),
-                            borderRadius:
-                                BorderRadius.circular(8),
-                            border: todo.isCompleted
-                                ? null
-                                : Border.all(
-                                    color: AppTheme.borderOrange,
-                                    width: 2),
-                          ),
-                          child: todo.isCompleted
-                              ? const Icon(Icons.check,
-                                  size: 18, color: Colors.white)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Title (tap to edit). Rendered as markdown so
-                      // multi-line tasks blend together in the card
-                      // instead of looking like a single truncated line.
-                      Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: onEdit,
-                          child: MarkdownBody(
-                            data: todo.title,
-                            selectable: false,
-                            softLineBreak: true,
-                            styleSheet: _todoMarkdownStyleSheet(
-                              context,
-                              TextStyle(
-                                fontSize: 16,
+                      Row(
+                        children: [
+                          // Checkbox
+                          GestureDetector(
+                            onTap: onToggle,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
                                 color: todo.isCompleted
-                                    ? AppTheme.mediumBrown
-                                    : AppTheme.darkBrown,
-                                decoration: todo.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                fontWeight: FontWeight.w500,
+                                    ? AppTheme.primaryOrange
+                                    : AppTheme.primaryOrange
+                                        .withValues(alpha: 0.1),
+                                borderRadius:
+                                    BorderRadius.circular(8),
+                                border: todo.isCompleted
+                                    ? null
+                                    : Border.all(
+                                        color: AppTheme.borderOrange,
+                                        width: 2),
+                              ),
+                              child: todo.isCompleted
+                                  ? const Icon(Icons.check,
+                                      size: 18, color: Colors.white)
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Title (tap to edit). Rendered as markdown so
+                          // multi-line tasks blend together in the card
+                          // instead of looking like a single truncated
+                          // line. Right padding reserves room for the
+                          // drag handle overlaid on top.
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                  right: canReorder ? 30 : 0),
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: onEdit,
+                                child: MarkdownBody(
+                                  data: todo.title,
+                                  selectable: false,
+                                  softLineBreak: true,
+                                  styleSheet: _todoMarkdownStyleSheet(
+                                    context,
+                                    TextStyle(
+                                      fontSize: 16,
+                                      color: todo.isCompleted
+                                          ? AppTheme.mediumBrown
+                                          : AppTheme.darkBrown,
+                                      decoration: todo.isCompleted
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
                       // Drag handle (manual order only applies to the
-                      // ungrouped list)
+                      // ungrouped list). Invisible by design — it still
+                      // grabs drags, it just doesn't draw dots over the
+                      // title — and pinned top-to-bottom so a multi-line
+                      // task can be grabbed from any line, not just the
+                      // vertical center.
                       if (canReorder)
-                        ReorderableDragStartListener(
-                          index: index,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 8),
-                            child: Icon(
-                              Icons.drag_indicator,
-                              color: AppTheme.mediumBrown
-                                  .withValues(alpha: 0.3),
-                              size: 22,
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          right: 0,
+                          child: ReorderableDragStartListener(
+                            index: index,
+                            child: SizedBox(
+                              width: 30,
+                              child: Center(
+                                child: Icon(
+                                  Icons.drag_indicator,
+                                  color: Colors.transparent,
+                                  size: 22,
+                                ),
+                              ),
                             ),
                           ),
                         ),

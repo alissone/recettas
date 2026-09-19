@@ -474,6 +474,12 @@ class SupabaseService {
     });
   }
 
+  static Future<void> updateSleepEvent(String id, DateTime occurredAt) async {
+    await _client.from('sleep_events').update({
+      'occurred_at': occurredAt.toUtc().toIso8601String(),
+    }).eq('id', id);
+  }
+
   static Future<void> deleteSleepEvent(String id) async {
     await _client.from('sleep_events').delete().eq('id', id);
   }

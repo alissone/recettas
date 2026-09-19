@@ -90,6 +90,8 @@ class _TodoScreenState extends State<TodoScreen> {
   bool _groupByCategory = false;
   List<String> _groupOrder = [];
   final Set<String> _collapsedGroups = {};
+  bool _searchVisible = false;
+  final _searchController = TextEditingController();
   String _surpriseDescription = _surpriseDescriptions[
       Random().nextInt(_surpriseDescriptions.length)];
   final _textController = TextEditingController();
@@ -140,6 +142,7 @@ class _TodoScreenState extends State<TodoScreen> {
     _repo.onChange.removeListener(_loadAll);
     _authSubscription?.cancel();
     _textController.dispose();
+    _searchController.dispose();
     _focusNode.dispose();
     _screenFocusNode.dispose();
     super.dispose();
@@ -252,6 +255,25 @@ class _TodoScreenState extends State<TodoScreen> {
       order.add(_uncategorizedKey);
     }
     return order;
+  }
+
+  /// Todos shown in the list: everything, or the search matches (by
+  /// title or category name) while the search bar is open.
+  List<Todo> get _visibleTodos {
+    final query = _searchController.text.trim().toLowerCase();
+    if (!_searchVisible || query.isEmpty) return _todos;
+    return _todos.where((t) {
+      final cat = _categoryForTodo(t);
+      return t.title.toLowerCase().contains(query) ||
+          (cat?.name.toLowerCase().contains(query) ?? false);
+    }).toList();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _searchVisible = !_searchVisible;
+      if (!_searchVisible) _searchController.clear();
+    });
   }
 
   void _toggleGroupCollapsed(String key) {
@@ -396,6 +418,8 @@ class _TodoScreenState extends State<TodoScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(),
+                  if (_isAuthenticated && _searchVisible)
+                    _buildSearchBar(),
                   Expanded(child: _buildContent()),
                 ],
               ),
@@ -437,6 +461,16 @@ class _TodoScreenState extends State<TodoScreen> {
             ),
           ),
           if (_isAuthenticated) ...[
+            IconButton(
+              tooltip: 'Buscar',
+              icon: Icon(
+                Icons.search,
+                color: _searchVisible
+                    ? AppTheme.primaryOrange
+                    : AppTheme.darkBrown,
+              ),
+              onPressed: _toggleSearch,
+            ),
             const SyncIndicator(),
             const SizedBox(width: 4),
           ],
@@ -514,8 +548,79 @@ class _TodoScreenState extends State<TodoScreen> {
     }
     if (_isAdding) return _buildAddingView();
     if (_todos.isEmpty) return _buildEmptyState();
+    if (_searchVisible && _searchController.text.trim().isNotEmpty) {
+      return _buildSearchResults();
+    }
     if (_groupByCategory) return _buildGroupedList();
     return _buildTodoList();
+  }
+
+  Widget _buildSearchResults() {
+    final visible = _visibleTodos;
+    if (visible.isEmpty) return _buildNoSearchResults();
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      children: [
+        for (final todo in visible) _buildGroupedItem(todo),
+      ],
+    );
+  }
+
+  Widget _buildNoSearchResults() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off,
+              size: 64,
+              color: AppTheme.primaryOrange.withValues(alpha: 0.3)),
+          const SizedBox(height: 16),
+          const Text('Nenhuma tarefa encontrada',
+              style: AppTheme.sectionTitle),
+          const SizedBox(height: 8),
+          const Text('Tente outro termo de busca',
+              style: AppTheme.caption),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.white,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: TextField(
+          controller: _searchController,
+          autofocus: true,
+          style: AppTheme.bodyText,
+          decoration: InputDecoration(
+            hintText: 'Buscar por tarefa ou categoria',
+            hintStyle: TextStyle(
+                color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
+            prefixIcon: const Icon(Icons.search,
+                color: AppTheme.mediumBrown),
+            suffixIcon: _searchController.text.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Limpar',
+                    icon: const Icon(Icons.close,
+                        color: AppTheme.mediumBrown),
+                    onPressed: () =>
+                        setState(_searchController.clear),
+                  ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+      ),
+    );
   }
 
   Widget _buildSignInPrompt() {

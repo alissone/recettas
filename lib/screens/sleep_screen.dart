@@ -8,7 +8,7 @@ import 'sleep_history_screen.dart';
 /// Sleep log: two buttons record "went to sleep" / "woke up" moments
 /// (long-press to pick a custom time), a third button registers both
 /// at once from a "slept the last N minutes" prompt, and a chart shows
-/// one bar per night on a noon-to-noon axis, one week or month at a
+/// one bar per day on an 18:00-to-18:00 axis, one week or month at a
 /// time.
 class SleepScreen extends StatefulWidget {
   const SleepScreen({super.key});
@@ -79,6 +79,14 @@ class _SleepScreenState extends State<SleepScreen> {
     _load();
   }
 
+  /// Most recently recorded event, if any — used to tell a genuinely new
+  /// event from a repeated tap correcting the last one.
+  SleepEvent? get _lastEvent {
+    if (_events.isEmpty) return null;
+    return _events.reduce(
+        (a, b) => a.occurredAt.isAfter(b.occurredAt) ? a : b);
+  }
+
   Future<void> _record(String type, DateTime occurredAt) async {
     if (SupabaseService.currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -87,7 +95,15 @@ class _SleepScreenState extends State<SleepScreen> {
     }
     setState(() => _isSaving = true);
     try {
-      await SupabaseService.addSleepEvent(type, occurredAt);
+      // Repeated taps of the same button (no opposite event in between)
+      // update the last event's time instead of adding a new one, so
+      // events always stay a strict sleep/wake/sleep/… alternation.
+      final last = _lastEvent;
+      if (last != null && last.eventType == type) {
+        await SupabaseService.updateSleepEvent(last.id, occurredAt);
+      } else {
+        await SupabaseService.addSleepEvent(type, occurredAt);
+      }
       // Recording something newer than the visible range: jump back
       // to today so the new event is actually shown.
       if (occurredAt.isAfter(_anchorDay.add(const Duration(days: 1)))) {
@@ -595,9 +611,9 @@ class _SleepChartPainter extends CustomPainter {
       ..strokeWidth = 1;
 
     // Vertical gridlines + hour labels: window hours 0/6/12/18/24 map
-    // to wall clock 12h, 18h, 00h, 06h, 12h.
+    // to wall clock 18h, 00h, 06h, 12h, 18h.
     const hourMarks = [0, 6, 12, 18, 24];
-    const hourLabels = ['12h', '18h', '00h', '06h', '12h'];
+    const hourLabels = ['18h', '00h', '06h', '12h', '18h'];
     for (var i = 0; i < hourMarks.length; i++) {
       final x = plotLeft + plotWidth * hourMarks[i] / 24.0;
       canvas.drawLine(

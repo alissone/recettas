@@ -61,7 +61,7 @@ class _SleepHistoryScreenState extends State<SleepHistoryScreen> {
       final events = await SupabaseService.getAllSleepEvents();
       final intervals = buildSleepIntervals(events);
 
-      // Total slept per noon-to-noon night, then bucket nights by month.
+      // Total slept per 18:00-to-18:00 day, then bucket by month.
       final byNight = <DateTime, Duration>{};
       for (final interval in intervals) {
         byNight[interval.day] =

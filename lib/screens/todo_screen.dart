@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../models/category_base.dart';
 import '../models/todo.dart';
+import '../models/todo_card.dart';
 import '../models/todo_category.dart';
 import '../services/category_store.dart';
 import '../services/supabase_service.dart';
@@ -295,6 +296,12 @@ class _TodoScreenState extends State<TodoScreen> {
 
   Future<void> _toggleTodo(Todo todo) async {
     await _repo.toggleTodo(todo.id, !todo.isCompleted);
+  }
+
+  /// In-place edits from the card itself (e.g. ticking a checklist item on
+  /// a "levar" card) — the repo change listener reloads the list.
+  Future<void> _updateTitle(Todo todo, String title) async {
+    await _repo.updateTodoTitle(todo.id, title);
   }
 
   Future<void> _deleteTodo(Todo todo) async {
@@ -757,6 +764,7 @@ class _TodoScreenState extends State<TodoScreen> {
           hasCategories: _categories.isNotEmpty,
           onToggle: () => _toggleTodo(todo),
           onEdit: () => _editTodo(todo),
+          onTitleChanged: (title) => _updateTitle(todo, title),
           onDelete: () => _deleteTodo(todo),
           onCategorizeStart: () => _startCategorize(todo),
           onCategorizeDragUpdate: _onCategorizeDragUpdate,
@@ -985,6 +993,7 @@ class _TodoScreenState extends State<TodoScreen> {
       canReorder: false,
       onToggle: () => _toggleTodo(todo),
       onEdit: () => _editTodo(todo),
+      onTitleChanged: (title) => _updateTitle(todo, title),
       onDelete: () => _deleteTodo(todo),
       onCategorizeStart: () => _startCategorize(todo),
       onCategorizeDragUpdate: _onCategorizeDragUpdate,
@@ -998,7 +1007,9 @@ class _TodoScreenState extends State<TodoScreen> {
     return CategorizeOverlay(
       key: _overlayKey,
       categories: _categories,
-      itemLabel: _categorizingTodo?.title ?? '',
+      itemLabel: _categorizingTodo == null
+          ? ''
+          : TodoCard.parse(_categorizingTodo!.title).summary,
       onAssign: _assignCategory,
       onDismiss: _dismissCategorize,
       onMoveToTop: _moveCategorizingTodoToTop,
@@ -1017,6 +1028,7 @@ class _SwipeableTodoItem extends StatelessWidget {
   final bool hasCategories;
   final VoidCallback onToggle;
   final VoidCallback onEdit;
+  final ValueChanged<String> onTitleChanged;
   final VoidCallback onDelete;
   final VoidCallback onCategorizeStart;
   final ValueChanged<Offset> onCategorizeDragUpdate;
@@ -1031,6 +1043,7 @@ class _SwipeableTodoItem extends StatelessWidget {
     required this.hasCategories,
     required this.onToggle,
     required this.onEdit,
+    required this.onTitleChanged,
     required this.onDelete,
     required this.onCategorizeStart,
     required this.onCategorizeDragUpdate,
@@ -1107,11 +1120,10 @@ class _SwipeableTodoItem extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          // Title (tap to edit). Rendered as markdown so
-                          // multi-line tasks blend together in the card
-                          // instead of looking like a single truncated
-                          // line. Right padding reserves room for the
-                          // drag handle overlaid on top.
+                          // Content (tap to edit). Markdown for plain
+                          // todos, a richer layout for the other kinds —
+                          // see [_TodoCardBody]. Right padding reserves
+                          // room for the drag handle overlaid on top.
                           Expanded(
                             child: Padding(
                               padding: EdgeInsets.only(
@@ -1119,23 +1131,10 @@ class _SwipeableTodoItem extends StatelessWidget {
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: onEdit,
-                                child: MarkdownBody(
-                                  data: todo.title,
-                                  selectable: false,
-                                  softLineBreak: true,
-                                  styleSheet: _todoMarkdownStyleSheet(
-                                    context,
-                                    TextStyle(
-                                      fontSize: 16,
-                                      color: todo.isCompleted
-                                          ? AppTheme.mediumBrown
-                                          : AppTheme.darkBrown,
-                                      decoration: todo.isCompleted
-                                          ? TextDecoration.lineThrough
-                                          : null,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                child: _TodoCardBody(
+                                  card: TodoCard.parse(todo.title),
+                                  completed: todo.isCompleted,
+                                  onChanged: onTitleChanged,
                                 ),
                               ),
                             ),
@@ -1211,13 +1210,327 @@ MarkdownStyleSheet _todoMarkdownStyleSheet(
 }
 
 // ---------------------------------------------------------------------------
-// Fullscreen markdown editor for a todo's title
+// Card content per kind (plain todo, "levar", event)
 // ---------------------------------------------------------------------------
 
-/// Fullscreen editor for a todo's title. Unlike the single-line quick-add
-/// field, Return inserts a newline here instead of submitting — the text is
-/// still stored as plain markdown in the `title` column; only editing and
-/// rendering understand it. Pops with the new text, or null when cancelled.
+const _weekdaysPt = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];
+const _monthsPt = [
+  'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+  'jul', 'ago', 'set', 'out', 'nov', 'dez',
+];
+
+/// Human label for an event's date, relative when it's close: "Hoje",
+/// "Amanhã", otherwise e.g. "sáb, 3 out".
+String _eventDateLabel(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(date.year, date.month, date.day);
+  final diff = day.difference(today).inDays;
+  if (diff == 0) return 'Hoje';
+  if (diff == 1) return 'Amanhã';
+  if (diff == -1) return 'Ontem';
+  final label = '${_weekdaysPt[date.weekday - 1]}, ${date.day} '
+      '${_monthsPt[date.month - 1]}';
+  return date.year == now.year ? label : '$label ${date.year}';
+}
+
+/// What goes inside a todo card next to the checkbox. Shared by the list
+/// and the editor's preview so both always look the same.
+class _TodoCardBody extends StatelessWidget {
+  final TodoCard card;
+  final bool completed;
+
+  /// Receives the card's full new text when a checklist item on a "levar"
+  /// card is ticked in place. Null makes the checklist read-only.
+  final ValueChanged<String>? onChanged;
+
+  const _TodoCardBody({
+    required this.card,
+    required this.completed,
+    this.onChanged,
+  });
+
+  static final _checkItem = RegExp(r'^(\s*)[-*+] \[([ xX])\] ?(.*)$');
+
+  TextStyle get _baseStyle => TextStyle(
+        fontSize: 16,
+        color: completed ? AppTheme.mediumBrown : AppTheme.darkBrown,
+        decoration: completed ? TextDecoration.lineThrough : null,
+        fontWeight: FontWeight.w500,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    switch (card.kind) {
+      case TodoKind.todo:
+        return _markdown(context, card.body, _baseStyle);
+      case TodoKind.move:
+        return _buildMove(context);
+      case TodoKind.event:
+        return _buildEvent(context);
+    }
+  }
+
+  Widget _markdown(BuildContext context, String data, TextStyle style) {
+    return MarkdownBody(
+      data: data,
+      selectable: false,
+      softLineBreak: true,
+      styleSheet: _todoMarkdownStyleSheet(context, style),
+    );
+  }
+
+  // --- Move ---
+
+  Widget _buildMove(BuildContext context) {
+    final lines = card.body.split('\n');
+    var total = 0;
+    var done = 0;
+    for (final line in lines) {
+      final m = _checkItem.firstMatch(line);
+      if (m == null) continue;
+      total++;
+      if (m.group(2) != ' ') done++;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Flexible(child: _PlacePill(name: card.from)),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 6),
+              child: Icon(Icons.arrow_forward,
+                  size: 16, color: AppTheme.mediumBrown),
+            ),
+            Flexible(child: _PlacePill(name: card.to)),
+            if (total > 0) ...[
+              const SizedBox(width: 8),
+              Text('$done/$total', style: AppTheme.caption),
+            ],
+          ],
+        ),
+        if (card.body.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          ..._buildChecklist(context, lines),
+        ],
+      ],
+    );
+  }
+
+  /// Checklist lines become tappable rows; everything in between is still
+  /// rendered as markdown, in the order it was written.
+  List<Widget> _buildChecklist(BuildContext context, List<String> lines) {
+    final base = _baseStyle.copyWith(fontSize: 15);
+    final children = <Widget>[];
+    final pending = <String>[];
+
+    void flush() {
+      final text = pending.join('\n').trim();
+      if (text.isNotEmpty) children.add(_markdown(context, text, base));
+      pending.clear();
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      final m = _checkItem.firstMatch(lines[i]);
+      if (m == null) {
+        pending.add(lines[i]);
+        continue;
+      }
+      flush();
+      final checked = m.group(2) != ' ';
+      final lineIndex = i;
+      children.add(GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onChanged == null
+            ? null
+            : () => onChanged!(_toggleLine(lineIndex)),
+        child: Padding(
+          padding: EdgeInsets.only(
+              left: m.group(1)!.length * 8.0, top: 3, bottom: 3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                checked ? Icons.check_box : Icons.check_box_outline_blank,
+                size: 20,
+                color: AppTheme.primaryOrange,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _markdown(
+                  context,
+                  m.group(3)!,
+                  checked
+                      ? base.copyWith(
+                          color: AppTheme.mediumBrown,
+                          decoration: TextDecoration.lineThrough)
+                      : base,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ));
+    }
+    flush();
+    return children;
+  }
+
+  String _toggleLine(int index) {
+    final lines = card.body.split('\n');
+    lines[index] = lines[index].replaceFirstMapped(
+        RegExp(r'\[([ xX])\]'), (m) => m.group(1) == ' ' ? '[x]' : '[ ]');
+    return TodoCard(kind: card.kind, meta: card.meta, body: lines.join('\n'))
+        .serialize();
+  }
+
+  // --- Event ---
+
+  Widget _buildEvent(BuildContext context) {
+    final date = card.date;
+    final start = card.start;
+    final end = card.end;
+    final now = DateTime.now();
+    final isPast = date != null &&
+        DateTime(date.year, date.month, date.day)
+            .isBefore(DateTime(now.year, now.month, now.day));
+    final accent = completed || isPast
+        ? AppTheme.mediumBrown.withValues(alpha: 0.6)
+        : AppTheme.primaryOrange;
+
+    final when = [
+      if (date != null) _eventDateLabel(date),
+      if (start != null)
+        end != null
+            ? '${TodoCard.formatTime(start)} – ${TodoCard.formatTime(end)}'
+            : TodoCard.formatTime(start),
+    ].join(' · ');
+    final title = card.eventTitle.isNotEmpty
+        ? card.eventTitle
+        : 'Evento sem título';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 44,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                border: Border.all(color: accent.withValues(alpha: 0.5)),
+              ),
+              child: date == null
+                  ? Icon(Icons.event_outlined, color: accent, size: 22)
+                  : Column(
+                      children: [
+                        Text(
+                          _monthsPt[date.month - 1].toUpperCase(),
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: accent),
+                        ),
+                        Text(
+                          '${date.day}',
+                          style: TextStyle(
+                              fontSize: 18,
+                              height: 1.1,
+                              fontWeight: FontWeight.w700,
+                              color: accent),
+                        ),
+                      ],
+                    ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style:
+                        _baseStyle.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  if (when.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(when,
+                        style: AppTheme.caption.copyWith(fontSize: 13)),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (card.body.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _markdown(
+            context,
+            card.body.trim(),
+            _baseStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// A place on a "levar" card, colored from its name like a category.
+class _PlacePill extends StatelessWidget {
+  final String name;
+
+  const _PlacePill({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = TodoCard.placeColor(name);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              name.isEmpty ? '?' : name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.darkBrown,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fullscreen editor for a todo (any kind)
+// ---------------------------------------------------------------------------
+
+/// Fullscreen editor for a todo. Unlike the single-line quick-add field,
+/// Return inserts a newline here instead of submitting. The kind's fields
+/// (places, event date/time) sit above the markdown body; converting to
+/// another kind only swaps those fields — the body is kept as-is. Pops with
+/// the full serialized text (see [TodoCard]), or null when cancelled.
 class _EditTodoScreen extends StatefulWidget {
   final String initialTitle;
 
@@ -1235,19 +1548,80 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
     height: 1.4,
   );
 
+  late TodoKind _kind;
   late final TextEditingController _controller;
+  // Every kind's fields live for the whole session, so flipping between
+  // kinds while editing doesn't lose what was typed; only the current
+  // kind's fields are saved.
+  late final TextEditingController _fromController;
+  late final TextEditingController _toController;
+  late final TextEditingController _eventTitleController;
+  DateTime? _date;
+  TimeOfDay? _start;
+  TimeOfDay? _end;
   bool _showPreview = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialTitle);
+    final card = TodoCard.parse(widget.initialTitle);
+    _kind = card.kind;
+    _controller = TextEditingController(text: card.body);
+    _fromController = TextEditingController(text: card.from);
+    _toController = TextEditingController(text: card.to);
+    _eventTitleController = TextEditingController(text: card.eventTitle);
+    _date = card.date;
+    _start = card.start;
+    _end = card.end;
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _fromController.dispose();
+    _toController.dispose();
+    _eventTitleController.dispose();
     super.dispose();
+  }
+
+  TodoCard get _card {
+    final Map<String, String> meta;
+    switch (_kind) {
+      case TodoKind.todo:
+        meta = const {};
+      case TodoKind.move:
+        meta = {'from': _fromController.text, 'to': _toController.text};
+      case TodoKind.event:
+        meta = {
+          'title': _eventTitleController.text,
+          if (_date != null) 'date': TodoCard.formatDate(_date!),
+          if (_start != null) 'start': TodoCard.formatTime(_start!),
+          if (_end != null) 'end': TodoCard.formatTime(_end!),
+        };
+    }
+    return TodoCard(kind: _kind, meta: meta, body: _controller.text);
+  }
+
+  void _convertTo(TodoKind kind) {
+    setState(() {
+      _kind = kind;
+      if (kind == TodoKind.event && _date == null) {
+        final now = DateTime.now();
+        _date = DateTime(now.year, now.month, now.day);
+        _start ??= TimeOfDay(hour: (now.hour + 1) % 24, minute: 0);
+      }
+    });
+  }
+
+  String get _screenTitle {
+    switch (_kind) {
+      case TodoKind.todo:
+        return 'Editar tarefa';
+      case TodoKind.move:
+        return 'Editar itens a levar';
+      case TodoKind.event:
+        return 'Editar evento';
+    }
   }
 
   /// Wraps the current selection in [marker] (or inserts an empty pair at
@@ -1284,6 +1658,32 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
     );
   }
 
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date ?? now,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 10),
+    );
+    if (picked != null) setState(() => _date = picked);
+  }
+
+  Future<void> _pickTime({required bool end}) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: (end ? _end ?? _start : _start) ?? TimeOfDay.now(),
+    );
+    if (picked == null) return;
+    setState(() {
+      if (end) {
+        _end = picked;
+      } else {
+        _start = picked;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1296,7 +1696,7 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Editar tarefa'),
+        title: Text(_screenTitle),
         actions: [
           IconButton(
             icon: Icon(_showPreview
@@ -1306,7 +1706,7 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
             onPressed: () => setState(() => _showPreview = !_showPreview),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, _controller.text),
+            onPressed: () => Navigator.pop(context, _card.serialize()),
             child: const Text(
               'Salvar',
               style: TextStyle(
@@ -1319,78 +1719,328 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: _showPreview
-              ? SingleChildScrollView(
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: MarkdownBody(
-                      data: _controller.text.trim().isEmpty
-                          ? '_Nada para mostrar_'
-                          : _controller.text,
-                      selectable: false,
-                      softLineBreak: true,
-                      styleSheet:
-                          _todoMarkdownStyleSheet(context, _baseStyle),
-                    ),
+          child: _showPreview ? _buildPreview() : _buildEditor(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreview() {
+    final card = _card;
+    final isEmpty = card.kind == TodoKind.todo && card.body.trim().isEmpty;
+    return SingleChildScrollView(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.white,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: _TodoCardBody(
+          card: isEmpty
+              ? const TodoCard(
+                  kind: TodoKind.todo, body: '_Nada para mostrar_')
+              : card,
+          completed: false,
+          // Ticking items in the preview edits the body being written.
+          onChanged: (text) => setState(
+              () => _controller.text = TodoCard.parse(text).body),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditor() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _buildConvertButton(),
+            const SizedBox(width: 8),
+            _EditorToolbarButton(
+              icon: Icons.format_bold,
+              tooltip: 'Negrito',
+              onPressed: () => _wrapSelection('**'),
+            ),
+            _EditorToolbarButton(
+              icon: Icons.format_italic,
+              tooltip: 'Itálico',
+              onPressed: () => _wrapSelection('*'),
+            ),
+            _EditorToolbarButton(
+              icon: Icons.format_list_bulleted,
+              tooltip: 'Lista',
+              onPressed: () => _insertLinePrefix('- '),
+            ),
+            _EditorToolbarButton(
+              icon: Icons.check_box_outlined,
+              tooltip: 'Checklist',
+              onPressed: () => _insertLinePrefix('- [ ] '),
+            ),
+          ],
+        ),
+        if (_kind == TodoKind.move) ...[
+          const SizedBox(height: 12),
+          _buildMoveFields(),
+        ],
+        if (_kind == TodoKind.event) ...[
+          const SizedBox(height: 12),
+          _buildEventFields(),
+        ],
+        const SizedBox(height: 8),
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.white,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              boxShadow: AppTheme.softShadow,
+            ),
+            child: TextField(
+              controller: _controller,
+              autofocus: _kind == TodoKind.todo,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              textCapitalization: TextCapitalization.sentences,
+              style: _baseStyle,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isCollapsed: true,
+                hintText: switch (_kind) {
+                  TodoKind.todo => null,
+                  TodoKind.move => '- [ ] O que levar',
+                  TodoKind.event => 'Notas',
+                },
+                hintStyle: _baseStyle.copyWith(
+                    color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// "Tarefa ▾" chip: shows the current kind and converts to another.
+  Widget _buildConvertButton() {
+    return PopupMenuButton<TodoKind>(
+      tooltip: 'Converter para',
+      onSelected: _convertTo,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      ),
+      color: AppTheme.white,
+      itemBuilder: (_) => [
+        for (final kind in TodoKind.values)
+          PopupMenuItem(
+            value: kind,
+            child: Row(
+              children: [
+                Icon(kind.icon, color: AppTheme.primaryOrange, size: 20),
+                const SizedBox(width: 12),
+                Expanded(child: Text(kind.label)),
+                if (kind == _kind)
+                  const Icon(Icons.check,
+                      color: AppTheme.mediumBrown, size: 18),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryOrange.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_kind.icon, color: AppTheme.primaryOrange, size: 18),
+            const SizedBox(width: 6),
+            Text(
+              _kind.label,
+              style: const TextStyle(
+                color: AppTheme.darkBrown,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Icon(Icons.arrow_drop_down, color: AppTheme.mediumBrown),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoveFields() {
+    return Row(
+      children: [
+        Expanded(child: _buildPlaceField(_fromController, 'De')),
+        IconButton(
+          tooltip: 'Inverter',
+          icon: const Icon(Icons.swap_horiz, color: AppTheme.mediumBrown),
+          onPressed: () => setState(() {
+            final from = _fromController.text;
+            _fromController.text = _toController.text;
+            _toController.text = from;
+          }),
+        ),
+        Expanded(child: _buildPlaceField(_toController, 'Para')),
+      ],
+    );
+  }
+
+  Widget _buildPlaceField(TextEditingController controller, String label) {
+    return _fieldBox(
+      TextField(
+        controller: controller,
+        textCapitalization: TextCapitalization.sentences,
+        style: _baseStyle,
+        onChanged: (_) => setState(() {}),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          isDense: true,
+          hintText: label,
+          hintStyle: _baseStyle.copyWith(
+              color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
+          prefixIconConstraints:
+              const BoxConstraints(minWidth: 22, minHeight: 10),
+          prefixIcon: Align(
+            alignment: Alignment.centerLeft,
+            widthFactor: 1,
+            child: Container(
+              width: 10,
+              height: 10,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: TodoCard.placeColor(controller.text),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldBox(
+          TextField(
+            controller: _eventTitleController,
+            autofocus: _eventTitleController.text.isEmpty,
+            textCapitalization: TextCapitalization.sentences,
+            style: _baseStyle.copyWith(fontWeight: FontWeight.w700),
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              isDense: true,
+              hintText: 'Título do evento',
+              hintStyle: _baseStyle.copyWith(
+                  color: AppTheme.mediumBrown.withValues(alpha: 0.5)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _MetaButton(
+              icon: Icons.calendar_today_outlined,
+              label: _date == null ? 'Data' : _eventDateLabel(_date!),
+              onTap: _pickDate,
+            ),
+            _MetaButton(
+              icon: Icons.schedule,
+              label: _start == null
+                  ? 'Início'
+                  : TodoCard.formatTime(_start!),
+              onTap: () => _pickTime(end: false),
+              onClear: _start == null
+                  ? null
+                  : () => setState(() => _start = null),
+            ),
+            _MetaButton(
+              icon: Icons.schedule_outlined,
+              label: _end == null
+                  ? 'Fim (opcional)'
+                  : 'até ${TodoCard.formatTime(_end!)}',
+              onTap: () => _pickTime(end: true),
+              onClear:
+                  _end == null ? null : () => setState(() => _end = null),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _fieldBox(Widget child) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Tappable field for a picked value (date, time), with an optional clear.
+class _MetaButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  const _MetaButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.white,
+      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(12, 8, onClear == null ? 12 : 4, 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: AppTheme.primaryOrange),
+              const SizedBox(width: 6),
+              Text(label,
+                  style: const TextStyle(
+                      color: AppTheme.darkBrown,
+                      fontWeight: FontWeight.w500)),
+              if (onClear != null)
+                GestureDetector(
+                  onTap: onClear,
+                  child: const Padding(
+                    padding: EdgeInsets.only(left: 4),
+                    child: Icon(Icons.close,
+                        size: 16, color: AppTheme.mediumBrown),
                   ),
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _EditorToolbarButton(
-                          icon: Icons.format_bold,
-                          tooltip: 'Negrito',
-                          onPressed: () => _wrapSelection('**'),
-                        ),
-                        _EditorToolbarButton(
-                          icon: Icons.format_italic,
-                          tooltip: 'Itálico',
-                          onPressed: () => _wrapSelection('*'),
-                        ),
-                        _EditorToolbarButton(
-                          icon: Icons.format_list_bulleted,
-                          tooltip: 'Lista',
-                          onPressed: () => _insertLinePrefix('- '),
-                        ),
-                        _EditorToolbarButton(
-                          icon: Icons.check_box_outlined,
-                          tooltip: 'Checklist',
-                          onPressed: () => _insertLinePrefix('- [ ] '),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppTheme.white,
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusMedium),
-                          boxShadow: AppTheme.softShadow,
-                        ),
-                        child: TextField(
-                          controller: _controller,
-                          autofocus: true,
-                          maxLines: null,
-                          expands: true,
-                          textAlignVertical: TextAlignVertical.top,
-                          keyboardType: TextInputType.multiline,
-                          textInputAction: TextInputAction.newline,
-                          textCapitalization: TextCapitalization.sentences,
-                          style: _baseStyle,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            isCollapsed: true,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
+            ],
+          ),
         ),
       ),
     );

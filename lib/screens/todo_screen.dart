@@ -1065,6 +1065,7 @@ class _SwipeableTodoItem extends StatelessWidget {
 
   Widget _buildCard(BuildContext context) {
     final cat = category;
+    final card = TodoCard.parse(todo.title);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -1092,12 +1093,19 @@ class _SwipeableTodoItem extends StatelessWidget {
                   // intrinsic-size purposes, unlike a Row child would be).
                   child: Stack(
                     children: [
+                      // Top-aligned so the checkbox stays level with the
+                      // first line instead of drifting down as the card
+                      // grows; the paddings below center it on that line.
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Checkbox
                           GestureDetector(
                             onTap: onToggle,
                             child: Container(
+                              margin: EdgeInsets.only(
+                                  top: _TodoCardBody.checkboxTopPadding(
+                                      card.kind)),
                               width: 28,
                               height: 28,
                               decoration: BoxDecoration(
@@ -1127,12 +1135,14 @@ class _SwipeableTodoItem extends StatelessWidget {
                           Expanded(
                             child: Padding(
                               padding: EdgeInsets.only(
+                                  top: _TodoCardBody.contentTopPadding(
+                                      card.kind),
                                   right: canReorder ? 30 : 0),
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: onEdit,
                                 child: _TodoCardBody(
-                                  card: TodoCard.parse(todo.title),
+                                  card: card,
                                   completed: todo.isCompleted,
                                   onChanged: onTitleChanged,
                                 ),
@@ -1252,6 +1262,31 @@ class _TodoCardBody extends StatelessWidget {
 
   static final _checkItem = RegExp(r'^(\s*)[-*+] \[([ xX])\] ?(.*)$');
 
+  /// Height of the event date badge, the tallest first row of any kind.
+  static const double _badgeHeight = 44;
+
+  /// Lines the list's 28px checkbox up with the middle of the first row:
+  /// a line of text or the place pills sit inside the checkbox's height,
+  /// while the event badge is taller, so the checkbox moves down instead.
+  static double checkboxTopPadding(TodoKind kind) =>
+      kind == TodoKind.event ? (_badgeHeight - 28) / 2 : 0;
+
+  static double contentTopPadding(TodoKind kind) {
+    switch (kind) {
+      case TodoKind.todo:
+        return 4;
+      case TodoKind.move:
+        return 2;
+      case TodoKind.event:
+        return 0;
+    }
+  }
+
+  /// Body indents: "levar" items line up with the place pill's dot, event
+  /// notes with the title next to the date badge.
+  static const double _moveBodyIndent = 4;
+  static const double _eventBodyIndent = 56;
+
   TextStyle get _baseStyle => TextStyle(
         fontSize: 16,
         color: completed ? AppTheme.mediumBrown : AppTheme.darkBrown,
@@ -1313,7 +1348,13 @@ class _TodoCardBody extends StatelessWidget {
         ),
         if (card.body.trim().isNotEmpty) ...[
           const SizedBox(height: 8),
-          ..._buildChecklist(context, lines),
+          Padding(
+            padding: const EdgeInsets.only(left: _moveBodyIndent),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _buildChecklist(context, lines),
+            ),
+          ),
         ],
       ],
     );
@@ -1418,7 +1459,8 @@ class _TodoCardBody extends StatelessWidget {
           children: [
             Container(
               width: 44,
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              height: _badgeHeight,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -1427,6 +1469,7 @@ class _TodoCardBody extends StatelessWidget {
               child: date == null
                   ? Icon(Icons.event_outlined, color: accent, size: 22)
                   : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           _monthsPt[date.month - 1].toUpperCase(),
@@ -1468,10 +1511,13 @@ class _TodoCardBody extends StatelessWidget {
         ),
         if (card.body.trim().isNotEmpty) ...[
           const SizedBox(height: 8),
-          _markdown(
-            context,
-            card.body.trim(),
-            _baseStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
+          Padding(
+            padding: const EdgeInsets.only(left: _eventBodyIndent),
+            child: _markdown(
+              context,
+              card.body.trim(),
+              _baseStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
+            ),
           ),
         ],
       ],
@@ -1658,6 +1704,23 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
     );
   }
 
+  /// Empties the body (the event's notes), with an undo in case it was
+  /// a mis-tap — nothing is saved until "Salvar" anyway.
+  void _clearNotes() {
+    final previous = _controller.value;
+    if (previous.text.isEmpty) return;
+    _controller.clear();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: const Text('Notas apagadas'),
+        action: SnackBarAction(
+          label: 'Desfazer',
+          onPressed: () => _controller.value = previous,
+        ),
+      ));
+  }
+
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -1779,6 +1842,12 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
               tooltip: 'Checklist',
               onPressed: () => _insertLinePrefix('- [ ] '),
             ),
+            if (_kind == TodoKind.event)
+              _EditorToolbarButton(
+                icon: Icons.delete_sweep_outlined,
+                tooltip: 'Apagar notas',
+                onPressed: _clearNotes,
+              ),
           ],
         ),
         if (_kind == TodoKind.move) ...[

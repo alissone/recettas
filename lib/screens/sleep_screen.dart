@@ -17,7 +17,8 @@ class SleepScreen extends StatefulWidget {
   State<SleepScreen> createState() => _SleepScreenState();
 }
 
-class _SleepScreenState extends State<SleepScreen> {
+class _SleepScreenState extends State<SleepScreen>
+    with WidgetsBindingObserver {
   bool _weekView = true;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -25,6 +26,10 @@ class _SleepScreenState extends State<SleepScreen> {
 
   /// Last day of the visible range; today unless the user paged back.
   DateTime _anchorDay = _today();
+
+  /// True while the user hasn't paged back, so the anchor tracks the
+  /// calendar day even if the screen stays open across midnight.
+  bool _followToday = true;
   int _loadSeq = 0;
 
   static const _weekdaysShort = [
@@ -43,6 +48,20 @@ class _SleepScreenState extends State<SleepScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (_followToday) _anchorDay = _today();
     _load();
   }
 
@@ -75,7 +94,10 @@ class _SleepScreenState extends State<SleepScreen> {
     final today = _today();
     if (next.isAfter(today)) next = today;
     if (next == _anchorDay) return;
-    setState(() => _anchorDay = next);
+    setState(() {
+      _anchorDay = next;
+      _followToday = next == today;
+    });
     _load();
   }
 
@@ -108,6 +130,7 @@ class _SleepScreenState extends State<SleepScreen> {
       // to today so the new event is actually shown.
       if (occurredAt.isAfter(_anchorDay.add(const Duration(days: 1)))) {
         _anchorDay = _today();
+        _followToday = true;
       }
       await _load();
     } catch (e) {
@@ -141,6 +164,7 @@ class _SleepScreenState extends State<SleepScreen> {
       await SupabaseService.addSleepEvent('wake', now);
       if (now.isAfter(_anchorDay.add(const Duration(days: 1)))) {
         _anchorDay = _today();
+        _followToday = true;
       }
       await _load();
     } catch (e) {
@@ -670,8 +694,11 @@ class _SleepChartPainter extends CustomPainter {
       var totalDuration = Duration.zero;
       for (final interval in dayIntervals) {
         totalDuration += interval.duration;
-        final left =
-            plotLeft + plotWidth * interval.startHour / 24.0;
+        final plotRight = plotLeft + plotWidth;
+        // Keep a minimum 2px bar without letting it overflow the plot
+        // (a sleep just before the 18:00 cutover starts at the edge).
+        final left = (plotLeft + plotWidth * interval.startHour / 24.0)
+            .clamp(plotLeft, plotRight - 2);
         final right =
             plotLeft + plotWidth * interval.endHour / 24.0;
         canvas.drawRRect(
@@ -679,7 +706,7 @@ class _SleepChartPainter extends CustomPainter {
             Rect.fromLTRB(
               left,
               rowCenter - barHeight / 2,
-              right.clamp(left + 2, plotLeft + plotWidth),
+              right.clamp(left + 2, plotRight),
               rowCenter + barHeight / 2,
             ),
             const Radius.circular(4),

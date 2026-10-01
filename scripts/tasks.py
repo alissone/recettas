@@ -129,12 +129,13 @@ class Api:
         midnight = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
         cutoff = midnight.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         rows = self._request("GET", "/rest/v1/todos", params={
-            "select": "id,title,is_completed",
+            "select": "id,title,is_completed,sort_order",
             "is_archived": "eq.false",
             "or": f"(is_completed.eq.false,completed_at.gte.{cutoff})",
             "order": "is_completed.asc,sort_order.asc,created_at.desc",
         })
-        return [{"id": r["id"], "title": r["title"], "done": bool(r["is_completed"])} for r in rows]
+        return [{"id": r["id"], "title": r["title"], "done": bool(r["is_completed"]),
+                 "order": r["sort_order"] or 0} for r in rows]
 
     def add(self, title):
         rows = self._request(
@@ -151,6 +152,9 @@ class Api:
 
     def set_title(self, todo_id, title):
         self._patch(todo_id, {"title": title})
+
+    def set_order(self, todo_id, sort_order):
+        self._patch(todo_id, {"sort_order": sort_order})
 
     def archive(self, todo_id):  # the app archives rather than deleting
         self._patch(todo_id, {"is_archived": True})
@@ -326,7 +330,7 @@ class App:
             else:
                 lines.append("")
 
-        keys = " ↑↓ move · space done · a add · e edit · d archive · r reload · L logout · q quit"
+        keys = " space done·a add·e edit·t/b top/bottom·d archive·r reload·L logout·q quit"
         lines.append(DIM + clip(keys, cols - 1) + RESET)
         lines.append((RED + self.status + RESET) if self.status else "")
         out(f"{ESC}[?25l{ESC}[H" + "".join(l + ESC + "[K\n" for l in lines[:-1]) + lines[-1] + ESC + "[K")
@@ -363,6 +367,8 @@ class App:
                 self.toggle()
             elif self.todos and k in ("e", "enter"):
                 self.edit()
+            elif self.todos and k in ("t", "b"):
+                self.move(top=k == "t")
             elif self.todos and k == "d":
                 self.archive()
 
@@ -401,6 +407,22 @@ class App:
         t = self.todos[self.sel]
         if self.guard(self.api.set_done, "Saving…", t["id"], not t["done"]):
             t["done"] = not t["done"]  # stays in place until the next refresh
+
+    def move(self, top):
+        """Send the task to the top/bottom of the list. The cursor stays on the
+        same row, so it ends up on the task that was right below it."""
+        if self.sel == (0 if top else len(self.todos) - 1):
+            return  # already there
+        t = self.todos[self.sel]
+        orders = [x["order"] for x in self.todos]
+        new = min(orders) - 1 if top else max(orders) + 1
+        if not self.guard(self.api.set_order, "Moving…", t["id"], new):
+            return
+        t["order"] = new
+        del self.todos[self.sel]
+        self.todos.insert(0 if top else len(self.todos), t)
+        if top:
+            self.sel = min(self.sel + 1, len(self.todos) - 1)  # tasks above it shifted down; follow the one below
 
     def archive(self):
         t = self.todos[self.sel]

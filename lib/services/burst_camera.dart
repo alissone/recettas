@@ -56,6 +56,8 @@ class BurstCamera {
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
     await controller.initialize();
+    // Never fire the flash during a burst (defaults to auto otherwise).
+    await controller.setFlashMode(FlashMode.off).catchError((_) {});
     _controller = controller;
     count = 0;
     _timer = Timer.periodic(interval, (_) => _shoot());

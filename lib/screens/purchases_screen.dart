@@ -63,7 +63,6 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
 
   /// Non-null while a long-press burst is shooting to the camera roll.
   BurstCamera? _burst;
-  int _burstCount = 0;
   StreamSubscription? _authSubscription;
 
   bool _searchVisible = false;
@@ -443,16 +442,8 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   Future<void> _startBurst(CameraLensDirection direction) async {
     if (_burst != null) return;
     HapticFeedback.heavyImpact();
-    final burst = BurstCamera(
-      direction: direction,
-      onShot: (n) {
-        if (mounted) setState(() => _burstCount = n);
-      },
-    );
-    setState(() {
-      _burst = burst;
-      _burstCount = 0;
-    });
+    final burst = BurstCamera(direction: direction);
+    setState(() => _burst = burst);
     try {
       await burst.start();
     } catch (e) {
@@ -481,7 +472,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   }
 
   /// Tap runs [onTap]; a 1s hold starts a headless burst with the camera
-  /// facing [direction], shown in orange with a counter. While any burst
+  /// facing [direction], shown in orange. While any burst
   /// runs, tapping either button stops it.
   Widget _captureButton({
     required CameraLensDirection direction,
@@ -504,13 +495,9 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
       },
       child: IconButton(
         icon: active
-            ? Badge(
-                label: Text('$_burstCount'),
-                backgroundColor: AppTheme.darkBrown,
-                child: Icon(activeIcon,
-                    color: AppTheme.primaryOrange,
-                    semanticLabel: 'Parar sequência'),
-              )
+            ? Icon(activeIcon,
+                color: AppTheme.primaryOrange,
+                semanticLabel: 'Parar sequência')
             : Icon(icon, color: AppTheme.darkBrown, semanticLabel: label),
         onPressed: _burst != null ? _stopBurst : onTap,
       ),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, HapticFeedback;
+import 'package:flutter/gestures.dart' show LongPressGestureRecognizer;
 import 'package:camera/camera.dart' show CameraLensDirection;
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
@@ -479,30 +480,38 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     );
   }
 
-  /// Tap runs [onTap]; hold starts a headless burst with the camera facing
-  /// [direction], shown in orange with a counter. While any burst runs,
-  /// tapping either button stops it.
+  /// Tap runs [onTap]; a 1s hold starts a headless burst with the camera
+  /// facing [direction], shown in orange with a counter. While any burst
+  /// runs, tapping either button stops it.
   Widget _captureButton({
     required CameraLensDirection direction,
-    required String tooltip,
+    required String label,
     required IconData icon,
     required IconData activeIcon,
     required VoidCallback onTap,
   }) {
     final active = _burst?.direction == direction;
-    return GestureDetector(
-      onLongPress: () => _startBurst(direction),
+    // No IconButton tooltip: Tooltip claims long-presses itself, which
+    // would swallow the burst gesture.
+    return RawGestureDetector(
+      gestures: {
+        LongPressGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+          () => LongPressGestureRecognizer(
+              duration: const Duration(seconds: 1)),
+          (r) => r.onLongPress = () => _startBurst(direction),
+        ),
+      },
       child: IconButton(
-        tooltip: active
-            ? 'Parar sequência ($_burstCount)'
-            : '$tooltip (segure para sequência)',
         icon: active
             ? Badge(
                 label: Text('$_burstCount'),
                 backgroundColor: AppTheme.darkBrown,
-                child: Icon(activeIcon, color: AppTheme.primaryOrange),
+                child: Icon(activeIcon,
+                    color: AppTheme.primaryOrange,
+                    semanticLabel: 'Parar sequência'),
               )
-            : Icon(icon, color: AppTheme.darkBrown),
+            : Icon(icon, color: AppTheme.darkBrown, semanticLabel: label),
         onPressed: _burst != null ? _stopBurst : onTap,
       ),
     );
@@ -691,14 +700,14 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                     children: [
                       _captureButton(
                         direction: CameraLensDirection.back,
-                        tooltip: 'Fotografar cupom',
+                        label: 'Fotografar cupom',
                         icon: Icons.photo_camera_outlined,
                         activeIcon: Icons.photo_camera,
                         onTap: () => _captureReceipt(ImageSource.camera),
                       ),
                       _captureButton(
                         direction: CameraLensDirection.front,
-                        tooltip: 'Escolher da galeria',
+                        label: 'Escolher da galeria',
                         icon: Icons.photo_library_outlined,
                         activeIcon: Icons.photo_library,
                         onTap: () => _captureReceipt(ImageSource.gallery),

@@ -2,6 +2,9 @@
     <!-- Location: suggest the purchase place from nearby known spots -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <!-- Burst receipt capture saves to the gallery (gal); API <= 29 only -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29"/>
     <!-- usesCleartextTraffic: the receipt OCR server (llama-server over
          Tailscale) is plain http -->
     <application

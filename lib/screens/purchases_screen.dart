@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData, HapticFeedback;
+import 'package:camera/camera.dart' show CameraLensDirection;
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
@@ -10,6 +11,7 @@ import '../models/category_base.dart';
 import '../models/list_invite.dart';
 import '../models/purchase.dart';
 import '../models/purchase_category.dart';
+import '../services/burst_camera.dart';
 import '../services/category_store.dart';
 import '../services/local_guesser.dart';
 import '../services/purchase_categorizer.dart';
@@ -57,6 +59,10 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   String? _selectedOwnerId;
   bool _isLoading = true;
   bool _uploadingReceipt = false;
+
+  /// Non-null while a long-press burst is shooting to the camera roll.
+  BurstCamera? _burst;
+  int _burstCount = 0;
   StreamSubscription? _authSubscription;
 
   bool _searchVisible = false;
@@ -119,6 +125,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   void dispose() {
     _authSubscription?.cancel();
     _searchController.dispose();
+    _burst?.stop();
     super.dispose();
   }
 
@@ -430,6 +437,77 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     }
   }
 
+  /// Long-press on the camera (back) or gallery (front) icon: shoot one
+  /// photo per second to the camera roll, no preview, until tapped again.
+  Future<void> _startBurst(CameraLensDirection direction) async {
+    if (_burst != null) return;
+    HapticFeedback.heavyImpact();
+    final burst = BurstCamera(
+      direction: direction,
+      onShot: (n) {
+        if (mounted) setState(() => _burstCount = n);
+      },
+    );
+    setState(() {
+      _burst = burst;
+      _burstCount = 0;
+    });
+    try {
+      await burst.start();
+    } catch (e) {
+      await burst.stop();
+      if (mounted) setState(() => _burst = null);
+      homeShellKey.currentState?.showBanner(
+        title: 'Falha ao abrir a câmera',
+        body: '$e',
+        icon: Icons.error_outline,
+        iconColor: Colors.red,
+      );
+    }
+  }
+
+  Future<void> _stopBurst() async {
+    final burst = _burst;
+    if (burst == null) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _burst = null);
+    await burst.stop();
+    homeShellKey.currentState?.showBanner(
+      title: '${burst.count} fotos salvas na galeria',
+      body: 'Use o botão da galeria para enviar os cupons para a fila.',
+      icon: Icons.photo_library_outlined,
+    );
+  }
+
+  /// Tap runs [onTap]; hold starts a headless burst with the camera facing
+  /// [direction], shown in orange with a counter. While any burst runs,
+  /// tapping either button stops it.
+  Widget _captureButton({
+    required CameraLensDirection direction,
+    required String tooltip,
+    required IconData icon,
+    required IconData activeIcon,
+    required VoidCallback onTap,
+  }) {
+    final active = _burst?.direction == direction;
+    return GestureDetector(
+      onLongPress: () => _startBurst(direction),
+      child: IconButton(
+        tooltip: active
+            ? 'Parar sequência ($_burstCount)'
+            : '$tooltip (segure para sequência)',
+        icon: active
+            ? Badge(
+                label: Text('$_burstCount'),
+                backgroundColor: AppTheme.darkBrown,
+                child: Icon(activeIcon, color: AppTheme.primaryOrange),
+              )
+            : Icon(icon, color: AppTheme.darkBrown),
+        onPressed: _burst != null ? _stopBurst : onTap,
+      ),
+    );
+  }
+
   // --- Manual add / edit ---
 
   Future<void> _showPurchaseSheet({Purchase? existing}) async {
@@ -611,19 +689,19 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
+                      _captureButton(
+                        direction: CameraLensDirection.back,
                         tooltip: 'Fotografar cupom',
-                        icon: const Icon(Icons.photo_camera_outlined,
-                            color: AppTheme.darkBrown),
-                        onPressed: () =>
-                            _captureReceipt(ImageSource.camera),
+                        icon: Icons.photo_camera_outlined,
+                        activeIcon: Icons.photo_camera,
+                        onTap: () => _captureReceipt(ImageSource.camera),
                       ),
-                      IconButton(
+                      _captureButton(
+                        direction: CameraLensDirection.front,
                         tooltip: 'Escolher da galeria',
-                        icon: const Icon(Icons.photo_library_outlined,
-                            color: AppTheme.darkBrown),
-                        onPressed: () =>
-                            _captureReceipt(ImageSource.gallery),
+                        icon: Icons.photo_library_outlined,
+                        activeIcon: Icons.photo_library,
+                        onTap: () => _captureReceipt(ImageSource.gallery),
                       ),
                     ],
                   ),

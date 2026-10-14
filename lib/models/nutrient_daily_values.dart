@@ -66,3 +66,42 @@ const Map<NutrientId, double> fdaDailyValues = {
   NutrientId.molybdenum: 45, // ug
   NutrientId.chloride: 2300, // mg
 };
+
+/// Nutrients whose target is a ceiling ("less than X") rather than a
+/// minimum to reach. Going under is fine - even ideal - so only
+/// exceeding 100% of the target is ever worth flagging.
+const Set<NutrientId> kCeilingNutrients = {
+  NutrientId.fat,
+  NutrientId.saturatedFat,
+  NutrientId.transFat,
+  NutrientId.cholesterol,
+  NutrientId.sodium,
+  NutrientId.addedSugar,
+};
+
+/// The value to compare intake against for [id]: the active
+/// recommendation set's number ([targets]) when it has one, otherwise the
+/// FDA Daily Value above - which is how nutrients absent from the shared
+/// ANVISA preset (most vitamins and trace minerals) still get a target.
+///
+/// For calories, [goalCalories] (the profile's RMR/TDEE estimate) takes
+/// over from the set when available. Added sugar is 10% of whichever
+/// calorie target applies, at 4 kcal/g, falling back to the flat 50 g
+/// label figure only when there is no calorie target at all.
+double? effectiveNutrientTarget(
+  NutrientId id, {
+  required Map<NutrientId, double> targets,
+  double? goalCalories,
+}) {
+  if (id == NutrientId.calories) return goalCalories ?? targets[id];
+  if (id == NutrientId.addedSugar) {
+    final calorieRef = goalCalories ?? targets[NutrientId.calories];
+    if (calorieRef == null || calorieRef <= 0) {
+      return fdaDailyValues[NutrientId.addedSugar];
+    }
+    return calorieRef * 0.10 / 4;
+  }
+  final manual = targets[id];
+  if (manual != null && manual > 0) return manual;
+  return fdaDailyValues[id];
+}

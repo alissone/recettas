@@ -13,6 +13,7 @@ import '../services/supabase_service.dart';
 import '../utils/dates.dart';
 import 'food_library_screen.dart';
 import 'nutrient_targets_screen.dart';
+import 'nutrition_report_screen.dart';
 
 /// Granularity of the nutrient trend chart's x-axis.
 enum _TrendRange { day, week, month }
@@ -478,31 +479,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   /// The value to compare intake against for [id]: the active
   /// recommendation set's number when it has one, otherwise the FDA Daily
-  /// Value (nutrient_daily_values.dart) - which is how nutrients absent
-  /// from the shared ANVISA preset (most vitamins and trace minerals)
-  /// still get a Meta/% Meta and can be checked for alerts.
-  double? _effectiveTarget(NutrientId id) {
-    if (id == NutrientId.calories) {
-      return _energyEstimate?.goalCalories ?? _targets[id];
-    }
-    if (id == NutrientId.addedSugar) return _addedSugarLimitG;
-    final manual = _targets[id];
-    if (manual != null && manual > 0) return manual;
-    return fdaDailyValues[id];
-  }
-
-  /// FDA guidance is added sugar under 10% of total calories, not a fixed
-  /// gram number - so this converts that percentage (at 4 kcal/g) using
-  /// whichever calorie target is available, falling back to the flat 50g
-  /// label figure (10% of a 2000 kcal diet) only when no calorie target
-  /// exists at all.
-  double? get _addedSugarLimitG {
-    final calorieRef = _effectiveTarget(NutrientId.calories);
-    if (calorieRef == null || calorieRef <= 0) {
-      return fdaDailyValues[NutrientId.addedSugar];
-    }
-    return calorieRef * 0.10 / 4;
-  }
+  /// Value - which is how nutrients absent from the shared ANVISA preset
+  /// (most vitamins and trace minerals) still get a Meta/% Meta and can be
+  /// checked for alerts. See [effectiveNutrientTarget].
+  double? _effectiveTarget(NutrientId id) => effectiveNutrientTarget(
+        id,
+        targets: _targets,
+        goalCalories: _energyEstimate?.goalCalories,
+      );
 
   /// Rows for the selected category: everything with a target or an
   /// actual intake. Nutrients nobody tracks stay out of the way. The
@@ -598,6 +582,15 @@ class _NutritionScreenState extends State<NutritionScreen> {
             onPressed: _openTargets,
             icon: const Icon(Icons.flag_outlined),
             tooltip: 'Metas diárias',
+          ),
+          IconButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const NutritionReportScreen()),
+            ),
+            icon: const Icon(Icons.print_outlined),
+            tooltip: 'Relatório para imprimir',
           ),
         ],
       ),
@@ -1437,20 +1430,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  /// Nutrients whose target is a ceiling ("less than X") rather than a
-  /// minimum to reach. Going under is fine - even ideal - so only
-  /// exceeding 100% of the target is ever worth flagging; the usual
-  /// "only alarm at double the target" leniency (see below) doesn't apply
-  /// either, since clearing a "less than" limit at all is already the
-  /// thing being warned about.
-  static const Set<NutrientId> _ceilingNutrients = {
-    NutrientId.fat,
-    NutrientId.saturatedFat,
-    NutrientId.transFat,
-    NutrientId.cholesterol,
-    NutrientId.sodium,
-    NutrientId.addedSugar,
-  };
+  /// Ceiling nutrients ([kCeilingNutrients]) skip the usual "only alarm
+  /// at double the target" leniency (see below), since clearing a "less
+  /// than" limit at all is already the thing being warned about.
+  static const Set<NutrientId> _ceilingNutrients = kCeilingNutrients;
 
   /// Flags today's intake against its target ([_effectiveTarget]: the
   /// active recommendation set's number, or the FDA Daily Value fallback)

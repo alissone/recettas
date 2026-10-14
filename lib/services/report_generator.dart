@@ -540,6 +540,12 @@ window.__chartsReady = true;
 </html>''';
   }
 
+  /// The A4 page shell, header/footer, KPI card and table styles, for
+  /// other reports to share the same look (NutritionReportGenerator).
+  static String get baseCss => _css();
+
+  static String escapeHtml(Object? v) => _esc(v);
+
   // ── Helpers ───────────────────────────────────────────────────────
   static String _two(int n) => n.toString().padLeft(2, '0');
 

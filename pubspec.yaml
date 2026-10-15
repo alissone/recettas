@@ -54,6 +54,14 @@ dependencies:
   flutter_markdown_plus: ^1.0.3
   camera: ^0.12.1
   gal: ^2.3.3
+  printing: ^5.14.2
+  pdf: ^3.11.3
+  # Not used directly - pins pdf's transitive dependency. image 4.11.0
+  # calls archive's ZLibDecoder.decodeLazy (archive >= 4.1) while only
+  # declaring archive ^4.0.9, and pdf 3.12 caps archive below 4.1, so the
+  # solver picks a combination that doesn't compile. pdf 3.13 lifts the
+  # cap but needs xml ^7. Drop this once xml is on 7.
+  image: ">=4.5.0 <4.11.0"
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import '../models/food.dart';
@@ -69,7 +68,6 @@ class NutritionReportGenerator {
     required Map<NutrientId, Nutrient> catalog,
     required Map<NutrientId, double> targets,
     double? goalCalories,
-    required String chartJs,
   }) {
     final sortedDays = [...days]..sort();
     final now = DateTime.now();
@@ -90,7 +88,6 @@ class NutritionReportGenerator {
     ];
 
     final pages = StringBuffer();
-    final scripts = StringBuffer();
     var pageNum = 0;
     String footer() => _pageFooter(period, nowStr);
 
@@ -102,6 +99,25 @@ class NutritionReportGenerator {
 
       final rows = [for (final d in dayData) _summaryRow(d)];
       final inline = rows.length <= _summaryInlineRows;
+
+      List<double> kcalOf(NutrientId id, double factor) =>
+          [for (final d in dayData) d.get(id) * factor];
+      final series = [
+        ('Proteínas', _proteinColor, kcalOf(NutrientId.protein, 4)),
+        ('Carboidratos', _carbColor, kcalOf(NutrientId.carbohydrates, 4)),
+        ('Gorduras', _fatColor, kcalOf(NutrientId.fat, 9)),
+      ];
+      final kcalTarget = target(NutrientId.calories);
+      final chartHeightMm = inline ? 80 : 160;
+      final legend = StringBuffer();
+      for (final s in series) {
+        legend.write('<span><i style="background:${s.$2}"></i>'
+            '${_esc(s.$1)}</span>');
+      }
+      if (kcalTarget != null) {
+        legend.write('<span><i class="dash"></i>'
+            'Meta (${kcalTarget.round()} kcal)</span>');
+      }
 
       pages.write('''
 <div class="page page-content">
@@ -116,9 +132,15 @@ class NutritionReportGenerator {
         prefix: 'Média ',
       )}
     <h3 class="section-title">Calorias por Dia (kcal, por macronutriente)</h3>
-    <div class="chart-wrap" style="${inline ? 'height:85mm;flex:none' : ''}">
-      <canvas id="chartPeriod"></canvas>
+    <div class="svg-chart" style="height:${chartHeightMm}mm">
+      ${_stackedBarsSvg(
+        labels: [for (final d in dayData) _fmtDayMonth(d.day)],
+        series: series,
+        target: kcalTarget,
+        height: chartHeightMm * 3.78,
+      )}
     </div>
+    <div class="panel-key chart-legend">$legend</div>
     ${inline ? _summaryTable(rows.join()) : ''}
   </div>
   ${footer()}
@@ -137,36 +159,6 @@ class NutritionReportGenerator {
 </div>''');
         }
       }
-
-      final labels = [for (final d in dayData) _fmtDayMonth(d.day)];
-      List<double> kcalOf(NutrientId id, double factor) =>
-          [for (final d in dayData) _r1(d.get(id) * factor)];
-      final kcalTarget = target(NutrientId.calories);
-      final j = jsonEncode;
-
-      scripts.write('''
-new Chart(document.getElementById('chartPeriod'), {
-  type: 'bar',
-  data: {
-    labels: ${j(labels)},
-    datasets: [
-      { label: 'Proteínas', data: ${j(kcalOf(NutrientId.protein, 4))}, backgroundColor: '$_proteinColor', stack: 'k' },
-      { label: 'Carboidratos', data: ${j(kcalOf(NutrientId.carbohydrates, 4))}, backgroundColor: '$_carbColor', stack: 'k' },
-      { label: 'Gorduras', data: ${j(kcalOf(NutrientId.fat, 9))}, backgroundColor: '$_fatColor', stack: 'k' },
-      ${kcalTarget == null ? '' : "{ type: 'line', label: 'Meta', data: ${j(List.filled(n, kcalTarget.roundToDouble()))}, borderColor: '$_navy', borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0 },"}
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom', labels: { font: { size: 9 }, boxWidth: 12 } } },
-    scales: {
-      x: { stacked: true, ticks: { font: { size: 9 } } },
-      y: { stacked: true, beginAtZero: true, ticks: { font: { size: 9 } } }
-    }
-  }
-});
-''');
     }
 
     // ── Per-day pages ────────────────────────────────────────────────
@@ -212,9 +204,7 @@ new Chart(document.getElementById('chartPeriod'), {
       <div class="day-split">
         <h3 class="section-title">Energia por Macro</h3>
         ${split.isEmpty ? '<p class="muted small">Sem dados de macronutrientes.</p>' : '''
-        <div class="chart-wrap" style="height:52mm;flex:none">
-          <canvas id="chartSplit$i"></canvas>
-        </div>
+        <div class="svg-chart" style="height:52mm">${_doughnutSvg(split)}</div>
         <div class="split-legend">$splitLegend</div>'''}
       </div>
     </div>
@@ -225,30 +215,6 @@ new Chart(document.getElementById('chartPeriod'), {
   </div>
   ${footer()}
 </div>''');
-
-      if (split.isNotEmpty) {
-        final j = jsonEncode;
-        scripts.write('''
-new Chart(document.getElementById('chartSplit$i'), {
-  type: 'doughnut',
-  data: {
-    labels: ${j([for (final s in split) s.$1])},
-    datasets: [{
-      data: ${j([for (final s in split) _r1(s.$2)])},
-      backgroundColor: ${j([for (final s in split) s.$3])},
-      borderWidth: 2,
-      borderColor: '#fff',
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '55%',
-    plugins: { legend: { display: false } }
-  }
-});
-''');
-      }
 
       // Nutrient panels, flowed into two columns per page.
       final columns = _panelColumns(d, catalog, target);
@@ -287,17 +253,121 @@ ${_css()}
 </style>
 </head>
 <body>
+<button class="print-btn" onclick="window.print()">Imprimir / Salvar PDF</button>
 $pages
 <script>
-$chartJs
-
-Chart.defaults.animation = false;
-$scripts
-window.__chartsReady = true;
+// Only a real browser (the desktop fallback opens the report from a
+// file) can print from the page; the in-app WebView and the PDF export
+// leave the button hidden and use the app's own actions instead.
+if (location.protocol === 'file:') document.body.classList.add('in-browser');
 </script>
 </body>
 </html>''';
   }
+
+  // ── Charts ────────────────────────────────────────────────────────
+  // Inline SVG rather than Chart.js: the PDF export renders the page in
+  // a WebView with JavaScript off (printing's convertHtml), where canvas
+  // charts would come out blank.
+
+  /// Energy split ring, one stroke-dashed circle per slice.
+  static String _doughnutSvg(List<(String, double, String)> split) {
+    const r = 38.0;
+    const c = 2 * math.pi * r;
+    final total = split.fold(0.0, (s, e) => s + e.$2);
+    final gap = split.length > 1 ? 0.8 : 0.0;
+    final arcs = StringBuffer();
+    var offset = 0.0;
+    for (final s in split) {
+      final len = s.$2 / total * c;
+      arcs.write('<circle cx="50" cy="50" r="$r" fill="none" '
+          'stroke="${s.$3}" stroke-width="20" '
+          'stroke-dasharray="${_n(math.max(len - gap, 0))} ${_n(c)}" '
+          'stroke-dashoffset="${_n(-offset)}" '
+          'transform="rotate(-90 50 50)"/>');
+      offset += len;
+    }
+    return '<svg viewBox="0 0 100 100" width="100%" height="100%">'
+        '$arcs</svg>';
+  }
+
+  /// Stacked columns per day with an optional dashed target line, drawn
+  /// in a [height]-px-tall viewBox 700 px wide (the body width).
+  static String _stackedBarsSvg({
+    required List<String> labels,
+    required List<(String, String, List<double>)> series,
+    required double? target,
+    required double height,
+  }) {
+    const width = 700.0;
+    const left = 44.0, right = 8.0, top = 10.0, bottom = 22.0;
+    final plotW = width - left - right;
+    final plotH = height - top - bottom;
+    final n = labels.length;
+
+    var maxValue = target ?? 0;
+    for (var i = 0; i < n; i++) {
+      maxValue =
+          math.max(maxValue, series.fold(0.0, (s, e) => s + e.$3[i]));
+    }
+    if (maxValue <= 0) maxValue = 1;
+    final step = _niceStep(maxValue / 5);
+    final axisMax = (maxValue / step).ceil() * step;
+    double y(double v) => top + plotH - v / axisMax * plotH;
+
+    final out = StringBuffer(
+        '<svg viewBox="0 0 $width ${_n(height)}" width="100%" height="100%" '
+        'font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="10">');
+
+    for (var v = 0.0; v <= axisMax + 0.001; v += step) {
+      out.write('<line x1="$left" x2="${width - right}" y1="${_n(y(v))}" '
+          'y2="${_n(y(v))}" stroke="#e2e8f0" stroke-width="1"/>'
+          '<text x="${left - 6}" y="${_n(y(v) + 3.5)}" text-anchor="end" '
+          'fill="$_muted">${v.round()}</text>');
+    }
+
+    final band = plotW / n;
+    final barW = math.min(band * 0.62, 48.0);
+    // Thin the x labels out so they never overlap (~34 px each).
+    final labelEvery = math.max(1, (34 / band).ceil());
+    for (var i = 0; i < n; i++) {
+      final x = left + band * i + (band - barW) / 2;
+      var acc = 0.0;
+      for (final s in series) {
+        final v = s.$3[i];
+        if (v <= 0) continue;
+        out.write('<rect x="${_n(x)}" y="${_n(y(acc + v))}" '
+            'width="${_n(barW)}" height="${_n(y(acc) - y(acc + v))}" '
+            'fill="${s.$2}"/>');
+        acc += v;
+      }
+      if (i % labelEvery == 0) {
+        out.write('<text x="${_n(left + band * i + band / 2)}" '
+            'y="${_n(height - 6)}" text-anchor="middle" fill="$_muted">'
+            '${_esc(labels[i])}</text>');
+      }
+    }
+
+    if (target != null) {
+      out.write('<line x1="$left" x2="${width - right}" '
+          'y1="${_n(y(target))}" y2="${_n(y(target))}" stroke="$_navy" '
+          'stroke-width="1.5" stroke-dasharray="6 4"/>');
+    }
+    out.write('</svg>');
+    return out.toString();
+  }
+
+  /// 1, 2, 2.5 or 5 times a power of ten, at least [raw].
+  static double _niceStep(double raw) {
+    final mag =
+        math.pow(10, (math.log(raw) / math.ln10).floor()).toDouble();
+    for (final m in [1.0, 2.0, 2.5, 5.0, 10.0]) {
+      if (m * mag >= raw) return m * mag;
+    }
+    return 10 * mag;
+  }
+
+  static String _n(double v) => v.toStringAsFixed(2);
 
   // ── Fragments ─────────────────────────────────────────────────────
 
@@ -519,8 +589,6 @@ window.__chartsReady = true;
   // ── Helpers ───────────────────────────────────────────────────────
   static String _two(int n) => n.toString().padLeft(2, '0');
 
-  static double _r1(double v) => (v * 10).roundToDouble() / 10;
-
   static String _fmtDate(DateTime d) =>
       '${_two(d.day)}/${_two(d.month)}/${d.year}';
 
@@ -552,6 +620,30 @@ window.__chartsReady = true;
   static String _css() => '''
 /* Keep bar fills and ruled lines when printing. */
 * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.svg-chart { flex-shrink: 0; }
+.svg-chart svg { display: block; }
+.chart-legend { justify-content: center; }
+.panel-key i.dash {
+  background: none;
+  border-top: 2px dashed $_navy;
+  height: 0;
+}
+.print-btn { display: none; }
+body.in-browser .print-btn {
+  display: block;
+  position: fixed;
+  top: 16px; right: 16px;
+  z-index: 10;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: $_navy;
+  color: #fff;
+  font: 600 10pt 'Segoe UI', Roboto, Arial, sans-serif;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  cursor: pointer;
+}
+@media print { .print-btn { display: none !important; } }
 .small { font-size: 8pt; }
 .kpi-value small { font-size: 8pt; font-weight: 600; color: $_muted; }
 .kpi-bar {

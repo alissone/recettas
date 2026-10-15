@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'dart:typed_data';
 
 import '../app_theme.dart';
 import '../models/energy_estimate.dart';
@@ -7,6 +7,7 @@ import '../models/food.dart';
 import '../models/nutrient.dart';
 import '../models/nutrient_daily_values.dart';
 import '../services/nutrition_report_generator.dart';
+import '../services/report_pdf.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
 import '../widgets/food_log_calendar.dart';
@@ -23,9 +24,6 @@ class NutritionReportScreen extends StatefulWidget {
 }
 
 class _NutritionReportScreenState extends State<NutritionReportScreen> {
-  /// Chart.js source, loaded once per app run.
-  static String? _chartJs;
-
   bool _isLoading = true;
   bool _isGenerating = false;
   String? _error;
@@ -172,7 +170,6 @@ class _NutritionReportScreenState extends State<NutritionReportScreen> {
     if (_selected.isEmpty) return;
     setState(() => _isGenerating = true);
     try {
-      _chartJs ??= await rootBundle.loadString('assets/chart.min.js');
       final days = _selected.toList()..sort();
       final wanted = {for (final d in days) isoDate(d)};
       final entries = [
@@ -185,7 +182,6 @@ class _NutritionReportScreenState extends State<NutritionReportScreen> {
         catalog: _catalog,
         targets: _targets,
         goalCalories: _goalCalories,
-        chartJs: _chartJs!,
       );
       if (!mounted) return;
       final fileName = days.length == 1
@@ -194,19 +190,12 @@ class _NutritionReportScreenState extends State<NutritionReportScreen> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => Scaffold(
-            backgroundColor: AppTheme.creamBackground,
-            appBar: AppBar(
-              backgroundColor: AppTheme.creamBackground,
-              foregroundColor: AppTheme.darkBrown,
-              elevation: 0,
-              title: Text(
-                  days.length == 1
-                      ? 'Nutrição — ${formatDayMonth(days.first)}'
-                      : 'Nutrição — ${days.length} dias',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            body: ReportHtmlView(html: html, fileName: fileName),
+          builder: (_) => _ReportViewerPage(
+            title: days.length == 1
+                ? 'Nutrição — ${formatDayMonth(days.first)}'
+                : 'Nutrição — ${days.length} dias',
+            html: html,
+            fileName: fileName,
           ),
         ),
       );
@@ -391,6 +380,93 @@ class _NutritionReportScreenState extends State<NutritionReportScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The generated report, with print and save-as-PDF actions. The PDF is
+/// converted once, on first use, and reused by both actions.
+class _ReportViewerPage extends StatefulWidget {
+  final String title;
+  final String html;
+  final String fileName;
+
+  const _ReportViewerPage({
+    required this.title,
+    required this.html,
+    required this.fileName,
+  });
+
+  @override
+  State<_ReportViewerPage> createState() => _ReportViewerPageState();
+}
+
+class _ReportViewerPageState extends State<_ReportViewerPage> {
+  Uint8List? _pdf;
+  bool _isBusy = false;
+
+  Future<void> _withPdf(Future<void> Function(Uint8List pdf) action) async {
+    setState(() => _isBusy = true);
+    try {
+      _pdf ??= await ReportPdf.fromHtml(widget.html);
+      await action(_pdf!);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Falha ao gerar o PDF: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  void _print() =>
+      _withPdf((pdf) => ReportPdf.printPdf(pdf, widget.fileName));
+
+  void _save() => _withPdf((pdf) async {
+        final path = await ReportPdf.savePdf(pdf, widget.fileName);
+        if (path != null && mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('PDF salvo em $path')));
+        }
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.creamBackground,
+      appBar: AppBar(
+        backgroundColor: AppTheme.creamBackground,
+        foregroundColor: AppTheme.darkBrown,
+        elevation: 0,
+        title: Text(widget.title,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          if (_isBusy)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppTheme.primaryOrange),
+              ),
+            )
+          else ...[
+            IconButton(
+              onPressed: _print,
+              icon: const Icon(Icons.print_outlined),
+              tooltip: 'Imprimir',
+            ),
+            IconButton(
+              onPressed: _save,
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              tooltip: 'Salvar PDF',
+            ),
+          ],
+        ],
+      ),
+      body: ReportHtmlView(html: widget.html, fileName: widget.fileName),
     );
   }
 }

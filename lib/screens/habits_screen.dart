@@ -12,6 +12,7 @@ import 'gym_screen.dart';
 import 'habit_list_screen.dart';
 import 'home_shell.dart' show homeTabIndex;
 import 'nutrition_screen.dart';
+import 'sleep_screen.dart';
 
 /// "Eu" tab: today at a glance across the three trackers. Each card
 /// opens the screen where the actual logging happens.
@@ -259,6 +260,8 @@ class _HabitsScreenState extends State<HabitsScreen> {
                   monthLine: _gymMonthLine,
                 ),
                 const SizedBox(height: 14),
+                _buildSleepTile(),
+                const SizedBox(height: 14),
                 _buildAsyncCard<_HabitsData>(
                   icon: Icons.self_improvement,
                   title: 'Hábitos',
@@ -272,6 +275,47 @@ class _HabitsScreenState extends State<HabitsScreen> {
                 ),
               ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sleep has no summary to show here, so it is a plain link card.
+  Widget _buildSleepTile() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const SleepScreen())),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusXSmall),
+                  ),
+                  child: const Icon(Icons.bedtime_outlined,
+                      color: AppTheme.primaryOrange, size: 22),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                    child: Text('Sono', style: AppTheme.sectionTitle)),
+                const Icon(Icons.chevron_right,
+                    color: AppTheme.mediumBrown),
+              ],
+            ),
           ),
         ),
       ),

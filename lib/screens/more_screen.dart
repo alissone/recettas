@@ -15,9 +15,9 @@ import 'nutrition_report_screen.dart';
 import 'profile_screen.dart';
 import 'recipes_screen.dart';
 import 'report_screen.dart';
-import 'sleep_screen.dart';
 import 'time_calculator_screen.dart';
 import 'timezone_screen.dart';
+import 'utilities_screen.dart';
 
 /// "Mais" tab: profile header at the top, then a list of utilities,
 /// each opening its own screen.
@@ -147,10 +147,10 @@ class _MoreScreenState extends State<MoreScreen> {
               screen: const GpsTrackerScreen(),
             ),
             _buildUtilityTile(
-              icon: Icons.bedtime_outlined,
-              title: 'Sono',
-              subtitle: 'Registrar e visualizar seu sono',
-              screen: const SleepScreen(),
+              icon: Icons.water_drop_outlined,
+              title: 'Água e energia',
+              subtitle: 'Leituras dos medidores, gasto e previsão',
+              screen: const UtilitiesScreen(),
             ),
             _buildUtilityTile(
               icon: Icons.library_music_outlined,

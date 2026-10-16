@@ -15,6 +15,7 @@ import '../models/receipt_job.dart';
 import '../models/recipe.dart';
 import '../models/shopping_item.dart';
 import '../models/sleep_event.dart';
+import '../models/utility_reading.dart';
 import '../models/weight_entry.dart';
 import 'product_page_parser.dart';
 
@@ -1068,6 +1069,57 @@ class SupabaseService {
       'user_id': currentUser!.id,
       'weight_kg': weightKg,
       'recorded_at': (recordedAt ?? DateTime.now()).toUtc().toIso8601String(),
+    });
+  }
+
+  // Water / energy meter readings (migration 034)
+  static Future<List<UtilityReading>> getUtilityReadings(
+      UtilityKind kind) async {
+    final data = await _client
+        .from('utility_readings')
+        .select()
+        .eq('user_id', currentUser!.id)
+        .eq('kind', kind.dbValue)
+        .order('recorded_at', ascending: true);
+    return data
+        .map<UtilityReading>((json) => UtilityReading.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> addUtilityReading(UtilityKind kind, double value,
+      {DateTime? recordedAt}) async {
+    await _client.from('utility_readings').insert({
+      'user_id': currentUser!.id,
+      'kind': kind.dbValue,
+      'value': value,
+      'recorded_at': (recordedAt ?? DateTime.now()).toUtc().toIso8601String(),
+    });
+  }
+
+  static Future<void> deleteUtilityReading(String id) async {
+    await _client.from('utility_readings').delete().eq('id', id);
+  }
+
+  /// Current tariff per kind; a missing entry means it was never set.
+  static Future<Map<UtilityKind, double>> getUtilityPrices() async {
+    final row = await _client
+        .from('utility_prices')
+        .select()
+        .eq('user_id', currentUser!.id)
+        .maybeSingle();
+    return {
+      if (row != null)
+        for (final kind in UtilityKind.values)
+          if (row[kind.priceColumn] != null)
+            kind: double.parse(row[kind.priceColumn].toString()),
+    };
+  }
+
+  static Future<void> saveUtilityPrice(UtilityKind kind, double price) async {
+    await _client.from('utility_prices').upsert({
+      'user_id': currentUser!.id,
+      kind.priceColumn: price,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 

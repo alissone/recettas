@@ -1,10 +1,12 @@
-// Web entry point with only login and chat.
+// Web entry point: login, then simplified Afazeres / Compras / Gastos
+// (lib/web/) plus the chat.
 //
 // Build with: flutter build web -t lib/main_chat.dart
 //
-// Deliberately skips LocalDb / TodoRepository (no sqlite wasm) and never
-// imports HomeShell or any other screen, so the rest of the app is
-// tree-shaken out of the bundle.
+// Deliberately skips LocalDb / TodoRepository (no sqlite wasm; the web
+// todo screen talks to Supabase directly) and never imports HomeShell or
+// the app's full screens, so the rest of the app is tree-shaken out of
+// the bundle.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -14,6 +16,10 @@ import 'app_theme.dart';
 import 'screens/chat_list_screen.dart';
 import 'services/chat_notifier.dart';
 import 'services/supabase_service.dart';
+import 'web/web_common.dart';
+import 'web/web_purchases_screen.dart';
+import 'web/web_shopping_screen.dart';
+import 'web/web_todo_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +40,7 @@ class ChatWebApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Recettas Chat',
+      title: 'Recettas',
       theme: AppTheme.themeData,
       home: const _AuthGate(),
       debugShowCheckedModeBanner: false,
@@ -42,7 +48,7 @@ class ChatWebApp extends StatelessWidget {
   }
 }
 
-/// Shows the login form until there is a session, then the chat inbox.
+/// Shows the login form until there is a session, then the tabs.
 class _AuthGate extends StatefulWidget {
   const _AuthGate();
 
@@ -72,23 +78,101 @@ class _AuthGateState extends State<_AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (SupabaseService.currentUser == null) return const _LoginScreen();
-    return Stack(
+    final user = SupabaseService.currentUser;
+    if (user == null) return const _LoginScreen();
+    // Keyed by user so switching accounts starts every tab from scratch.
+    return _WebShell(key: ValueKey(user.id));
+  }
+}
+
+/// Bottom-nav shell, same tab order as the app's HomeShell.
+class _WebShell extends StatefulWidget {
+  const _WebShell({super.key});
+
+  @override
+  State<_WebShell> createState() => _WebShellState();
+}
+
+class _WebShellState extends State<_WebShell> {
+  int _index = 0;
+
+  /// Bumped when Compras registers a gasto, so Gastos reloads.
+  final _purchasesChanged = ValueNotifier(0);
+
+  late final List<Widget> _tabs = [
+    const WebTodoScreen(),
+    WebShoppingScreen(onPurchaseAdded: () => _purchasesChanged.value++),
+    WebPurchasesScreen(reload: _purchasesChanged),
+    const Stack(
       children: [
-        const ChatListScreen(),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: SafeArea(
-            child: IconButton(
-              tooltip: 'Sair',
-              icon: const Icon(Icons.logout),
-              color: AppTheme.mediumBrown,
-              onPressed: SupabaseService.signOut,
-            ),
-          ),
-        ),
+        ChatListScreen(),
+        Positioned(top: 8, right: 8, child: SafeArea(child: SignOutButton())),
       ],
+    ),
+  ];
+
+  @override
+  void dispose() {
+    _purchasesChanged.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(index: _index, children: _tabs),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _index,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppTheme.white,
+        onTap: (i) => setState(() => _index = i),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_circle_outline),
+            activeIcon: Icon(Icons.check_circle),
+            label: 'Afazeres',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart_outlined),
+            activeIcon: Icon(Icons.shopping_cart),
+            label: 'Compras',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.payments_outlined),
+            activeIcon: Icon(Icons.payments),
+            label: 'Gastos',
+          ),
+          BottomNavigationBarItem(
+            icon: _ChatNavIcon(icon: Icons.chat_bubble_outline),
+            activeIcon: _ChatNavIcon(icon: Icons.chat_bubble),
+            label: 'Chat',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Chat icon with the unread-conversations badge (mirrors the private
+/// one in HomeShell, which this entry point can't import).
+class _ChatNavIcon extends StatelessWidget {
+  final IconData icon;
+
+  const _ChatNavIcon({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: ChatNotifier.instance.unreadRooms,
+      builder: (context, unread, child) {
+        if (unread == 0) return child!;
+        return Badge(
+          label: Text(unread > 9 ? '9+' : '$unread'),
+          backgroundColor: AppTheme.primaryOrange,
+          child: child,
+        );
+      },
+      child: Icon(icon),
     );
   }
 }

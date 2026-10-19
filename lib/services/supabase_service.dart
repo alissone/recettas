@@ -15,6 +15,8 @@ import '../models/receipt_job.dart';
 import '../models/recipe.dart';
 import '../models/shopping_item.dart';
 import '../models/sleep_event.dart';
+import '../models/todo.dart';
+import '../models/todo_category.dart';
 import '../models/utility_reading.dart';
 import '../models/weight_entry.dart';
 import 'product_page_parser.dart';
@@ -223,6 +225,55 @@ class SupabaseService {
 
   static Future<void> deletePurchase(String id) async {
     await _client.from('purchases').delete().eq('id', id);
+  }
+
+  // Todos, straight against the server. The app goes through the
+  // offline-first TodoRepository instead; these are for the web build,
+  // which has no local SQLite cache.
+
+  /// Open (not completed, not archived) todos in their manual order.
+  static Future<List<Todo>> getOpenTodos() async {
+    final data = await _client
+        .from('todos')
+        .select()
+        .eq('user_id', currentUser!.id)
+        .eq('is_completed', false)
+        .eq('is_archived', false)
+        .order('sort_order', ascending: true)
+        .order('created_at', ascending: false);
+    return data.map<Todo>((json) => Todo.fromJson(json)).toList();
+  }
+
+  static Future<List<TodoCategory>> getTodoCategories() async {
+    final data = await _client
+        .from('todo_categories')
+        .select()
+        .eq('user_id', currentUser!.id)
+        .order('created_at');
+    return data
+        .map<TodoCategory>((json) => TodoCategory.fromJson(json))
+        .toList();
+  }
+
+  static Future<Todo> addTodo(String title) async {
+    final data = await _client
+        .from('todos')
+        .insert({'user_id': currentUser!.id, 'title': title})
+        .select()
+        .single();
+    return Todo.fromJson(data);
+  }
+
+  static Future<void> updateTodo(
+      String id, Map<String, dynamic> fields) async {
+    await _client.from('todos').update(fields).eq('id', id);
+  }
+
+  /// Same write as TodoRepository's queued reorder: sort_order = index.
+  static Future<void> reorderTodos(List<String> ids) async {
+    await Future.wait(ids.asMap().entries.map((e) => _client
+        .from('todos')
+        .update({'sort_order': e.key}).eq('id', e.value)));
   }
 
   // Shopping list ("Compras": reminders of stuff to buy)

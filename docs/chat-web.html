@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Chat-only Web Build</title>
+<title>Recettas Web Build</title>
 <script>
 /* Applied before first paint so a saved dark theme never flashes light. */
 (function(){try{var t=localStorage.getItem("document-theme");
@@ -1138,18 +1138,18 @@ footer {
 
   <header class="masthead">
     <div class="eyebrow">Recettas · Web · Deployment Guide</div>
-    <h1>Chat-only Web Build</h1>
-    <p class="standfirst">A web version of Recettas with only login and chat, built from its own entry point, stripped of the app's large assets, and hosted on Firebase Hosting.</p>
+    <h1>Recettas Web Build</h1>
+    <p class="standfirst">A lightweight web version of Recettas with login, simplified Afazeres, Compras and Gastos tabs, and the chat. It is built from its own entry point, stripped of the app's large assets, and hosted on Firebase Hosting.</p>
     <div class="meta">
       <span><b>Project</b> recettas</span>
-      <span><b>Date</b> 2026-10-01</span>
-      <span><b>Status</b> Built, not yet deployed</span>
+      <span><b>Date</b> 2026-10-19</span>
+      <span><b>Status</b> Built, chat deployed earlier; new tabs not yet deployed</span>
     </div>
   </header>
 
 <section>
 <h2>Summary</h2>
-<p>The full app bundles every screen, a local SQLite database and about 87 MB of exercise GIFs and posters. A browser visitor who only wants to chat should not pay for any of that.</p>
+<p>The full app bundles every screen, a local SQLite database and about 87 MB of exercise GIFs and posters. Someone in a browser who only wants to check the lists or chat should not have to download any of that.</p>
 <div class="tiles">
 <div class="tile">
 <div class="label">Before pruning</div>
@@ -1158,30 +1158,72 @@ footer {
 </div>
 <div class="tile secondary">
 <div class="label">After pruning</div>
-<div class="figure">43.5 MB</div>
+<div class="figure">44.0 MB</div>
 <div class="sub">37 MB is CanvasKit, loaded one variant at a time</div>
 </div>
 <div class="tile secondary">
 <div class="label">JS per visitor</div>
-<div class="figure">~2.7 MB</div>
-<div class="sub">main.dart.js</div>
+<div class="figure">~3.2 MB</div>
+<div class="sub">main.dart.js (was ~2.7 MB chat-only)</div>
 </div>
 </div>
 <div class="callout">
 <div class="kicker">What a visitor actually downloads</div>
-<p>About 2.7 MB of JavaScript, the fonts, and one CanvasKit file. Flutter web fetches individual assets only when code requests them, and the chat never requests the pruned ones.</p>
+<p>About 3.2 MB of JavaScript, the fonts, and one CanvasKit file. Flutter web fetches individual assets only when code requests them, and the web screens never request the pruned ones.</p>
 </div>
 </section>
 <section>
 <h2>What was built</h2>
 <div class="plain">
 <ul>
-<li><strong><code>lib/main_chat.dart</code>.</strong> A second entry point. It initializes Supabase and <code>ChatNotifier</code>, and shows a login or sign-up form until there is a session, then <code>ChatListScreen</code> with a sign-out button.</li>
-<li><strong><code>scripts/build_chat_web.ps1</code>.</strong> Builds the entry point into <code>build/web_chat</code>, then deletes the assets the chat never requests.</li>
+<li><strong><code>lib/main_chat.dart</code>.</strong> The web entry point. It initializes Supabase and <code>ChatNotifier</code> and shows a login or sign-up form until there is a session. After login it shows a bottom-nav shell with four tabs, in the app's order: Afazeres, Compras, Gastos, Chat. The Chat icon carries the unread badge.</li>
+<li><strong><code>lib/web/</code>.</strong> Simplified, web-only versions of the three list tabs, plus shared widgets (<code>web_common.dart</code>) and the gasto form dialog.</li>
+<li><strong>Todo methods on <code>SupabaseService</code>.</strong> <code>getOpenTodos</code>, <code>getTodoCategories</code>, <code>addTodo</code>, <code>updateTodo</code>, <code>reorderTodos</code>. These talk to Supabase directly, because the web build has no SQLite cache.</li>
+<li><strong><code>scripts/build_chat_web.ps1</code>.</strong> Builds the entry point into <code>build/web_chat</code>, then deletes the assets the web build never requests.</li>
 </ul>
 </div>
-<h3>Why a new login screen</h3>
-<p>The existing <code>ProfileScreen</code> imports <code>home_shell.dart</code>, which imports every other tab. Reusing it would have pulled the whole app back into the bundle. The new screen is a small standalone form that uses only <code>SupabaseService.signIn</code>, <code>signUp</code> and <code>signOut</code>.</p>
+<h3>The tabs</h3>
+<div class="scroll"><table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Can do</th>
+<th>Left to the app</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Afazeres</strong></td>
+<td>List open todos in manual order, add, tick, archive, drag to reorder</td>
+<td>Editing, categorizing, grouped view, completed todos</td>
+</tr>
+<tr>
+<td><strong>Compras</strong></td>
+<td>List items (own and shared lists), add, delete, tick to register a gasto, untick</td>
+<td>Managing invites</td>
+</tr>
+<tr>
+<td><strong>Gastos</strong></td>
+<td>One month at a time with a total, add, edit, delete (with confirmation)</td>
+<td>Receipts and queue, search, reports, auto-categorize, editing categories</td>
+</tr>
+<tr>
+<td><strong>Chat</strong></td>
+<td>Same <code>ChatListScreen</code> and <code>ChatRoomScreen</code> as before</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<div class="plain">
+<ul>
+<li><strong>Afazeres</strong> fetches only todos that are neither completed nor archived. A todo ticked during the session stays visible, struck through, until the next reload. Deleting archives the row, the same as in the app. Reordering writes <code>sort_order = index</code>, the same write the app's <code>TodoRepository</code> queues, so the order matches on the phone after its next sync. Category colors show as a stripe. &quot;Levar&quot; and event cards show their places or date above the markdown body, read-only.</li>
+<li><strong>Compras</strong> uses the same rules as the app for shared lists: tabs appear only when more than one list has items. Ticking opens the gasto form (valor, data, local, categoria). The gasto goes to the list the item belongs to, with that list's categories, and Gastos reloads.</li>
+<li><strong>Gastos</strong> uses the same form for add and edit. New gastos go to the list being shown.</li>
+<li>The <strong>Local</strong> field reuses the app's <code>LocalField</code> (frequent places dropdown plus free text). There is no GPS guess on the web.</li>
+</ul>
+</div>
+<h3>Why separate screens</h3>
+<p>The app's <code>TodoScreen</code>, <code>ShoppingScreen</code>, <code>PurchasesScreen</code> and <code>ProfileScreen</code> all import <code>home_shell.dart</code>, which imports every other tab. Reusing any of them would pull the whole app back into the bundle. The todo screen also depends on <code>TodoRepository</code>, which needs SQLite. The web screens import only models, <code>SupabaseService</code>, <code>app_theme.dart</code>, <code>utils/brl.dart</code>, <code>ListOwnerTabs</code> and <code>LocalField</code>.</p>
 <h3>What the entry point skips</h3>
 <div class="split">
 <div class="panel">
@@ -1190,7 +1232,9 @@ footer {
 <li><code>Supabase.initialize</code></li>
 <li><code>ChatNotifier.instance.init()</code></li>
 <li><code>ChatListScreen</code> and <code>ChatRoomScreen</code></li>
+<li><code>lib/web/</code> screens</li>
 <li><code>SupabaseService</code> and the models (tree-shaken)</li>
+<li><code>flutter_markdown_plus</code> for todo text</li>
 </ul>
 </div>
 </div>
@@ -1199,7 +1243,8 @@ footer {
 <ul>
 <li><code>LocalDb.initPlatform()</code> and the sqlite wasm</li>
 <li><code>TodoRepository.init()</code></li>
-<li><code>HomeShell</code> and every other screen</li>
+<li><code>HomeShell</code> and the app's full screens</li>
+<li>Receipt scanning, camera, GPS (<code>LocalGuesser</code>)</li>
 <li>Exercise GIFs and posters, harpa, NVI, chart.js</li>
 </ul>
 </div>
@@ -1216,7 +1261,7 @@ footer {
 <tbody>
 <tr>
 <td><code>assets/assets/exercises</code>, <code>exercise_posters</code></td>
-<td>About 87 MB, never requested by chat</td>
+<td>About 87 MB, never requested on the web</td>
 </tr>
 <tr>
 <td><code>assets/assets/harpa_crista.json</code>, <code>NVI.xml</code>, <code>chart.min.js</code></td>
@@ -1242,38 +1287,20 @@ footer {
 <div class="kicker">Use Hosting, not App Hosting</div>
 <p>App Hosting deploys server-rendered frameworks from a GitHub repo and needs the paid Blaze plan. This build is static files, which is what <strong>Firebase Hosting</strong> is for. It works on the free Spark plan (10 GB storage, 360 MB/day transfer). The project is <code>recettas-chat</code> either way.</p>
 </div>
-<ol>
-<li>
-<p><strong>Install the CLI and log in</strong></p>
-<pre class="code"><code>npm install -g firebase-tools
-firebase login</code></pre>
+<p><code>firebase.json</code> and <code>.firebaserc</code> are already in the repo (public directory <code>build/web_chat</code>, SPA rewrite, project <code>recettas-chat</code>). To deploy:</p>
+<pre class="code"><code>powershell -File scripts/build_chat_web.ps1
+firebase deploy --only hosting</code></pre>
 
-</li>
-<li>
-<p><strong>Build the chat bundle</strong></p>
-<pre class="code"><code>powershell -File scripts/build_chat_web.ps1</code></pre>
+<p>It serves at <code>https://recettas-chat.web.app</code>.</p>
+<div class="callout warn">
+<div class="kicker">&quot;resolving hosting target of a site with no site name&quot;</div>
+<p>This assertion means the CLI could not look up the project's default Hosting site. On 2026-10-19 the cause was an <strong>expired login</strong>: <code>firebase login:list</code> still showed the account, but API calls returned HTTP 401. Fix it with:</p>
+<pre class="code"><code>firebase login --reauth</code></pre>
 
-</li>
-<li>
-<p><strong>Initialize Hosting</strong> from the project root</p>
-<pre class="code"><code>firebase init hosting</code></pre>
-
-<ul>
-<li>Choose &quot;Use an existing project&quot; and pick <code>recettas-chat</code>.</li>
-<li>Public directory: <code>build/web_chat</code>.</li>
-<li>Single-page app (rewrite all URLs to <code>/index.html</code>): <strong>yes</strong>.</li>
-<li>GitHub auto-deploys: <strong>no</strong>.</li>
-<li>Overwrite <code>index.html</code>: <strong>no</strong>.</li>
-</ul>
-<p>This creates <code>firebase.json</code> and <code>.firebaserc</code>.</p>
-</li>
-<li>
-<p><strong>Deploy</strong></p>
-<pre class="code"><code>firebase deploy --only hosting</code></pre>
-
-<p>It prints a URL such as <code>https://recettas-chat.web.app</code>.</p>
-</li>
-</ol>
+<p><code>firebase hosting:sites:list --project recettas-chat</code> is a quick way to check that the credentials work before deploying.</p>
+</div>
+<h3>First-time setup (already done)</h3>
+<p>For reference, the config came from <code>firebase init hosting</code> with these answers: use the existing project <code>recettas-chat</code>, public directory <code>build/web_chat</code>, single-page app <strong>yes</strong>, GitHub auto-deploys <strong>no</strong>, overwrite <code>index.html</code> <strong>no</strong>.</p>
 <h3>Supabase redirect URLs</h3>
 <p>In Supabase, under Authentication → URL Configuration, add <code>https://recettas-chat.web.app</code> and <code>https://recettas-chat.firebaseapp.com</code> to the Site URL or Redirect URLs. Without this, the email confirmation link from sign-up may point somewhere else. Password login itself should work without it.</p>
 <h3>Optional: avoid stale caches</h3>
@@ -1284,9 +1311,9 @@ firebase login</code></pre>
 <div class="callout warn">
 <div class="kicker">Not yet verified</div>
 <ul>
-<li>The build compiles and <code>flutter analyze</code> is clean, but login and chat have <strong>not</strong> been tried in a browser.</li>
-<li><code>ChatNotifier.init()</code> runs before login. It should pick up a later sign-in, since <code>ChatListScreen</code> re-renders on auth changes, but the unread badge logic lives in the notifier and was not checked.</li>
-<li>Nothing has been deployed yet.</li>
+<li>The build compiles and <code>flutter analyze</code> is clean, but the Afazeres, Compras and Gastos tabs have <strong>not</strong> been tried in a browser.</li>
+<li>The new tabs have not been deployed yet.</li>
+<li>The site now opens on Afazeres instead of Chat, and the page title is &quot;Recettas&quot; instead of &quot;Recettas Chat&quot;.</li>
 </ul>
 </div>
 </section>
@@ -1294,7 +1321,7 @@ firebase login</code></pre>
 
   <footer>
     <span>Recettas</span>
-    <span>2026-10-01</span>
+    <span>2026-10-19</span>
   </footer>
 
 </div>

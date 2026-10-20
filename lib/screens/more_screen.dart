@@ -14,6 +14,7 @@ import 'product_scanner_screen.dart';
 import 'nutrition_report_screen.dart';
 import 'profile_screen.dart';
 import 'recipes_screen.dart';
+import 'relays_screen.dart';
 import 'report_screen.dart';
 import 'time_calculator_screen.dart';
 import 'timezone_screen.dart';
@@ -151,6 +152,12 @@ class _MoreScreenState extends State<MoreScreen> {
               title: 'Água e energia',
               subtitle: 'Leituras dos medidores, gasto e previsão',
               screen: const UtilitiesScreen(),
+            ),
+            _buildUtilityTile(
+              icon: Icons.power_settings_new,
+              title: 'Tomadas',
+              subtitle: 'Ligar e desligar os relés de casa',
+              screen: const RelaysScreen(),
             ),
             _buildUtilityTile(
               icon: Icons.library_music_outlined,

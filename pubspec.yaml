@@ -62,6 +62,7 @@ dependencies:
   # solver picks a combination that doesn't compile. pdf 3.13 lifts the
   # cap but needs xml ^7. Drop this once xml is on 7.
   image: ">=4.5.0 <4.11.0"
+  record: ^7.1.2
 
 dev_dependencies:
   flutter_test:

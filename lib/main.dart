@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_theme.dart';
@@ -7,6 +8,7 @@ import 'screens/home_shell.dart' show HomeShell, homeShellKey;
 import 'services/chat_notifier.dart';
 import 'services/local_db.dart';
 import 'services/todo_repository.dart';
+import 'services/voice_note_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +21,9 @@ void main() async {
   );
 
   await TodoRepository.instance.init();
+
+  // Recordings live on disk, which the web build doesn't have.
+  if (!kIsWeb) unawaited(VoiceNoteRepository.instance.init());
 
   // Subscribes to the chat inbox for the whole session: the unread
   // badge and the in-app banner have to work before the Chat tab is

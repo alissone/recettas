@@ -3,6 +3,8 @@
     <!-- Location: suggest the purchase place from nearby known spots -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <!-- Voice notes recorded from the Afazeres tab -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- Burst receipt capture saves to the gallery (gal); API <= 29 only.
          camera_android_camerax declares the same permission capped at 28,
          so the merger is told to keep this value. -->

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' show Random;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -12,11 +13,14 @@ import '../models/todo_category.dart';
 import '../services/category_store.dart';
 import '../services/supabase_service.dart';
 import '../services/todo_repository.dart';
+import '../services/voice_note_repository.dart';
 import '../widgets/categorize_overlay.dart';
 import '../widgets/swipe_action_card.dart';
 import '../widgets/sync_indicator.dart';
+import '../widgets/voice_recorder_sheet.dart';
 import 'edit_categories_screen.dart';
 import 'home_shell.dart';
+import 'voice_notes_screen.dart';
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -388,6 +392,29 @@ class _TodoScreenState extends State<TodoScreen> {
     await _repo.updateTodoTitle(todo.id, title);
   }
 
+  Future<void> _recordVoiceNote() async {
+    final saved = await VoiceRecorderSheet.show(context);
+    _screenFocusNode.requestFocus();
+    if (saved != true || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: const Text('Nota de voz salva - será transcrita no PC'),
+      backgroundColor: AppTheme.darkBrown,
+      action: SnackBarAction(
+        label: 'Ver',
+        textColor: AppTheme.lightOrange,
+        onPressed: _openVoiceNotes,
+      ),
+    ));
+  }
+
+  void _openVoiceNotes() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const VoiceNotesScreen()),
+    );
+    _screenFocusNode.requestFocus();
+  }
+
   void _openEditCategories() async {
     await Navigator.push(
       context,
@@ -437,12 +464,27 @@ class _TodoScreenState extends State<TodoScreen> {
       ),
       floatingActionButton:
           _isAuthenticated && !_isAdding && _categorizingTodo == null
-              ? FloatingActionButton(
-                  // Unique tag: the other tabs' FABs coexist in the
-                  // IndexedStack and default hero tags would clash.
-                  heroTag: 'todo_fab',
-                  onPressed: _startAdding,
-                  child: const Icon(Icons.add),
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Recordings are files on disk; no web support.
+                    if (!kIsWeb) ...[
+                      FloatingActionButton.small(
+                        heroTag: 'todo_voice_fab',
+                        tooltip: 'Gravar nota de voz',
+                        onPressed: _recordVoiceNote,
+                        child: const Icon(Icons.mic),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    FloatingActionButton(
+                      // Unique tag: the other tabs' FABs coexist in the
+                      // IndexedStack and default hero tags would clash.
+                      heroTag: 'todo_fab',
+                      onPressed: _startAdding,
+                      child: const Icon(Icons.add),
+                    ),
+                  ],
                 )
               : null,
     );
@@ -478,6 +520,20 @@ class _TodoScreenState extends State<TodoScreen> {
               ),
               onPressed: _toggleSearch,
             ),
+            if (!kIsWeb)
+              ValueListenableBuilder<int>(
+                valueListenable: VoiceNoteRepository.instance.pendingCount,
+                builder: (_, pending, _) => IconButton(
+                  tooltip: 'Notas de voz',
+                  icon: Badge(
+                    isLabelVisible: pending > 0,
+                    label: Text('$pending'),
+                    child: const Icon(Icons.graphic_eq,
+                        color: AppTheme.darkBrown),
+                  ),
+                  onPressed: _openVoiceNotes,
+                ),
+              ),
             const SyncIndicator(),
             const SizedBox(width: 4),
           ],

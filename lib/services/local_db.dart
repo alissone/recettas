@@ -30,7 +30,7 @@ class LocalDb {
     final dir = await getDatabasesPath();
     _db = await openDatabase(
       p.join(dir, 'recettas_cache.db'),
-      version: 4,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE todos (
@@ -65,6 +65,7 @@ class LocalDb {
         await db.execute(_createGpsRecordingsSql);
         await db.execute(_createGpsPointsSql);
         await db.execute(_createGpsPointsIndexSql);
+        await db.execute(_createVoiceUploadsSql);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -78,6 +79,9 @@ class LocalDb {
         }
         if (oldVersion < 4) {
           await db.execute('ALTER TABLE todos ADD COLUMN completed_at TEXT');
+        }
+        if (oldVersion < 5) {
+          await db.execute(_createVoiceUploadsSql);
         }
       },
     );
@@ -106,6 +110,18 @@ class LocalDb {
       lng REAL NOT NULL,
       altitude REAL,
       timestamp TEXT NOT NULL
+    )
+  ''';
+
+  /// Voice notes recorded on this device that haven't reached Supabase
+  /// yet; the audio file stays on disk until the upload succeeds.
+  static const _createVoiceUploadsSql = '''
+    CREATE TABLE voice_uploads (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      duration_seconds INTEGER NOT NULL,
+      recorded_at TEXT NOT NULL
     )
   ''';
 

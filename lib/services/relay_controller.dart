@@ -23,7 +23,6 @@ class RelayControllerException implements Exception {
 class RelayController {
   RelayController._();
 
-  static const relayCount = 8;
   static const defaultUrl = 'http://192.168.1.50';
   static const _urlKey = 'relay_controller_url';
   static const _tokenKey = 'relay_controller_token';
@@ -49,17 +48,19 @@ class RelayController {
   }
 
   /// User-given labels ("Bomba", "Luz da varanda"), index 0 = relay 1.
-  static Future<List<String>> getNames() async {
+  /// Padded to at least [count] entries.
+  static Future<List<String>> getNames([int count = 0]) async {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getStringList(_namesKey) ?? const [];
-    return List.generate(relayCount,
+    final length = count > stored.length ? count : stored.length;
+    return List.generate(length,
         (i) => i < stored.length && stored[i].isNotEmpty
             ? stored[i]
             : 'Relé ${i + 1}');
   }
 
   static Future<void> setName(int relay, String name) async {
-    final names = await getNames();
+    final names = await getNames(relay);
     names[relay - 1] = name.trim();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_namesKey, names);
@@ -115,20 +116,34 @@ class RelayController {
       case 401:
         throw RelayControllerException('Token inválido');
       case 400:
-        throw RelayControllerException('Requisição inválida: ${res.body}');
+        throw RelayControllerException(
+            'Requisição inválida: ${_errorOf(res.body)}');
       case 503:
         throw RelayControllerException(
-            'Controlador não pode executar o comando agora');
+            'Comando recusado: ${_errorOf(res.body)}');
       default:
         throw RelayControllerException('Erro HTTP ${res.statusCode}');
     }
   }
 
-  /// Accepts both the plain form ({"3": true}) and the desired/actual
-  /// form ({"3": {"desired": true, "actual": true}}), using "actual".
+  static String _errorOf(String body) {
+    try {
+      return (jsonDecode(body) as Map<String, dynamic>)['error'] as String;
+    } catch (_) {
+      return body;
+    }
+  }
+
+  /// One entry per relay the firmware reports (index 0 = relay 1), so
+  /// the board decides how many are wired. Accepts both the plain form
+  /// ({"3": true}) and the desired/actual form
+  /// ({"3": {"desired": true, "actual": true}}), using "actual".
   static List<bool> _parseRelays(Map<String, dynamic> json) {
     final relays = json['relays'] as Map<String, dynamic>? ?? const {};
-    return List.generate(relayCount, (i) {
+    final count = relays.keys
+        .map(int.tryParse)
+        .fold<int>(0, (max, n) => n != null && n > max ? n : max);
+    return List.generate(count, (i) {
       final v = relays['${i + 1}'];
       if (v is bool) return v;
       if (v is Map) return v['actual'] == true;

@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firmware credentials (Wi-Fi password, API token)
+firmware/**/secrets.h

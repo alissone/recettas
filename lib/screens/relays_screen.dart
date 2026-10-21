@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../services/relay_controller.dart';
 
-/// Eight ON/OFF switches for the ESP8266 relay board at home. The board
-/// is the source of truth: every switch shows what the last response
+/// ON/OFF switches for the ESP8266 relay board at home, one per relay
+/// the firmware reports. The board is the source of truth: every switch shows what the last response
 /// reported, and the screen re-polls while open so physical changes
 /// (reboot, another phone) show up.
 class RelaysScreen extends StatefulWidget {
@@ -18,8 +18,7 @@ class RelaysScreen extends StatefulWidget {
 
 class _RelaysScreenState extends State<RelaysScreen> {
   List<bool>? _states; // null = never reached the controller
-  List<String> _names = List.generate(
-      RelayController.relayCount, (i) => 'Relé ${i + 1}');
+  List<String> _names = [];
   String _url = RelayController.defaultUrl;
   bool? _online; // null = checking
   int? _uptime;
@@ -44,13 +43,7 @@ class _RelaysScreenState extends State<RelaysScreen> {
 
   Future<void> _init() async {
     final url = await RelayController.getUrl();
-    final names = await RelayController.getNames();
-    if (mounted) {
-      setState(() {
-        _url = url;
-        _names = names;
-      });
-    }
+    if (mounted) setState(() => _url = url);
     await _refresh();
   }
 
@@ -59,9 +52,11 @@ class _RelaysScreenState extends State<RelaysScreen> {
     try {
       final states = await RelayController.getStatus();
       final uptime = await RelayController.getUptime();
+      final names = await RelayController.getNames(states.length);
       if (mounted) {
         setState(() {
           _states = states;
+          _names = names;
           _uptime = uptime;
           _online = true;
           _error = null;
@@ -117,7 +112,7 @@ class _RelaysScreenState extends State<RelaysScreen> {
     );
     if (name == null) return;
     await RelayController.setName(relay, name);
-    final names = await RelayController.getNames();
+    final names = await RelayController.getNames(_states?.length ?? 0);
     if (mounted) setState(() => _names = names);
   }
 
@@ -162,14 +157,17 @@ class _RelaysScreenState extends State<RelaysScreen> {
           children: [
             _buildStatusCard(),
             const SizedBox(height: 16),
-            for (var relay = 1; relay <= RelayController.relayCount; relay++)
-              _buildRelayTile(relay),
-            const SizedBox(height: 8),
-            Text(
-              'Toque e segure um relé para renomear.',
-              style: AppTheme.caption,
-              textAlign: TextAlign.center,
-            ),
+            // The relay list only exists once the board has answered.
+            if (_states != null) ...[
+              for (var relay = 1; relay <= _states!.length; relay++)
+                _buildRelayTile(relay),
+              const SizedBox(height: 8),
+              Text(
+                'Toque e segure um relé para renomear.',
+                style: AppTheme.caption,
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),
@@ -224,10 +222,8 @@ class _RelaysScreenState extends State<RelaysScreen> {
   }
 
   Widget _buildRelayTile(int relay) {
-    final on = _states?[relay - 1] ?? false;
+    final on = _states![relay - 1];
     final pending = _pending.contains(relay);
-    // Without a known state a switch would lie, so it stays disabled.
-    final enabled = _states != null && !pending;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -268,9 +264,7 @@ class _RelaysScreenState extends State<RelaysScreen> {
                       Text(_names[relay - 1], style: AppTheme.valueBold),
                       const SizedBox(height: 2),
                       Text(
-                        _states == null
-                            ? 'Relé $relay · estado desconhecido'
-                            : 'Relé $relay · ${on ? 'ligado' : 'desligado'}',
+                        'Relé $relay · ${on ? 'ligado' : 'desligado'}',
                         style: AppTheme.caption,
                       ),
                     ],
@@ -289,7 +283,7 @@ class _RelaysScreenState extends State<RelaysScreen> {
                 Switch(
                   value: on,
                   activeThumbColor: AppTheme.primaryOrange,
-                  onChanged: enabled ? (v) => _setRelay(relay, v) : null,
+                  onChanged: pending ? null : (v) => _setRelay(relay, v),
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
@@ -35,13 +36,18 @@ class VoiceRecorderSheet extends StatefulWidget {
 }
 
 class _VoiceRecorderSheetState extends State<VoiceRecorderSheet> {
-  // Mono 16 kHz AAC: what WhisperX resamples to anyway, ~0.5 MB/minute.
+  // Mono AAC at 64 kbps, ~0.5 MB/minute. 44.1 kHz rather than the 16 kHz
+  // WhisperX resamples to: iOS's AAC encoder rejects 64 kbps at 16 kHz,
+  // and AVAudioRecorder then silently writes a header-only (28 byte) file.
   static const _config = RecordConfig(
     encoder: AudioEncoder.aacLc,
     bitRate: 64000,
-    sampleRate: 16000,
+    sampleRate: 44100,
     numChannels: 1,
   );
+
+  /// Anything this small is just a container header with no audio.
+  static const _minFileBytes = 1024;
 
   final _recorder = AudioRecorder();
   final _stopwatch = Stopwatch();
@@ -112,6 +118,11 @@ class _VoiceRecorderSheetState extends State<VoiceRecorderSheet> {
     try {
       final path = await _recorder.stop() ?? _path;
       if (path == null || _id == null) throw 'arquivo não encontrado';
+      final size = await File(path).length();
+      if (size < _minFileBytes) {
+        await File(path).delete();
+        throw 'o arquivo saiu vazio ($size bytes) - o gravador não capturou áudio';
+      }
       await VoiceNoteRepository.instance.addRecording(
         id: _id!,
         filePath: path,
@@ -121,6 +132,8 @@ class _VoiceRecorderSheetState extends State<VoiceRecorderSheet> {
     } catch (e) {
       if (mounted) {
         setState(() {
+          // The recorder is already stopped; only "Descartar" remains.
+          _recording = false;
           _saving = false;
           _error = 'Erro ao salvar: $e';
         });

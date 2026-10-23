@@ -41,6 +41,7 @@ SUMMARY_PROMPT = (SCRIPT_DIR / "summary_prompt.md").read_text(encoding="utf-8")
 # Models that accept the server-side refusal fallback ("default" routing).
 FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-fable-5-1"}
 ERROR_TAIL_CHARS = 500
+MIN_AUDIO_BYTES = 1024
 
 
 def log(msg: str) -> None:
@@ -91,6 +92,11 @@ async def transcribe_note(sb: AsyncClient, note: dict) -> None:
     log(f"Transcrevendo {note_id} ({note.get('duration_seconds') or '?'}s)...")
     try:
         audio = await sb.storage.from_(BUCKET).download(audio_path)
+        if len(audio) < MIN_AUDIO_BYTES:
+            # e.g. an m4a with only its header: the phone's recorder never
+            # captured audio. ffmpeg's "Invalid data" would hide that.
+            raise RuntimeError(
+                f"Áudio vazio ({len(audio)} bytes) - a gravação falhou no celular")
         with tempfile.TemporaryDirectory(prefix="voice_note_") as tmp:
             tmp_dir = Path(tmp)
             local = tmp_dir / f"{note_id}{Path(audio_path).suffix or '.m4a'}"

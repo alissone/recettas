@@ -8,15 +8,18 @@ Tailscale - it works from any network that can reach Supabase.
 
 For each queued note: download the audio from the "voice-notes" bucket,
 run WhisperX (transcribe_one.bat), write the transcript to the row and
-delete the audio. For each note with summary_status = 'requested': ask
-Claude for action-item bullet points and write them to summary.
+delete the audio. Claude tasks are requested by setting a status column
+to 'requested': summary_status (action-item bullets -> summary),
+shopping_status (things to buy -> shopping) and expenses_status (spoken
+purchases -> rows in purchases, echoed in expenses).
 """
 import asyncio
+import json
 import os
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import anthropic
@@ -38,6 +41,33 @@ BUCKET = "voice-notes"
 TABLE = "voice_notes"
 TRANSCRIBE_BAT = SCRIPT_DIR / "transcribe_one.bat"
 SUMMARY_PROMPT = (SCRIPT_DIR / "summary_prompt.md").read_text(encoding="utf-8")
+SHOPPING_PROMPT = (SCRIPT_DIR / "shopping_prompt.md").read_text(encoding="utf-8")
+EXPENSES_PROMPT = (SCRIPT_DIR / "expenses_prompt.md").read_text(encoding="utf-8")
+# Structured output for "Lançar gastos"; field meanings are in expenses_prompt.md.
+EXPENSES_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "itens": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "item": {"type": "string"},
+                    "valor": {"type": "number"},
+                    "local": {"type": ["string", "null"]},
+                    "data": {"type": ["string", "null"]},
+                    "categoria": {"type": ["string", "null"]},
+                },
+                "required": ["item", "valor", "local", "data", "categoria"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["itens"],
+    "additionalProperties": False,
+}
+WEEKDAYS_PT = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira",
+               "sexta-feira", "sábado", "domingo"]
 # Models that accept the server-side refusal fallback ("default" routing).
 FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-fable-5-1"}
 ERROR_TAIL_CHARS = 500
@@ -127,60 +157,161 @@ async def transcribe_note(sb: AsyncClient, note: dict) -> None:
         }).eq("id", note_id).execute()
 
 
-# --- Summaries ---
+# --- Claude tasks (summary, shopping list, expenses) ---
 
 
-def summarize(client: anthropic.Anthropic, transcript: str) -> str:
-    """Ask Claude for action-item bullet points (blocking)."""
+def ask_claude(client: anthropic.Anthropic, system: str, content: str,
+               effort: str = "low", json_schema: dict | None = None) -> str:
+    """One Claude request (blocking); returns the response text."""
     extra = {}
     if CLAUDE_MODEL in FALLBACK_MODELS:
         extra = {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
+    output_config: dict = {"effort": effort}
+    if json_schema:
+        output_config["format"] = {"type": "json_schema", "schema": json_schema}
     response = client.beta.messages.create(
         model=CLAUDE_MODEL,
         max_tokens=16000,
-        system=SUMMARY_PROMPT,
-        output_config={"effort": "low"},
-        messages=[{"role": "user", "content": f"Transcrição:\n\n{transcript}"}],
+        system=system,
+        output_config=output_config,
+        messages=[{"role": "user", "content": content}],
         **extra,
     )
     if response.stop_reason == "refusal":
-        raise RuntimeError("Claude recusou resumir esta transcrição")
+        raise RuntimeError("Claude recusou processar esta transcrição")
+    if response.stop_reason == "max_tokens":
+        raise RuntimeError("Resposta do Claude cortada (max_tokens)")
     return "\n".join(b.text for b in response.content if b.type == "text").strip()
 
 
-async def summarize_note(sb: AsyncClient, client: anthropic.Anthropic, note: dict) -> None:
-    note_id = note["id"]
-    if not await claim(sb, note_id, "summary_status", "requested"):
-        return
-    log(f"Resumindo {note_id}...")
+def transcript_message(note: dict) -> str:
+    return f"Transcrição:\n\n{note.get('transcript') or ''}"
+
+
+async def summary_work(sb: AsyncClient, client: anthropic.Anthropic, note: dict) -> dict:
+    text = await asyncio.to_thread(ask_claude, client, SUMMARY_PROMPT, transcript_message(note))
+    return {"summary": text}
+
+
+async def shopping_work(sb: AsyncClient, client: anthropic.Anthropic, note: dict) -> dict:
+    text = await asyncio.to_thread(ask_claude, client, SHOPPING_PROMPT, transcript_message(note))
+    return {"shopping": text}
+
+
+def parse_date(value) -> date | None:
     try:
-        summary = await asyncio.to_thread(summarize, client, note.get("transcript") or "")
-        await sb.table(TABLE).update({
-            "summary_status": "done",
-            "summary": summary,
-            "error_message": None,
+        return date.fromisoformat(str(value)) if value else None
+    except ValueError:
+        return None
+
+
+class TaskCancelled(Exception):
+    """The app cancelled the task (status column reset) while it ran."""
+
+
+async def still_claimed(sb: AsyncClient, note_id: str, status_column: str) -> bool:
+    res = await sb.table(TABLE).select("id").eq("id", note_id).eq(
+        status_column, "processing").execute()
+    return bool(res.data)
+
+
+async def expenses_work(sb: AsyncClient, client: anthropic.Anthropic, note: dict) -> dict:
+    """Extract spoken purchases and insert them into Gastos (purchases)."""
+    note_id = note["id"]
+    # The phone's day, as far as this PC can tell (both are in Brazil).
+    recorded = datetime.fromisoformat(note["recorded_at"]).astimezone().date()
+    cats = await (
+        sb.table("purchase_categories").select("id, name")
+        .eq("user_id", note["user_id"]).execute()
+    )
+    cat_ids = {c["name"].casefold(): c["id"] for c in cats.data}
+    context = (
+        f"Data da gravação: {recorded.isoformat()} ({WEEKDAYS_PT[recorded.weekday()]})\n"
+        f"Categorias: {', '.join(c['name'] for c in cats.data) or '(nenhuma)'}\n\n"
+        + transcript_message(note)
+    )
+    text = await asyncio.to_thread(
+        ask_claude, client, EXPENSES_PROMPT, context, "medium", EXPENSES_SCHEMA)
+    items = []
+    for it in json.loads(text)["itens"]:
+        valor = round(float(it.get("valor") or 0), 2)
+        name = (it.get("item") or "").strip()
+        if valor <= 0 or not name:
+            continue
+        categoria = it.get("categoria")
+        items.append({
+            "item": name,
+            "valor": valor,
+            "local": (it.get("local") or "").strip() or None,
+            "data": (parse_date(it.get("data")) or recorded).isoformat(),
+            "categoria": categoria if categoria and categoria.casefold() in cat_ids else None,
+        })
+    # Cancelled while Claude was thinking: don't touch Gastos.
+    if not await still_claimed(sb, note_id, "expenses_status"):
+        raise TaskCancelled
+    # Replace whatever an earlier run for this note inserted ("Refazer", or
+    # a run that died before marking the note done).
+    await sb.table("purchases").delete().eq("voice_note_id", note_id).execute()
+    if items:
+        await sb.table("purchases").insert([{
+            "user_id": note["user_id"],
+            "purchase_date": it["data"],
+            "item": it["item"],
+            "valor": it["valor"],
+            "local": it["local"],
+            "category_id": cat_ids.get(it["categoria"].casefold()) if it["categoria"] else None,
+            "voice_note_id": note_id,
+        } for it in items]).execute()
+    return {"expenses": items}
+
+
+# status column -> (log label, work)
+TASKS = {
+    "summary_status": ("Resumindo", summary_work),
+    "shopping_status": ("Lista de compras de", shopping_work),
+    "expenses_status": ("Lançando gastos de", expenses_work),
+}
+
+
+async def run_task(sb: AsyncClient, client: anthropic.Anthropic, status_column: str,
+                   note: dict) -> None:
+    note_id = note["id"]
+    if not await claim(sb, note_id, status_column, "requested"):
+        return
+    label, work = TASKS[status_column]
+    log(f"{label} {note_id}...")
+    try:
+        fields = await work(sb, client, note)
+        # Only if still ours: "Cancelar" in the app resets the column.
+        res = await sb.table(TABLE).update({
+            **fields,
+            status_column: "done",
+            # error_message is shared by all tasks; leave it for any other
+            # task that is still in error.
             "updated_at": now_iso(),
-        }).eq("id", note_id).execute()
-        log(f"Resumo pronto {note_id}")
+        }).eq("id", note_id).eq(status_column, "processing").execute()
+        log(f"Pronto: {label.lower()} {note_id}" if res.data
+            else f"Cancelado no app: {label.lower()} {note_id}")
+        return
+    except TaskCancelled:
+        log(f"Cancelado no app: {label.lower()} {note_id}")
+        return
     except anthropic.AuthenticationError:
-        await fail_summary(sb, note_id, "ANTHROPIC_API_KEY inválida no .env do transcriber")
+        message = "ANTHROPIC_API_KEY inválida no .env do transcriber"
     except anthropic.RateLimitError as e:
-        await fail_summary(sb, note_id, f"Limite de uso da API: {e}")
+        message = f"Limite de uso da API: {e}"
     except anthropic.APIStatusError as e:
-        await fail_summary(sb, note_id, f"Erro da API ({e.status_code}): {e.message}")
+        message = f"Erro da API ({e.status_code}): {e.message}"
     except anthropic.APIConnectionError:
-        await fail_summary(sb, note_id, "Sem conexão com a API da Anthropic")
+        message = "Sem conexão com a API da Anthropic"
     except Exception as e:  # noqa: BLE001 - reported on the row
-        await fail_summary(sb, note_id, str(e))
-
-
-async def fail_summary(sb: AsyncClient, note_id: str, message: str) -> None:
-    log(f"Erro no resumo {note_id}: {message}")
+        message = str(e)
+    log(f"Erro ({label.lower()}) {note_id}: {message}")
     await sb.table(TABLE).update({
-        "summary_status": "error",
+        status_column: "error",
         "error_message": message[:ERROR_TAIL_CHARS],
         "updated_at": now_iso(),
-    }).eq("id", note_id).execute()
+    }).eq("id", note_id).eq(status_column, "processing").execute()
 
 
 # --- Main loop ---
@@ -194,19 +325,21 @@ async def process_pending(sb: AsyncClient, client: anthropic.Anthropic) -> None:
     for note in queued.data:
         await transcribe_note(sb, note)
 
-    requested = await (
-        sb.table(TABLE).select("id, transcript")
-        .eq("summary_status", "requested").order("updated_at").execute()
-    )
-    for note in requested.data:
-        await summarize_note(sb, client, note)
+    for status_column in TASKS:
+        requested = await (
+            sb.table(TABLE).select("id, user_id, transcript, recorded_at")
+            .eq(status_column, "requested").order("updated_at").execute()
+        )
+        for note in requested.data:
+            await run_task(sb, client, status_column, note)
 
 
 async def reset_interrupted(sb: AsyncClient) -> None:
     """A previous run died mid-job; this is the only worker, so requeue."""
     await sb.table(TABLE).update({"status": "queued"}).eq("status", "processing").execute()
-    await sb.table(TABLE).update({"summary_status": "requested"}).eq(
-        "summary_status", "processing").execute()
+    for status_column in TASKS:
+        await sb.table(TABLE).update({status_column: "requested"}).eq(
+            status_column, "processing").execute()
 
 
 async def main() -> None:

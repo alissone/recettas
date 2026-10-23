@@ -6,12 +6,16 @@ import 'package:share_plus/share_plus.dart';
 
 import '../app_theme.dart';
 import '../models/voice_note.dart';
+import '../services/supabase_service.dart';
 import '../services/todo_repository.dart';
 import '../services/voice_note_repository.dart';
+import '../utils/brl.dart';
+import '../utils/dates.dart';
 
 /// Voice notes queue: recordings still on the phone, notes waiting for
 /// the WhisperX worker, and finished transcripts that can be copied,
-/// shared, summarized with Claude, or turned into todos.
+/// shared, turned into todos, or handed to Claude (summary -> todos,
+/// shopping list -> Compras, spoken purchases -> Gastos).
 class VoiceNotesScreen extends StatefulWidget {
   const VoiceNotesScreen({super.key});
 
@@ -72,8 +76,9 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
         _notes.any((n) =>
             n.status == VoiceNoteStatus.queued ||
             n.status == VoiceNoteStatus.processing ||
-            n.summaryStatus == VoiceSummaryStatus.requested ||
-            n.summaryStatus == VoiceSummaryStatus.processing);
+            VoiceTask.values.any((t) =>
+                n.statusOf(t) == VoiceTaskStatus.requested ||
+                n.statusOf(t) == VoiceTaskStatus.processing));
     if (busy) _pollTimer = Timer(_pollInterval, _load);
   }
 
@@ -113,7 +118,8 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
   Future<void> _addSummaryItems(VoiceNote note) async {
     final selected = await showDialog<List<String>>(
       context: context,
-      builder: (_) => _PickItemsDialog(items: note.summaryItems),
+      builder: (_) => _PickItemsDialog(
+          title: 'Adicionar aos afazeres', items: note.summaryItems),
     );
     if (selected == null || selected.isEmpty) return;
     for (final item in selected) {
@@ -124,13 +130,33 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
         success: true);
   }
 
+  Future<void> _addShoppingItems(VoiceNote note) async {
+    final selected = await showDialog<List<String>>(
+      context: context,
+      builder: (_) => _PickItemsDialog(
+          title: 'Adicionar às compras', items: note.shoppingItems),
+    );
+    if (selected == null || selected.isEmpty) return;
+    try {
+      for (final item in selected) {
+        await SupabaseService.addShoppingItem(item);
+      }
+      _snack(
+          '${selected.length} ${selected.length == 1 ? 'item adicionado' : 'itens adicionados'} às compras',
+          success: true);
+    } catch (e) {
+      _snack('Erro ao adicionar às compras: $e');
+    }
+  }
+
   Future<void> _confirmDelete(VoiceNote note) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.creamBackground,
         title: const Text('Excluir nota?', style: AppTheme.sectionTitle),
-        content: const Text('A transcrição e o resumo serão apagados.'),
+        content: const Text('A transcrição e os resultados do Claude serão '
+            'apagados. Gastos e itens já adicionados continuam nas listas.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -359,97 +385,310 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
                     : TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 4,
-              children: [
-                _action(Icons.copy, 'Copiar', () => _copy(transcript)),
-                _action(Icons.share_outlined, 'Compartilhar',
-                    () => _share(transcript)),
-                _action(Icons.add_task, 'Virar afazer',
-                    () => _addAsTodo(transcript)),
-                if (note.summaryStatus == null ||
-                    note.summaryStatus == VoiceSummaryStatus.error)
-                  _action(Icons.auto_awesome, 'Resumir',
-                      () => _run(() => _repo.requestSummary(note.id),
-                          'Erro ao pedir resumo')),
-              ],
+            const SizedBox(height: 10),
+            _actionGroup([
+              _actionTile(Icons.copy, 'Copiar texto',
+                  onTap: () => _copy(transcript)),
+              _actionTile(Icons.share_outlined, 'Compartilhar',
+                  onTap: () => _share(transcript)),
+              _actionTile(Icons.add_task, 'Criar afazer com o texto',
+                  onTap: () => _addAsTodo(transcript)),
+            ]),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 6),
+              child: Text('Com Claude',
+                  style: AppTheme.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.mediumBrown)),
             ),
-            _buildSummary(note),
+            _actionGroup([
+              for (final task in VoiceTask.values) _taskTile(note, task),
+            ]),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildSummary(VoiceNote note) {
-    switch (note.summaryStatus) {
-      case null:
-        return const SizedBox.shrink();
-      case VoiceSummaryStatus.requested:
-      case VoiceSummaryStatus.processing:
-        return Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppTheme.primaryOrange),
+  // --- Claude tasks ---
+
+  static const _taskInfo = {
+    VoiceTask.summary: (Icons.checklist, 'Resumir em afazeres',
+        'Tópicos que viram itens em Afazeres'),
+    VoiceTask.shopping: (Icons.shopping_cart_outlined, 'Lista de compras',
+        'O que comprar, para adicionar em Compras'),
+    VoiceTask.expenses: (Icons.receipt_long_outlined, 'Lançar em Gastos',
+        'Compras ditas com valor são lançadas direto'),
+  };
+
+  /// One task row plus, when done, its result right below it.
+  Widget _taskTile(VoiceNote note, VoiceTask task) {
+    final (icon, title, hint) = _taskInfo[task]!;
+    final status = note.statusOf(task);
+    final busy = status == VoiceTaskStatus.requested ||
+        status == VoiceTaskStatus.processing;
+    final subtitle = switch (status) {
+      null => hint,
+      VoiceTaskStatus.requested => 'Pedido, aguardando o PC...',
+      VoiceTaskStatus.processing => 'Processando com Claude...',
+      VoiceTaskStatus.error => 'Erro: ${note.errorMessage ?? 'desconhecido'}'
+          ' - toque para tentar de novo',
+      VoiceTaskStatus.done => null,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _actionTile(
+          icon,
+          title,
+          subtitle: subtitle,
+          subtitleColor:
+              status == VoiceTaskStatus.error ? Colors.red.shade400 : null,
+          // Done: the row itself does nothing and "Refazer" is the trailing
+          // button, so a stray tap can't redo (for Gastos, replace) it.
+          onTap: busy || status == VoiceTaskStatus.done
+              ? null
+              : () => _requestTask(note, task),
+          trailing: busy
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppTheme.primaryOrange),
+                    ),
+                    IconButton(
+                      tooltip: 'Cancelar',
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(Icons.close,
+                          size: 20, color: Colors.red.shade300),
+                      onPressed: () => _run(
+                          () => _repo.cancelTask(note.id, task),
+                          'Erro ao cancelar'),
+                    ),
+                  ],
+                )
+              : status == VoiceTaskStatus.done
+                  ? IconButton(
+                      tooltip: 'Refazer',
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.refresh,
+                          size: 20, color: AppTheme.primaryOrange),
+                      onPressed: () => _redoTask(note, task),
+                    )
+                  : null,
+        ),
+        if (status == VoiceTaskStatus.done)
+          switch (task) {
+            VoiceTask.summary => _bulletResult(
+                items: note.summaryItems,
+                rawText: note.summary,
+                addLabel: 'Adicionar aos afazeres',
+                onAdd: () => _addSummaryItems(note),
               ),
-              const SizedBox(width: 8),
-              Text(
-                  note.summaryStatus == VoiceSummaryStatus.requested
-                      ? 'Resumo pedido, aguardando o PC...'
-                      : 'Resumindo com Claude...',
-                  style: AppTheme.caption),
-            ],
+            VoiceTask.shopping => _bulletResult(
+                items: note.shoppingItems,
+                rawText: note.shopping,
+                addLabel: 'Adicionar às compras',
+                onAdd: () => _addShoppingItems(note),
+              ),
+            VoiceTask.expenses => _expensesResult(note),
+          },
+      ],
+    );
+  }
+
+  void _requestTask(VoiceNote note, VoiceTask task) {
+    _run(() => _repo.requestTask(note.id, task), 'Erro ao pedir');
+  }
+
+  Future<void> _redoTask(VoiceNote note, VoiceTask task) async {
+    if (task == VoiceTask.expenses && note.expenses.isNotEmpty) {
+      final n = note.expenses.length;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: AppTheme.creamBackground,
+          title: const Text('Refazer gastos?', style: AppTheme.sectionTitle),
+          content: Text(n == 1
+              ? 'O gasto lançado por esta nota será substituído, inclusive '
+                  'se você o editou em Gastos.'
+              : 'Os $n gastos lançados por esta nota serão substituídos, '
+                  'inclusive os que você editou em Gastos.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Cancelar',
+                  style: TextStyle(color: AppTheme.mediumBrown)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Refazer',
+                  style: TextStyle(color: AppTheme.primaryOrange)),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+    }
+    _requestTask(note, task);
+  }
+
+  Widget _resultBox(List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.lightPeach.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _bulletResult({
+    required List<String> items,
+    required String? rawText,
+    required String addLabel,
+    required VoidCallback onAdd,
+  }) {
+    return _resultBox([
+      if (items.isEmpty)
+        Text(rawText ?? '', style: AppTheme.bodyText)
+      else
+        for (final item in items)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text('•  $item', style: AppTheme.bodyText),
           ),
-        );
-      case VoiceSummaryStatus.error:
-        return Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text('Erro no resumo: ${note.errorMessage ?? 'desconhecido'}',
-              style: AppTheme.caption.copyWith(color: Colors.red.shade400)),
-        );
-      case VoiceSummaryStatus.done:
-        final items = note.summaryItems;
-        return Container(
-          margin: const EdgeInsets.only(top: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppTheme.lightPeach.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          ),
-          child: Column(
+      Wrap(
+        spacing: 4,
+        children: [
+          if (items.isNotEmpty) _action(Icons.playlist_add, addLabel, onAdd),
+          _action(Icons.copy, 'Copiar', () => _copy(rawText ?? '')),
+        ],
+      ),
+    ]);
+  }
+
+  Widget _expensesResult(VoiceNote note) {
+    final expenses = note.expenses;
+    if (expenses.isEmpty) {
+      return _resultBox([
+        const Text('Nenhuma compra com valor encontrada na nota.',
+            style: AppTheme.bodyText),
+      ]);
+    }
+    final total = expenses.fold<double>(0, (sum, e) => sum + e.valor);
+    final recordedDay = isoDate(note.recordedAt.toLocal());
+    return _resultBox([
+      for (final e in expenses)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (items.isEmpty)
-                Text(note.summary ?? '', style: AppTheme.bodyText)
-              else
-                for (final item in items)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text('•  $item', style: AppTheme.bodyText),
-                  ),
-              Wrap(
-                spacing: 4,
-                children: [
-                  if (items.isNotEmpty)
-                    _action(Icons.playlist_add, 'Adicionar aos afazeres',
-                        () => _addSummaryItems(note)),
-                  _action(Icons.copy, 'Copiar',
-                      () => _copy(note.summary ?? '')),
-                  _action(Icons.refresh, 'Refazer',
-                      () => _run(() => _repo.requestSummary(note.id),
-                          'Erro ao pedir resumo')),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(e.item, style: AppTheme.bodyText),
+                    if (_expenseDetails(e, recordedDay).isNotEmpty)
+                      Text(_expenseDetails(e, recordedDay),
+                          style: AppTheme.caption),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
+              Text(formatBrl(e.valor),
+                  style: AppTheme.valueBold.copyWith(fontSize: 14)),
             ],
           ),
-        );
-    }
+        ),
+      Text(
+        '${expenses.length} ${expenses.length == 1 ? 'gasto lançado' : 'gastos lançados'}'
+        ' em Gastos • total ${formatBrl(total)}',
+        style: AppTheme.caption.copyWith(color: Colors.green.shade700),
+      ),
+    ]);
+  }
+
+  /// "Mello • 22/10 • Comida"; the date only when it isn't the note's day.
+  String _expenseDetails(VoiceExpense e, String recordedDay) {
+    final date = DateTime.tryParse(e.data);
+    return [
+      if (e.local != null) e.local!,
+      if (date != null && e.data != recordedDay) formatDayMonth(date),
+      if (e.categoria != null) e.categoria!,
+    ].join(' • ');
+  }
+
+  // --- Action list ---
+
+  /// Rows stacked in one rounded box with hairline dividers.
+  Widget _actionGroup(List<Widget> rows) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppTheme.lightPeach),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0) Divider(height: 1, color: AppTheme.lightPeach),
+            rows[i],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _actionTile(
+    IconData icon,
+    String title, {
+    String? subtitle,
+    Color? subtitleColor,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppTheme.primaryOrange),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: AppTheme.bodyText
+                          .copyWith(fontWeight: FontWeight.w600)),
+                  if (subtitle != null)
+                    Text(subtitle,
+                        style: AppTheme.caption.copyWith(
+                            color: subtitleColor ?? AppTheme.mediumBrown),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 8), trailing],
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _action(IconData icon, String label, VoidCallback onPressed) {
@@ -479,12 +718,12 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
   }
 }
 
-/// Checkbox list of summary items, all selected by default; pops the
-/// chosen ones.
+/// Checkbox list of items, all selected by default; pops the chosen ones.
 class _PickItemsDialog extends StatefulWidget {
+  final String title;
   final List<String> items;
 
-  const _PickItemsDialog({required this.items});
+  const _PickItemsDialog({required this.title, required this.items});
 
   @override
   State<_PickItemsDialog> createState() => _PickItemsDialogState();
@@ -502,7 +741,7 @@ class _PickItemsDialogState extends State<_PickItemsDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
       ),
-      title: const Text('Adicionar aos afazeres', style: AppTheme.sectionTitle),
+      title: Text(widget.title, style: AppTheme.sectionTitle),
       content: SizedBox(
         width: double.maxFinite,
         child: ListView.builder(

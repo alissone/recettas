@@ -19,16 +19,27 @@ phone ──upload .m4a──▶ Supabase Storage (voice-notes)  ◀──downlo
    in case the socket drops. It downloads the audio, runs WhisperX
    (`transcribe_one.bat`, same `whisperx` conda env as `falar.bat`), writes
    `transcript`, and deletes the audio from Storage.
-3. "Resumir" in the app sets `summary_status = 'requested'`. The worker
-   asks Claude for action-item bullets (`summary_prompt.md`) and writes
-   them to `summary`. The app turns them into todos.
+3. The "Com Claude" actions in the app set a status column to
+   `'requested'` and the worker runs the matching task:
+   - `summary_status`: action-item bullets (`summary_prompt.md`) go to
+     `summary`. The app turns the ones you pick into todos.
+   - `shopping_status`: things to buy (`shopping_prompt.md`) go to
+     `shopping`. The app adds the ones you pick to Compras.
+   - `expenses_status`: spoken purchases ("comprei no Mello 3 linguiças
+     por 10 e 50...") are extracted as JSON (`expenses_prompt.md`, with
+     structured output). Each item has an item, a value, an optional
+     place, a date when one other than the recording day is mentioned,
+     and one of the user's categories. The worker inserts them straight
+     into `purchases` with `voice_note_id`, and echoes them in `expenses`.
+     A rerun deletes that note's purchases first, so it never duplicates.
 
 Notes recorded while the PC is off just wait in the queue. Anything
 interrupted mid-job is requeued when the worker starts.
 
 ## Setup
 
-1. Run `migrations/035_create_voice_notes.sql` in the Supabase SQL editor.
+1. Run `migrations/035_create_voice_notes.sql` and
+   `036_voice_notes_expenses_shopping.sql` in the Supabase SQL editor.
 2. `setup.bat` creates `.venv`, installs the dependencies, and creates `.env`.
 3. Fill in `.env`:
    - `SUPABASE_SERVICE_ROLE_KEY`: Dashboard → Project Settings → API.
@@ -44,7 +55,7 @@ interrupted mid-job is requeued when the worker starts.
 |---|---|---|
 | `WHISPER_MODEL` | `large-v2` | any WhisperX model name |
 | `WHISPER_LANGUAGE` | `pt` | passed to `--language` |
-| `CLAUDE_MODEL` | `claude-opus-5-5` | model used for summaries |
+| `CLAUDE_MODEL` | `claude-opus-5-5` | model used for the Claude tasks |
 | `POLL_SECONDS` | `60` | fallback poll interval |
 
 The conda path (`D:\anaconda3\condabin\conda.bat`) and env name live

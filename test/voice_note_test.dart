@@ -37,4 +37,32 @@ void main() {
     });
     expect(note.status, VoiceNoteStatus.queued);
   });
+
+  test('shopping items, expenses and task statuses are parsed', () {
+    final note = VoiceNote.fromJson({
+      'id': 'n3',
+      'status': 'done',
+      'shopping': '- Leite\n- Ovos (2 dúzias)\n',
+      'shopping_status': 'done',
+      'expenses': [
+        {
+          'item': '3 linguiças',
+          'valor': 10.5,
+          'local': 'Mello',
+          'data': '2026-10-22',
+          'categoria': 'Comida',
+        },
+        {'item': 'sabonete', 'valor': 2, 'local': null, 'data': '2026-10-23'},
+      ],
+      'expenses_status': 'processing',
+      'recorded_at': '2026-10-23T12:00:00Z',
+    });
+    expect(note.shoppingItems, ['Leite', 'Ovos (2 dúzias)']);
+    expect(note.expenses.map((e) => e.valor), [10.5, 2.0]);
+    expect(note.expenses.first.local, 'Mello');
+    expect(note.expenses.last.local, isNull);
+    expect(note.statusOf(VoiceTask.expenses), VoiceTaskStatus.processing);
+    expect(note.statusOf(VoiceTask.shopping), VoiceTaskStatus.done);
+    expect(note.statusOf(VoiceTask.summary), isNull);
+  });
 }

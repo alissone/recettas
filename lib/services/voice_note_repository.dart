@@ -176,9 +176,20 @@ class VoiceNoteRepository {
     return data.map<VoiceNote>(VoiceNote.fromJson).toList();
   }
 
-  Future<void> requestSummary(String id) async {
+  /// Asks the worker to (re)run [task] on the note; for expenses, a rerun
+  /// replaces the purchases the previous run inserted.
+  Future<void> requestTask(String id, VoiceTask task) async {
     await _client.from(_table).update({
-      'summary_status': 'requested',
+      task.statusColumn: 'requested',
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
+  }
+
+  /// Takes [task] off the worker's queue (back to "not requested"). If
+  /// the worker is already running it, it drops the result when it ends.
+  Future<void> cancelTask(String id, VoiceTask task) async {
+    await _client.from(_table).update({
+      task.statusColumn: null,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', id);
   }

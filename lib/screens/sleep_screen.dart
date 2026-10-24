@@ -109,6 +109,21 @@ class _SleepScreenState extends State<SleepScreen>
         (a, b) => a.occurredAt.isAfter(b.occurredAt) ? a : b);
   }
 
+  /// True while the latest event is a "sleep" — the screen goes dark
+  /// until a "wake" is recorded.
+  bool get _isSleeping => _lastEvent?.isSleep ?? false;
+
+  Color get _bgColor =>
+      _isSleeping ? const Color(0xFF0E0A08) : AppTheme.creamBackground;
+  Color get _cardColor =>
+      _isSleeping ? const Color(0xFF1C1411) : AppTheme.white;
+  Color get _titleColor =>
+      _isSleeping ? const Color(0xFFEADBD0) : AppTheme.darkBrown;
+  Color get _bodyColor =>
+      _isSleeping ? const Color(0xFFCDB8AA) : AppTheme.lightBrown;
+  Color get _mutedColor =>
+      _isSleeping ? const Color(0xFFA08B7D) : AppTheme.mediumBrown;
+
   Future<void> _record(String type, DateTime occurredAt) async {
     if (SupabaseService.currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -284,9 +299,12 @@ class _SleepScreenState extends State<SleepScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.creamBackground,
+      backgroundColor: _bgColor,
       appBar: AppBar(
         title: const Text('Sono'),
+        backgroundColor: _isSleeping ? _bgColor : null,
+        foregroundColor: _isSleeping ? _titleColor : null,
+        surfaceTintColor: Colors.transparent,
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -313,8 +331,8 @@ class _SleepScreenState extends State<SleepScreen>
                     child: Text(
                       'Toque para registrar agora · '
                       'segure para escolher a hora',
-                      style: AppTheme.caption
-                          .copyWith(fontWeight: FontWeight.w400),
+                      style: AppTheme.caption.copyWith(
+                          fontWeight: FontWeight.w400, color: _mutedColor),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -334,7 +352,7 @@ class _SleepScreenState extends State<SleepScreen>
           child: _buildRecordButton(
             label: 'Fui dormir',
             icon: Icons.bedtime_outlined,
-            color: AppTheme.darkBrown,
+            color: _isSleeping ? AppTheme.lightBrown : AppTheme.darkBrown,
             onTap: () => _record('sleep', DateTime.now()),
             onLongPress: () => _recordCustom('sleep'),
           ),
@@ -418,18 +436,19 @@ class _SleepScreenState extends State<SleepScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.white,
+        color: _cardColor,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        boxShadow: AppTheme.cardShadow,
+        boxShadow: _isSleeping ? null : AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text('Noites de sono',
-                    style: AppTheme.sectionTitle),
+                    style: AppTheme.sectionTitle
+                        .copyWith(color: _titleColor)),
               ),
               SegmentedButton<bool>(
                 segments: const [
@@ -444,6 +463,7 @@ class _SleepScreenState extends State<SleepScreen>
                   selectedBackgroundColor:
                       AppTheme.primaryOrange.withValues(alpha: 0.15),
                   selectedForegroundColor: AppTheme.primaryOrange,
+                  foregroundColor: _mutedColor,
                   visualDensity: VisualDensity.compact,
                   side: BorderSide(color: AppTheme.borderOrange),
                 ),
@@ -456,7 +476,7 @@ class _SleepScreenState extends State<SleepScreen>
               IconButton(
                 onPressed: () => _page(-1),
                 icon: const Icon(Icons.chevron_left),
-                color: AppTheme.mediumBrown,
+                color: _mutedColor,
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Período anterior',
               ),
@@ -465,15 +485,15 @@ class _SleepScreenState extends State<SleepScreen>
                   child: Text(
                     '${_formatDayMonth(days.first)} – '
                     '${_formatDayMonth(days.last)}',
-                    style: AppTheme.caption
-                        .copyWith(fontWeight: FontWeight.w600),
+                    style: AppTheme.caption.copyWith(
+                        fontWeight: FontWeight.w600, color: _mutedColor),
                   ),
                 ),
               ),
               IconButton(
                 onPressed: _isAtToday ? null : () => _page(1),
                 icon: const Icon(Icons.chevron_right),
-                color: AppTheme.mediumBrown,
+                color: _mutedColor,
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Próximo período',
               ),
@@ -496,8 +516,8 @@ class _SleepScreenState extends State<SleepScreen>
                 child: Text(
                   'Nenhum registro no período.\n'
                   'Use os botões acima para começar.',
-                  style: AppTheme.caption
-                      .copyWith(fontWeight: FontWeight.w400),
+                  style: AppTheme.caption.copyWith(
+                      fontWeight: FontWeight.w400, color: _mutedColor),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -514,6 +534,7 @@ class _SleepScreenState extends State<SleepScreen>
                   weekView: _weekView,
                   weekdaysShort: _weekdaysShort,
                   formatDuration: _formatDuration,
+                  labelColor: _mutedColor,
                 ),
               ),
             ),
@@ -526,9 +547,10 @@ class _SleepScreenState extends State<SleepScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTheme.caption),
+        Text(label, style: AppTheme.caption.copyWith(color: _mutedColor)),
         const SizedBox(height: 2),
-        Text(value, style: AppTheme.headingMedium),
+        Text(value,
+            style: AppTheme.headingMedium.copyWith(color: _titleColor)),
       ],
     );
   }
@@ -541,21 +563,22 @@ class _SleepScreenState extends State<SleepScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.white,
+        color: _cardColor,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        boxShadow: AppTheme.cardShadow,
+        boxShadow: _isSleeping ? null : AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Últimos registros', style: AppTheme.sectionTitle),
+          Text('Últimos registros',
+              style: AppTheme.sectionTitle.copyWith(color: _titleColor)),
           const SizedBox(height: 8),
           if (shown.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text('Nenhum registro ainda.',
-                  style: AppTheme.caption
-                      .copyWith(fontWeight: FontWeight.w400)),
+                  style: AppTheme.caption.copyWith(
+                      fontWeight: FontWeight.w400, color: _mutedColor)),
             ),
           for (final event in shown)
             Padding(
@@ -568,26 +591,26 @@ class _SleepScreenState extends State<SleepScreen>
                         : Icons.wb_sunny_outlined,
                     size: 20,
                     color: event.isSleep
-                        ? AppTheme.darkBrown
+                        ? (_isSleeping ? _titleColor : AppTheme.darkBrown)
                         : AppTheme.primaryOrange,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       event.isSleep ? 'Dormi' : 'Acordei',
-                      style: AppTheme.bodyText,
+                      style:
+                          AppTheme.bodyText.copyWith(color: _bodyColor),
                     ),
                   ),
                   Text(
                     _formatEventTime(event.occurredAt),
-                    style: AppTheme.caption,
+                    style: AppTheme.caption.copyWith(color: _mutedColor),
                   ),
                   IconButton(
                     onPressed: () => _deleteEvent(event),
                     icon: Icon(Icons.close,
                         size: 18,
-                        color: AppTheme.mediumBrown
-                            .withValues(alpha: 0.6)),
+                        color: _mutedColor.withValues(alpha: 0.6)),
                     visualDensity: VisualDensity.compact,
                     tooltip: 'Excluir',
                   ),
@@ -610,6 +633,7 @@ class _SleepChartPainter extends CustomPainter {
   final bool weekView;
   final List<String> weekdaysShort;
   final String Function(Duration) formatDuration;
+  final Color labelColor;
 
   _SleepChartPainter({
     required this.days,
@@ -617,6 +641,7 @@ class _SleepChartPainter extends CustomPainter {
     required this.weekView,
     required this.weekdaysShort,
     required this.formatDuration,
+    required this.labelColor,
   });
 
   static const _axisHeight = 22.0;
@@ -631,7 +656,7 @@ class _SleepChartPainter extends CustomPainter {
     final rowHeight = (size.height - plotTop) / days.length;
 
     final gridPaint = Paint()
-      ..color = AppTheme.mediumBrown.withValues(alpha: 0.12)
+      ..color = labelColor.withValues(alpha: 0.12)
       ..strokeWidth = 1;
 
     // Vertical gridlines + hour labels: window hours 0/6/12/18/24 map
@@ -649,7 +674,7 @@ class _SleepChartPainter extends CustomPainter {
         anchorCenter: true,
         style: TextStyle(
           fontSize: 10,
-          color: AppTheme.mediumBrown.withValues(alpha: 0.7),
+          color: labelColor.withValues(alpha: 0.7),
         ),
       );
     }
@@ -682,7 +707,7 @@ class _SleepChartPainter extends CustomPainter {
           anchorRight: true,
           style: TextStyle(
             fontSize: weekView ? 11 : 9,
-            color: AppTheme.mediumBrown,
+            color: labelColor,
             fontWeight: FontWeight.w600,
           ),
         );
@@ -722,9 +747,9 @@ class _SleepChartPainter extends CustomPainter {
           formatDuration(totalDuration),
           Offset(size.width, rowCenter),
           anchorRight: true,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
-            color: AppTheme.mediumBrown,
+            color: labelColor,
             fontWeight: FontWeight.w600,
           ),
         );
@@ -758,6 +783,7 @@ class _SleepChartPainter extends CustomPainter {
   bool shouldRepaint(_SleepChartPainter oldDelegate) {
     return oldDelegate.days != days ||
         oldDelegate.intervals != intervals ||
-        oldDelegate.weekView != weekView;
+        oldDelegate.weekView != weekView ||
+        oldDelegate.labelColor != labelColor;
   }
 }

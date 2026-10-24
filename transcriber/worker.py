@@ -215,14 +215,37 @@ async def still_claimed(sb: AsyncClient, note_id: str, status_column: str) -> bo
     return bool(res.data)
 
 
+async def target_list(sb: AsyncClient, user_id: str) -> str:
+    """Owner id of the Gastos list to insert into.
+
+    A shared list the user was invited to (migrations 012/013) wins over
+    their own: that's the list they actually keep. With several, the one
+    with the most recent purchase.
+    """
+    invites = await (
+        sb.table("list_invites").select("inviter_id")
+        .eq("invitee_id", user_id).eq("status", "accepted").execute()
+    )
+    shared = [r["inviter_id"] for r in invites.data]
+    if len(shared) <= 1:
+        return shared[0] if shared else user_id
+    latest = await (
+        sb.table("purchases").select("user_id").in_("user_id", shared)
+        .order("created_at", desc=True).limit(1).execute()
+    )
+    return latest.data[0]["user_id"] if latest.data else shared[0]
+
+
 async def expenses_work(sb: AsyncClient, client: anthropic.Anthropic, note: dict) -> dict:
     """Extract spoken purchases and insert them into Gastos (purchases)."""
     note_id = note["id"]
     # The phone's day, as far as this PC can tell (both are in Brazil).
     recorded = datetime.fromisoformat(note["recorded_at"]).astimezone().date()
+    # Categories belong to the list, so use the target list's own.
+    owner_id = await target_list(sb, note["user_id"])
     cats = await (
         sb.table("purchase_categories").select("id, name")
-        .eq("user_id", note["user_id"]).execute()
+        .eq("user_id", owner_id).execute()
     )
     cat_ids = {c["name"].casefold(): c["id"] for c in cats.data}
     context = (
@@ -254,7 +277,7 @@ async def expenses_work(sb: AsyncClient, client: anthropic.Anthropic, note: dict
     await sb.table("purchases").delete().eq("voice_note_id", note_id).execute()
     if items:
         await sb.table("purchases").insert([{
-            "user_id": note["user_id"],
+            "user_id": owner_id,
             "purchase_date": it["data"],
             "item": it["item"],
             "valor": it["valor"],

@@ -138,11 +138,17 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
     );
     if (selected == null || selected.isEmpty) return;
     try {
+      // Same rule as the worker's Gastos: a list shared with the user wins
+      // over their own, since that's the one they keep.
+      final owners = await SupabaseService.getListOwners();
+      final target = owners.firstWhere((o) => !o.isMine,
+          orElse: () => owners.first);
       for (final item in selected) {
-        await SupabaseService.addShoppingItem(item);
+        await SupabaseService.addShoppingItem(item, ownerId: target.id);
       }
       _snack(
-          '${selected.length} ${selected.length == 1 ? 'item adicionado' : 'itens adicionados'} às compras',
+          '${selected.length} ${selected.length == 1 ? 'item adicionado' : 'itens adicionados'}'
+          ' às compras${target.isMine ? '' : ' (${target.name})'}',
           success: true);
     } catch (e) {
       _snack('Erro ao adicionar às compras: $e');

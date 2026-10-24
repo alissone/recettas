@@ -54,4 +54,35 @@ void main() {
     ], DateTime(2026, 10, 2))!;
     expect(u.usedSoFar, closeTo(10, 1e-9)); // only Oct 1-2 of the 2-day gap
   });
+
+  test('days before the first reading are estimated at the month rate', () {
+    // First reading Oct 5, then 2 kWh/day: Oct 1-5 adds 4 days * 2.
+    final u = UtilityUsage.compute([
+      r(1000, DateTime(2026, 10, 5)),
+      r(1010, DateTime(2026, 10, 10)),
+    ], DateTime(2026, 10, 10))!;
+    expect(u.estimatedBefore, closeTo(8, 1e-9));
+    expect(u.usedSoFar, closeTo(18, 1e-9));
+    expect(u.projected, closeTo(62, 1e-6));
+    expect(u.backfillEnd, DateTime(2026, 10, 5));
+  });
+
+  test('last 24h is interpolated up to the latest reading', () {
+    final u = UtilityUsage.compute([
+      r(1000, DateTime(2026, 10, 1)),
+      r(1030, DateTime(2026, 10, 4)), // 10/day
+      r(1032, DateTime(2026, 10, 4, 12)), // 4/day
+    ], now)!;
+    // 12h at 10/day + 12h at 4/day.
+    expect(u.last24h, closeTo(7, 1e-9));
+    expect(u.last24hEnd, DateTime(2026, 10, 4, 12));
+  });
+
+  test('last 24h scales up readings that span less than a day', () {
+    final u = UtilityUsage.compute([
+      r(1000, DateTime(2026, 10, 3)),
+      r(1001, DateTime(2026, 10, 3, 6)),
+    ], now)!;
+    expect(u.last24h, closeTo(4, 1e-9));
+  });
 }

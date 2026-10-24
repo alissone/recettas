@@ -24,6 +24,10 @@ class UtilitiesScreen extends StatefulWidget {
 String _num(double v, [int decimals = 1]) =>
     v.toStringAsFixed(decimals).replaceAll('.', ',');
 
+/// 9:05 -> "09:05".
+String _time(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:'
+    '${t.minute.toString().padLeft(2, '0')}';
+
 class _UtilitiesScreenState extends State<UtilitiesScreen> {
   UtilityKind _kind = UtilityKind.energy;
   final Map<UtilityKind, List<UtilityReading>> _readings = {};
@@ -398,7 +402,26 @@ class _UtilitiesScreenState extends State<UtilitiesScreen> {
                 : '$usedCost até agora',
             style: AppTheme.valueBold,
           ),
+          if (usage.estimatedBefore > 0)
+            Text(
+              'Inclui ~${_num(usage.estimatedBefore, _decimals)} $unit '
+              'estimados antes da primeira leitura '
+              '(${formatDayMonth(usage.backfillEnd)})',
+              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+            ),
           const SizedBox(height: 16),
+          _stat(
+            'Últimas 24h',
+            usage.last24h == null
+                ? '—'
+                : '${_num(usage.last24h!, _decimals)} $unit',
+            usage.last24h == null
+                ? 'Precisa de mais leituras'
+                : '${_cost(usage.last24h) ?? 'sem preço'} · até '
+                    '${formatDayMonth(usage.last24hEnd)} '
+                    '${_time(usage.last24hEnd)}',
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -536,7 +559,8 @@ class _UtilitiesScreenState extends State<UtilitiesScreen> {
             const SizedBox(height: 8),
             Text(
               'Previsão: ritmo médio das leituras do mês aplicado aos dias '
-              'restantes (regressão linear).',
+              'restantes (regressão linear)'
+              '${usage.backfill.isEmpty ? '' : ', e aos dias antes da primeira leitura'}.',
               style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
             ),
           ],
@@ -619,10 +643,8 @@ class _UtilitiesScreenState extends State<UtilitiesScreen> {
                     '${_num(reading.value, _decimals)} ${_kind.unit}',
                     style: AppTheme.valueBold),
                 subtitle: Text(
-                  '${formatDayMonth(t)} '
-                  '${t.hour.toString().padLeft(2, '0')}:'
-                  '${t.minute.toString().padLeft(2, '0')}'
-                  ' · ${delta == null ? 'ponto de partida' : '+${_num(delta, _decimals)} ${_kind.unit}'}',
+                  '${formatDayMonth(t)} ${_time(t)}'
+                  ' ·${delta == null ? 'ponto de partida' : '+${_num(delta, _decimals)} ${_kind.unit}'}',
                   style: AppTheme.caption,
                 ),
                 trailing: IconButton(
@@ -766,10 +788,11 @@ class _UsagePainter extends CustomPainter {
           stroke(AppTheme.mediumBrown.withValues(alpha: 0.4), 2));
     }
 
-    if (usage.forecast.length > 1) {
-      final forecastPaint = stroke(color.withValues(alpha: 0.7), 2.5);
-      for (final PathMetric metric
-          in pathOf(usage.forecast).computeMetrics()) {
+    // Estimates (before the first reading, and to month end) are dashed.
+    final forecastPaint = stroke(color.withValues(alpha: 0.7), 2.5);
+    for (final series in [usage.backfill, usage.forecast]) {
+      if (series.length < 2) continue;
+      for (final PathMetric metric in pathOf(series).computeMetrics()) {
         var distance = 0.0;
         while (distance < metric.length) {
           canvas.drawPath(

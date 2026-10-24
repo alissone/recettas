@@ -23,7 +23,19 @@ class UtilityUsage {
   /// now when that reading is from an earlier month.
   final DateTime asOf;
 
+  /// Month-to-date usage, including [estimatedBefore].
   final double usedSoFar;
+
+  /// When the first reading came after the month began, the usage between
+  /// the month start and that reading, estimated at the month's rate so the
+  /// month still adds up to a whole one. Zero otherwise.
+  final double estimatedBefore;
+
+  /// Usage over the 24 hours ending at [last24hEnd] (the latest reading),
+  /// interpolated between readings - or scaled from the overall rate when
+  /// the readings span less than a day. Null with fewer than two readings.
+  final double? last24h;
+  final DateTime last24hEnd;
 
   /// Expected usage for the whole month; null until there is enough
   /// history to estimate a rate.
@@ -39,20 +51,36 @@ class UtilityUsage {
   final List<UsagePoint> previous;
   final List<UsagePoint> forecast;
 
+  /// The estimated stretch from the month start to the first reading;
+  /// empty when there is none.
+  final List<UsagePoint> backfill;
+
   const UtilityUsage({
     required this.monthStart,
     required this.nextMonthStart,
     required this.asOf,
     required this.usedSoFar,
+    required this.estimatedBefore,
+    required this.last24h,
+    required this.last24hEnd,
     required this.projected,
     required this.prevSoFar,
     required this.prevTotal,
     required this.current,
     required this.previous,
     required this.forecast,
+    required this.backfill,
   });
 
   int get daysInMonth => nextMonthStart.difference(monthStart).inDays;
+
+  /// Where the estimated stretch ends: the first reading. Only meaningful
+  /// when [backfill] is not empty.
+  DateTime get backfillEnd => backfill.isEmpty
+      ? monthStart
+      : monthStart.add(Duration(
+          milliseconds:
+              (backfill.last.x * Duration.millisecondsPerDay).round()));
 
   /// Change against the previous month at the same point, as a fraction
   /// (0.12 = 12% more). Null when there is nothing to compare against.
@@ -96,24 +124,6 @@ class UtilityUsage {
 
     final asOf = (last.isAfter(monthStart) && !last.isAfter(now)) ? last : now;
     final meterAtMonthStart = meterAt(sorted, monthStart);
-    final usedSoFar = meterAt(sorted, asOf) - meterAtMonthStart;
-
-    // --- Previous month, same point in time ---
-    final prevAsOf = DateTime(
-      prevStart.year,
-      prevStart.month,
-      asOf.day > daysInPrev ? daysInPrev : asOf.day,
-      asOf.hour,
-      asOf.minute,
-    );
-    final hasPrev = !first.isAfter(prevStart);
-    final meterAtPrevStart = meterAt(sorted, prevStart);
-    final prevSoFar = hasPrev && !last.isBefore(prevAsOf)
-        ? meterAt(sorted, prevAsOf) - meterAtPrevStart
-        : null;
-    final prevTotal = hasPrev && !last.isBefore(monthStart)
-        ? meterAtMonthStart - meterAtPrevStart
-        : null;
 
     // --- Rate: least-squares line through this month's readings ---
     final fit = <UsagePoint>[
@@ -136,6 +146,40 @@ class UtilityUsage {
     }
     if (slope != null && slope < 0) slope = 0;
 
+    // --- Before the first reading: same rate, back to the month start ---
+    final firstX = first.isAfter(monthStart)
+        ? _days(first.difference(monthStart))
+        : 0.0;
+    final estimatedBefore = slope == null ? 0.0 : slope * firstX;
+    final usedSoFar =
+        meterAt(sorted, asOf) - meterAtMonthStart + estimatedBefore;
+
+    // --- Last 24h, ending at the latest reading ---
+    final dayAgo = last.subtract(const Duration(days: 1));
+    final spanDays = _days(last.difference(first));
+    final double? last24h = spanDays <= 0
+        ? null
+        : first.isAfter(dayAgo)
+            ? (sorted.last.value - sorted.first.value) / spanDays
+            : sorted.last.value - meterAt(sorted, dayAgo);
+
+    // --- Previous month, same point in time ---
+    final prevAsOf = DateTime(
+      prevStart.year,
+      prevStart.month,
+      asOf.day > daysInPrev ? daysInPrev : asOf.day,
+      asOf.hour,
+      asOf.minute,
+    );
+    final hasPrev = !first.isAfter(prevStart);
+    final meterAtPrevStart = meterAt(sorted, prevStart);
+    final prevSoFar = hasPrev && !last.isBefore(prevAsOf)
+        ? meterAt(sorted, prevAsOf) - meterAtPrevStart
+        : null;
+    final prevTotal = hasPrev && !last.isBefore(monthStart)
+        ? meterAtMonthStart - meterAtPrevStart
+        : null;
+
     final remainingDays = _days(nextStart.difference(asOf));
     final projected =
         slope == null ? null : usedSoFar + slope * remainingDays;
@@ -147,8 +191,11 @@ class UtilityUsage {
         if (r.recordedAt.isAfter(monthStart) &&
             !r.recordedAt.isAfter(nextStart))
           UsagePoint(_days(r.recordedAt.difference(monthStart)),
-              r.value - meterAtMonthStart),
+              r.value - meterAtMonthStart + estimatedBefore),
     ];
+    final backfill = firstX > 0 && slope != null
+        ? [const UsagePoint(0, 0), UsagePoint(firstX, estimatedBefore)]
+        : <UsagePoint>[];
 
     final previous = <UsagePoint>[];
     if (hasPrev) {
@@ -172,12 +219,16 @@ class UtilityUsage {
       nextMonthStart: nextStart,
       asOf: asOf,
       usedSoFar: usedSoFar,
+      estimatedBefore: estimatedBefore,
+      last24h: last24h,
+      last24hEnd: last,
       projected: projected,
       prevSoFar: prevSoFar,
       prevTotal: prevTotal,
       current: current,
       previous: previous,
       forecast: forecast,
+      backfill: backfill,
     );
   }
 

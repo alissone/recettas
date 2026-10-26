@@ -64,7 +64,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<ChatMessage> _messages = [];
   bool _loading = true;
   String? _error;
+
+  /// Any send in flight - gates the attach and send buttons alike.
   bool _sending = false;
+
+  /// ...and that send is an attachment, so the spinner belongs on the
+  /// app bar button rather than the composer's.
+  bool _attaching = false;
 
   /// Messages that showed up while this screen was open - only those
   /// slide in. Everything already on screen when it opened renders at
@@ -181,26 +187,47 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _attach() async {
     if (_sending) return;
-    final picked = await FilePicker.pickFile();
-    if (picked == null || !mounted) return;
-    setState(() => _sending = true);
-    try {
-      await CloudFileRepository.instance.sendChatAttachment(
-        roomId: widget.room.id,
-        name: picked.name,
-        bytes: await picked.readAsBytes(),
-        mimeType: mimeTypeForName(picked.name),
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Não foi possível enviar o arquivo: $e'),
-          backgroundColor: AppTheme.darkBrown,
-        ));
+    final picked = await FilePicker.pickFiles();
+    if (picked.isEmpty || !mounted) return;
+    setState(() {
+      _sending = true;
+      _attaching = true;
+    });
+
+    // One message per file, so a file that fails halfway through the
+    // batch mustn't take the ones already sent with it: tally the
+    // failures and report them at the end instead of bailing out.
+    final failed = <String>[];
+    for (final file in picked) {
+      try {
+        await CloudFileRepository.instance.sendChatAttachment(
+          roomId: widget.room.id,
+          name: file.name,
+          bytes: await file.readAsBytes(),
+          mimeType: mimeTypeForName(file.name),
+        );
+      } catch (e) {
+        debugPrint('Chat attachment "${file.name}" failed: $e');
+        failed.add(file.name);
       }
-    } finally {
-      if (mounted) setState(() => _sending = false);
+      if (!mounted) return;
     }
+
+    setState(() {
+      _sending = false;
+      _attaching = false;
+    });
+
+    if (failed.isEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        failed.length == 1
+            ? 'Não foi possível enviar "${failed.first}"'
+            : 'Não foi possível enviar ${failed.length} de '
+                '${picked.length} arquivos',
+      ),
+      backgroundColor: AppTheme.darkBrown,
+    ));
   }
 
   Future<void> _sendFromFiles() async {
@@ -264,6 +291,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Anexar arquivos',
+            onPressed: _sending ? null : _attach,
+            icon: _attaching
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTheme.primaryOrange,
+                    ),
+                  )
+                : Icon(
+                    Icons.attach_file,
+                    color:
+                        _sending ? AppTheme.mediumBrown : AppTheme.darkBrown,
+                  ),
+          ),
           IconButton(
             tooltip: 'Enviar arquivos de Arquivos',
             icon: const Icon(Icons.folder_outlined, color: AppTheme.darkBrown),
@@ -452,11 +497,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          IconButton(
-            tooltip: 'Anexar arquivo',
-            onPressed: _sending ? null : _attach,
-            icon: const Icon(Icons.attach_file, color: AppTheme.darkBrown),
-          ),
           Expanded(
             child: TextField(
               controller: _controller,

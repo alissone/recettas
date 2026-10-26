@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
@@ -34,6 +34,9 @@ class ShareIntake {
   Future<void> _queue = Future.value();
 
   Future<void> init() async {
+    // iOS has no share extension; it receives files through
+    // IncomingFilesService (document handler) instead.
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
     final sharing = ReceiveSharingIntent.instance;
     // App was launched by the share...
     final initial = await sharing.getInitialMedia();

@@ -53,6 +53,8 @@ class _FilesScreenState extends State<FilesScreen> {
 
   @override
   void dispose() {
+    // Files shared in from other apps (Android share sheet, iOS document
+    // handler) upload through the repository, which bumps `uploads`.
     _repo.uploads.removeListener(_load);
     super.dispose();
   }

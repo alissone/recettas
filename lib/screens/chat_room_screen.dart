@@ -1,13 +1,17 @@
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app_theme.dart';
 import '../models/chat.dart';
+import '../models/cloud_file.dart';
 import '../services/chat_notifier.dart';
+import '../services/cloud_file_repository.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
+import '../utils/file_types.dart';
 import 'chat_list_screen.dart' show ChatAvatar, formatChatTime;
 
 /// How much history the conversation shows. The messages are never
@@ -79,7 +83,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void initState() {
     super.initState();
     ChatNotifier.instance.openRoomId = widget.room.id;
-    ChatNotifier.instance.markRead(widget.room.id);
+    // After the first frame: markRead updates the unread badge, and
+    // notifying its listeners while this route is still building throws.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ChatNotifier.instance.markRead(widget.room.id);
+    });
     _loadWindow();
     _subscribe();
   }
@@ -169,6 +177,30 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   // --- Sending ---
+
+  Future<void> _attach() async {
+    if (_sending) return;
+    final picked = await FilePicker.pickFile();
+    if (picked == null || !mounted) return;
+    setState(() => _sending = true);
+    try {
+      await CloudFileRepository.instance.sendChatAttachment(
+        roomId: widget.room.id,
+        name: picked.name,
+        bytes: await picked.readAsBytes(),
+        mimeType: mimeTypeForName(picked.name),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Não foi possível enviar o arquivo: $e'),
+          backgroundColor: AppTheme.darkBrown,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
 
   Future<void> _send() async {
     final text = _controller.text.trim();
@@ -397,6 +429,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          IconButton(
+            tooltip: 'Anexar arquivo',
+            onPressed: _sending ? null : _attach,
+            icon: const Icon(Icons.attach_file, color: AppTheme.darkBrown),
+          ),
           Expanded(
             child: TextField(
               controller: _controller,
@@ -654,14 +691,17 @@ class _MessageBubbleState extends State<_MessageBubble>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    widget.message.content,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.35,
-                      color: mine ? Colors.white : AppTheme.darkBrown,
+                  if (widget.message.hasFile)
+                    _AttachmentTile(message: widget.message, mine: mine)
+                  else
+                    Text(
+                      widget.message.content,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.35,
+                        color: mine ? Colors.white : AppTheme.darkBrown,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 3),
                   Text(
                     formatChatTime(widget.message.createdAt),
@@ -678,6 +718,96 @@ class _MessageBubbleState extends State<_MessageBubble>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The file inside a message bubble: icon, name, size and a download
+/// button.
+class _AttachmentTile extends StatefulWidget {
+  final ChatMessage message;
+  final bool mine;
+
+  const _AttachmentTile({required this.message, required this.mine});
+
+  @override
+  State<_AttachmentTile> createState() => _AttachmentTileState();
+}
+
+class _AttachmentTileState extends State<_AttachmentTile> {
+  bool _downloading = false;
+
+  void _toast(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(text),
+      backgroundColor: AppTheme.darkBrown,
+    ));
+  }
+
+  Future<void> _download() async {
+    final message = widget.message;
+    setState(() => _downloading = true);
+    try {
+      final bytes = await CloudFileRepository.instance
+          .downloadChatAttachment(message.filePath!);
+      final saved = await FilePicker.saveFile(
+        fileName: message.fileName!,
+        bytes: bytes,
+        mimeType: message.fileMime ?? 'application/octet-stream',
+        dialogTitle: 'Salvar arquivo',
+      );
+      if (saved != null) _toast('"${message.fileName}" baixado');
+    } catch (e) {
+      _toast('Não foi possível baixar: $e');
+    } finally {
+      if (mounted) setState(() => _downloading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final message = widget.message;
+    final color = widget.mine ? Colors.white : AppTheme.darkBrown;
+    final subColor = widget.mine
+        ? Colors.white.withValues(alpha: 0.85)
+        : AppTheme.mediumBrown;
+    return InkWell(
+      onTap: _downloading ? null : _download,
+      borderRadius: BorderRadius.circular(8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(iconForFileName(message.fileName!), color: color, size: 28),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(message.fileName!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: color)),
+                if (message.fileSize != null)
+                  Text(CloudFile.formatSize(message.fileSize!),
+                      style: TextStyle(fontSize: 12, color: subColor)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          _downloading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child:
+                      CircularProgressIndicator(strokeWidth: 2, color: color),
+                )
+              : Icon(Icons.download, color: color, size: 22),
+        ],
       ),
     );
   }

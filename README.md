@@ -107,3 +107,12 @@ values, and `DD/MM/YYYY` date normalization.
   rather than matched to something close. Food ids are a `uuid5` of the
   name, so re-running a report updates the same row instead of duplicating
   it. Run with `-h` for usage.
+
+## Deploying
+
+- Deploying the web app
+
+```powershell
+powershell -File scripts/build_chat_web.ps1
+firebase deploy --only hosting
+```

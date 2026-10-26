@@ -9,6 +9,7 @@ import '../services/chat_notifier.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
 import 'chat_room_screen.dart';
+import 'files_screen.dart';
 
 /// "Chat" tab: the inbox. Rows are styled like the utility tiles on the
 /// "Mais" tab - a white card with a leading badge, title, subtitle and
@@ -18,7 +19,11 @@ import 'chat_room_screen.dart';
 /// realtime subscription for the whole app; this screen only renders
 /// what it publishes.
 class ChatListScreen extends StatefulWidget {
-  const ChatListScreen({super.key});
+  /// Extra buttons after "Arquivos" in the header (the web build adds
+  /// its sign-out button here).
+  final List<Widget> headerActions;
+
+  const ChatListScreen({super.key, this.headerActions = const []});
 
   /// Index of this screen in the bottom navigation bar.
   static const tabIndex = 3;
@@ -86,6 +91,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
+  void _openFiles() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const FilesScreen()),
+    );
+  }
+
   void _snack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -119,9 +131,24 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
-              child: Text('Conversas', style: AppTheme.headingLarge),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 8, 4),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child:
+                        Text('Conversas', style: AppTheme.headingLarge),
+                  ),
+                  if (_isAuthenticated)
+                    IconButton(
+                      tooltip: 'Arquivos',
+                      icon: const Icon(Icons.folder_outlined,
+                          color: AppTheme.darkBrown),
+                      onPressed: _openFiles,
+                    ),
+                  ...widget.headerActions,
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),

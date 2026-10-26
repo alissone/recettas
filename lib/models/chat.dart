@@ -90,6 +90,13 @@ class ChatMessage {
   final String content;
   final DateTime createdAt;
 
+  /// Set when the message carries a file (migration 038); [content] then
+  /// holds a short "attachment name" text for previews.
+  final String? fileName;
+  final int? fileSize;
+  final String? fileMime;
+  final String? filePath;
+
   ChatMessage({
     required this.id,
     required this.roomId,
@@ -97,7 +104,13 @@ class ChatMessage {
     required this.senderEmail,
     required this.content,
     required this.createdAt,
+    this.fileName,
+    this.fileSize,
+    this.fileMime,
+    this.filePath,
   });
+
+  bool get hasFile => filePath != null && fileName != null;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
@@ -108,6 +121,10 @@ class ChatMessage {
       content: json['content'] ?? '',
       createdAt: DateTime.tryParse(json['created_at'] ?? '')?.toLocal() ??
           DateTime.now(),
+      fileName: json['file_name'],
+      fileSize: (json['file_size'] as num?)?.toInt(),
+      fileMime: json['file_mime'],
+      filePath: json['file_path'],
     );
   }
 

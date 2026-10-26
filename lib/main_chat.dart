@@ -103,12 +103,7 @@ class _WebShellState extends State<_WebShell> {
     const WebTodoScreen(),
     WebShoppingScreen(onPurchaseAdded: () => _purchasesChanged.value++),
     WebPurchasesScreen(reload: _purchasesChanged),
-    const Stack(
-      children: [
-        ChatListScreen(),
-        Positioned(top: 8, right: 8, child: SafeArea(child: SignOutButton())),
-      ],
-    ),
+    const ChatListScreen(headerActions: [SignOutButton()]),
   ];
 
   @override

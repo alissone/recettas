@@ -1244,6 +1244,13 @@ class SupabaseService {
     });
   }
 
+  /// One-shot read of the inbox, for when the realtime stream is down.
+  static Future<List<ChatRoom>> getChatRooms() async {
+    final rows = await _client.from('chat_rooms').select();
+    return rows.map<ChatRoom>(ChatRoom.fromJson).toList()
+      ..sort((a, b) => b.sortTime.compareTo(a.sortTime));
+  }
+
   /// One room's messages, oldest first, updating as they arrive.
   ///
   /// The sort is redone here rather than left to the builder: its

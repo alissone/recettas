@@ -52,6 +52,10 @@ class ChatNotifier {
   final Map<String, DateTime> _seen = {};
   bool _seeded = false;
 
+  /// Whether the realtime stream has delivered a snapshot yet; until it
+  /// does, the one-shot fallback read may fill the inbox.
+  bool _streamDelivered = false;
+
   /// Persisted per room: when the user last had the conversation open.
   final Map<String, DateTime> _readAt = {};
 
@@ -73,14 +77,34 @@ class ChatNotifier {
     _roomsSubscription = null;
     _seen.clear();
     _seeded = false;
+    _streamDelivered = false;
     await _loadReadTimes();
     if (generation != _generation) return;
     _roomsSubscription = SupabaseService.streamChatRooms().listen(
-      _onRooms,
+      (rooms) {
+        _streamDelivered = true;
+        _onRooms(rooms);
+      },
       // A dropped realtime socket or an RLS hiccup must not take the
       // rest of the app down with an unhandled stream error.
-      onError: (_) {},
+      onError: (Object e) {
+        debugPrint('Chat rooms stream error: $e');
+        _loadRoomsOnce(generation);
+      },
     );
+    // Don't leave the inbox empty while the socket connects (or if it
+    // never does).
+    unawaited(_loadRoomsOnce(generation));
+  }
+
+  Future<void> _loadRoomsOnce(int generation) async {
+    try {
+      final loaded = await SupabaseService.getChatRooms();
+      if (generation != _generation || _streamDelivered) return;
+      await _onRooms(loaded);
+    } catch (e) {
+      debugPrint('Chat rooms fallback load failed: $e');
+    }
   }
 
   void _stop() {

@@ -63,6 +63,8 @@ dependencies:
   # cap but needs xml ^7. Drop this once xml is on 7.
   image: ">=4.5.0 <4.11.0"
   record: ^7.1.2
+  file_picker: ^13.3.0
+  device_info_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

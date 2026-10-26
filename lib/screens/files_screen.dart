@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/cloud_file.dart';
 import '../services/cloud_file_repository.dart';
+import '../services/incoming_files_service.dart';
 import '../utils/dates.dart';
 import '../utils/file_types.dart';
 
@@ -32,10 +33,31 @@ class _FilesScreenState extends State<FilesScreen> {
   /// The card currently expanded into its properties, if any.
   String? _selectedId;
 
+  /// Newest shared-file event already inserted (see IncomingFilesService).
+  int _lastSharedSeq = 0;
+
   @override
   void initState() {
     super.initState();
     _load();
+    // A file shared in from another app uploads itself in the
+    // background; show it here without waiting for a refresh.
+    _lastSharedSeq = IncomingFilesService.instance.currentSeq;
+    IncomingFilesService.instance.lastEvent.addListener(_onSharedFile);
+  }
+
+  @override
+  void dispose() {
+    IncomingFilesService.instance.lastEvent.removeListener(_onSharedFile);
+    super.dispose();
+  }
+
+  void _onSharedFile() {
+    final event = IncomingFilesService.instance.lastEvent.value;
+    if (event == null || !mounted || event.seq <= _lastSharedSeq) return;
+    _lastSharedSeq = event.seq;
+    final file = event.file;
+    if (file != null) setState(() => _files.insert(0, file));
   }
 
   Future<void> _load() async {

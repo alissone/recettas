@@ -46,6 +46,25 @@ Android, iOS, Windows, macOS and Linux from a single codebase.
   is instant and usable offline. Writes are queued in a local `pending_ops`
   table and pushed to Supabase in the background with retry; a small sync
   indicator in the UI reflects `synced` / `syncing` / `offline` state.
+- **Sharing files into the app (iOS)**: there is deliberately **no share
+  extension**. An extension can only hand bytes to the app through an App
+  Group, and App Groups need a paid Apple Developer membership — a free
+  personal team can't enable the capability (nor Keychain Sharing, the
+  usual way to get the Supabase session across). Instead `Runner`
+  declares `CFBundleDocumentTypes` for `public.data` with
+  `LSSupportsOpeningDocumentsInPlace = false`, which puts Recettas in the
+  share sheet's app row for any file. iOS copies the file into
+  `Documents/Inbox/` and launches the app;
+  `ios/Runner/SceneDelegate.swift` (a `FlutterSceneDelegate` subclass —
+  with a scene manifest, URLs go to the scene, not to `AppDelegate`)
+  hands the URL to `ios/Runner/IncomingFiles.swift`, which also sweeps
+  the Inbox so a missed callback still gets the file through.
+  `lib/services/incoming_files_service.dart` *pulls* that queue at
+  startup and on every resume rather than being pushed to, so a file that
+  arrives before the engine is up isn't dropped, and holds anything that
+  lands while signed out until the session is back. It then uploads into
+  Arquivos. The tradeoff: this catches files and images, but **not**
+  shared plain text or URLs — those really do need an extension.
 - **Receipt OCR pipeline**: a receipt photo is uploaded to the private
   `receipts` storage bucket and a row is inserted into `receipt_jobs`
   (`queued`). From the Receipt Queue screen, processing is triggered

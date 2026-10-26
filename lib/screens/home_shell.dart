@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/chat.dart';
 import '../services/chat_notifier.dart';
+import '../services/incoming_files_service.dart';
 import '../services/supabase_service.dart';
 import 'chat_list_screen.dart';
 import 'chat_room_screen.dart';
+import 'files_screen.dart';
 import 'habits_screen.dart';
 import 'purchases_screen.dart';
 import 'shopping_screen.dart';
@@ -50,6 +52,9 @@ class HomeShellState extends State<HomeShell> {
   VoidCallback? _bannerTap;
   Timer? _bannerTimer;
 
+  /// Newest shared-file event already bannered (see IncomingFilesService).
+  int _lastSharedSeq = 0;
+
   final List<Widget> _screens = const [
     TodoScreen(),
     ShoppingScreen(),
@@ -65,6 +70,41 @@ class HomeShellState extends State<HomeShell> {
     // The chat subscription is global (see ChatNotifier), so a message
     // arriving while the user is on any other tab still surfaces here.
     ChatNotifier.instance.incoming.addListener(_onIncomingMessage);
+    // A shared file uploads itself in the background from whatever tab
+    // the launch happened to land on, so the banner is the only thing
+    // that tells the user it arrived.
+    _lastSharedSeq = IncomingFilesService.instance.currentSeq;
+    IncomingFilesService.instance.lastEvent.addListener(_onSharedFile);
+  }
+
+  void _onSharedFile() {
+    final event = IncomingFilesService.instance.lastEvent.value;
+    if (event == null || !mounted || event.seq <= _lastSharedSeq) return;
+    _lastSharedSeq = event.seq;
+
+    final file = event.file;
+    if (file != null) {
+      showBanner(
+        title: 'Enviado para Arquivos',
+        body: file.name,
+        icon: Icons.cloud_upload_outlined,
+        onTap: _openFiles,
+      );
+    } else {
+      showBanner(
+        title: 'Não foi possível enviar',
+        body: event.failedName ?? '',
+        icon: Icons.error_outline,
+        iconColor: Colors.red,
+      );
+    }
+  }
+
+  void _openFiles() {
+    dismissBanner();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const FilesScreen()),
+    );
   }
 
   void _onIncomingMessage() {
@@ -124,6 +164,7 @@ class HomeShellState extends State<HomeShell> {
   @override
   void dispose() {
     ChatNotifier.instance.incoming.removeListener(_onIncomingMessage);
+    IncomingFilesService.instance.lastEvent.removeListener(_onSharedFile);
     _bannerTimer?.cancel();
     super.dispose();
   }

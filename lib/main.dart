@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_theme.dart';
 import 'screens/home_shell.dart' show HomeShell, homeShellKey;
 import 'services/chat_notifier.dart';
+import 'services/incoming_files_service.dart';
 import 'services/local_db.dart';
 import 'services/todo_repository.dart';
 import 'services/voice_note_repository.dart';
@@ -30,6 +31,10 @@ void main() async {
   // ever opened. Not awaited - a slow network must not hold up the
   // first frame.
   unawaited(ChatNotifier.instance.init());
+
+  // A file shared into Recettas launches the app, so the queue has to be
+  // picked up at startup and not only when Arquivos is opened.
+  unawaited(IncomingFilesService.instance.init());
 
   runApp(const RecettasApp());
 }

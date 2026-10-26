@@ -47,7 +47,14 @@ class _FilesScreenState extends State<FilesScreen> {
   @override
   void initState() {
     super.initState();
+    _repo.uploads.addListener(_load);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _repo.uploads.removeListener(_load);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -88,7 +95,6 @@ class _FilesScreenState extends State<FilesScreen> {
         mimeType: mimeTypeForName(picked.name),
       );
       if (!mounted) return;
-      setState(() => _files.insert(0, file));
       _toast('"${file.name}" enviado');
     } catch (e) {
       if (mounted) _toast('Erro ao enviar: $e');

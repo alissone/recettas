@@ -249,18 +249,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       backgroundColor: AppTheme.creamBackground,
       appBar: AppBar(
         titleSpacing: 0,
-        // Back button plus "send files from Arquivos" at the top left.
-        leadingWidth: 104,
-        leading: Row(
-          children: [
-            const BackButton(),
-            IconButton(
-              tooltip: 'Enviar arquivos de Arquivos',
-              icon: const Icon(Icons.folder_outlined),
-              onPressed: _sendFromFiles,
-            ),
-          ],
-        ),
         title: Row(
           children: [
             ChatAvatar(label: label, size: 34),
@@ -276,6 +264,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Enviar arquivos de Arquivos',
+            icon: const Icon(Icons.folder_outlined, color: AppTheme.darkBrown),
+            onPressed: _sendFromFiles,
+          ),
           PopupMenuButton<ChatWindow>(
             tooltip: 'Mostrar mensagens de',
             icon: Icon(

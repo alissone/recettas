@@ -7,6 +7,7 @@ import 'app_theme.dart';
 import 'screens/home_shell.dart' show HomeShell, homeShellKey;
 import 'services/chat_notifier.dart';
 import 'services/local_db.dart';
+import 'services/share_intake.dart';
 import 'services/todo_repository.dart';
 import 'services/voice_note_repository.dart';
 
@@ -25,6 +26,9 @@ void main() async {
   // Recordings live on disk, which the web build doesn't have.
   if (!kIsWeb) unawaited(VoiceNoteRepository.instance.init());
 
+  // Files shared to the app from other apps' share sheets go to Arquivos.
+  if (!kIsWeb) unawaited(ShareIntake.instance.init());
+
   // Subscribes to the chat inbox for the whole session: the unread
   // badge and the in-app banner have to work before the Chat tab is
   // ever opened. Not awaited - a slow network must not hold up the
@@ -40,6 +44,8 @@ class RecettasApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scaffoldMessengerKey: kIsWeb ? null : ShareIntake.instance.messengerKey,
+      navigatorKey: kIsWeb ? null : ShareIntake.instance.navigatorKey,
       title: 'Recettas',
       theme: AppTheme.themeData,
       home: HomeShell(key: homeShellKey),

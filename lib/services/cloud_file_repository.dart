@@ -31,6 +31,10 @@ class CloudFileRepository {
 
   String? _deviceName;
 
+  /// Bumped after each upload so an open Arquivos screen can reload
+  /// (shares arrive from outside it).
+  final ValueNotifier<int> uploads = ValueNotifier(0);
+
   /// Readable name of this device for the upload/download history.
   Future<String> deviceName() async {
     return _deviceName ??= await _lookupDeviceName();
@@ -101,6 +105,7 @@ class CloudFileRepository {
         'storage_path': path,
       }).select().single();
       await _logEvent(id, CloudFileEventKind.upload);
+      uploads.value++;
       return CloudFile.fromJson(row);
     } catch (_) {
       // Don't leave an orphan object that no row points at.

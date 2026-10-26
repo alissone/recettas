@@ -191,6 +191,41 @@ class CloudFileRepository {
     }
   }
 
+  /// Sends a file already in the drive to a chat. The bytes are copied
+  /// between buckets on the server, so nothing is downloaded or
+  /// re-uploaded; the drive copy stays where it is.
+  Future<void> sendCloudFileToChat({
+    required String roomId,
+    required CloudFile file,
+  }) async {
+    final me = _client.auth.currentUser!;
+    final id = _uuid.v4();
+    final path = '$roomId/$id';
+    await _client.storage.from(_bucket).copy(
+          file.storagePath,
+          path,
+          destinationBucket: _chatBucket,
+        );
+    try {
+      await _client.from('chat_messages').insert({
+        'id': id,
+        'room_id': roomId,
+        'sender_id': me.id,
+        'sender_email': me.email!.toLowerCase(),
+        'content': '\u{1F4CE} ${file.name}',
+        'file_name': file.name,
+        'file_size': file.sizeBytes,
+        'file_mime': file.mimeType,
+        'file_path': path,
+      });
+    } catch (_) {
+      try {
+        await _client.storage.from(_chatBucket).remove([path]);
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
   Future<Uint8List> downloadChatAttachment(String path) =>
       _client.storage.from(_chatBucket).download(path);
 

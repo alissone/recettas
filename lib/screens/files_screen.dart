@@ -11,8 +11,14 @@ import '../utils/file_types.dart';
 /// Upload here, download on another device later. Files are grouped by
 /// upload time the way Finder does. Shared by the app and the web build,
 /// so it must not import dart:io.
+///
+/// With [sendToRoomId] it becomes a picker: rows get checkboxes and a
+/// button sends the ticked files into that chat as attachments.
 class FilesScreen extends StatefulWidget {
-  const FilesScreen({super.key});
+  final String? sendToRoomId;
+  final String? sendToLabel;
+
+  const FilesScreen({super.key, this.sendToRoomId, this.sendToLabel});
 
   @override
   State<FilesScreen> createState() => _FilesScreenState();
@@ -31,6 +37,12 @@ class _FilesScreenState extends State<FilesScreen> {
 
   /// The card currently expanded into its properties, if any.
   String? _selectedId;
+
+  /// Picker mode: ids ticked to be sent to the chat.
+  final Set<String> _picked = {};
+  bool _sendingPicked = false;
+
+  bool get _picking => widget.sendToRoomId != null;
 
   @override
   void initState() {
@@ -151,6 +163,33 @@ class _FilesScreenState extends State<FilesScreen> {
     }
   }
 
+  Future<void> _sendPicked() async {
+    final roomId = widget.sendToRoomId!;
+    final chosen = _files.where((f) => _picked.contains(f.id)).toList();
+    if (chosen.isEmpty) return;
+    setState(() => _sendingPicked = true);
+    var sent = 0;
+    try {
+      // Oldest first, so the conversation reads in the list's order.
+      for (final file in chosen.reversed) {
+        await _repo.sendCloudFileToChat(roomId: roomId, file: file);
+        sent++;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sendingPicked = false;
+        // Keep only what failed to go, so a retry doesn't duplicate.
+        for (final file in chosen.reversed.take(sent)) {
+          _picked.remove(file.id);
+        }
+      });
+      _toast('Erro ao enviar: $e');
+      return;
+    }
+    if (mounted) Navigator.pop(context, sent);
+  }
+
   // --- Build ---
 
   @override
@@ -158,7 +197,9 @@ class _FilesScreenState extends State<FilesScreen> {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       appBar: AppBar(
-        title: const Text('Arquivos'),
+        title: Text(_picking
+            ? 'Enviar para ${widget.sendToLabel ?? 'a conversa'}'
+            : 'Arquivos'),
         actions: [
           IconButton(
             tooltip: 'Atualizar',
@@ -167,7 +208,23 @@ class _FilesScreenState extends State<FilesScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _picking
+          ? FloatingActionButton.extended(
+              heroTag: 'files_send_fab',
+              onPressed:
+                  _picked.isEmpty || _sendingPicked ? null : _sendPicked,
+              icon: _sendingPicked
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send),
+              label: Text(_picked.isEmpty
+                  ? 'Selecione arquivos'
+                  : 'Enviar (${_picked.length})'),
+            )
+          : FloatingActionButton.extended(
         heroTag: 'files_upload_fab',
         onPressed: _uploading ? null : _upload,
         icon: _uploading
@@ -251,10 +308,15 @@ class _FilesScreenState extends State<FilesScreen> {
   }
 
   Widget _buildRow(CloudFile file) {
-    final selected = _selectedId == file.id;
+    final selected = !_picking && _selectedId == file.id;
     return _FileCard(
       key: ValueKey(file.id),
       file: file,
+      picking: _picking,
+      checked: _picked.contains(file.id),
+      onToggleChecked: () => setState(() {
+        if (!_picked.remove(file.id)) _picked.add(file.id);
+      }),
       expanded: selected,
       busy: _busy.contains(file.id),
       onTap: () => setState(() => _selectedId = selected ? null : file.id),
@@ -284,6 +346,9 @@ String _formatDateTime(DateTime t) =>
 /// upload/download history) with the download / rename / delete actions.
 class _FileCard extends StatefulWidget {
   final CloudFile file;
+  final bool picking;
+  final bool checked;
+  final VoidCallback onToggleChecked;
   final bool expanded;
   final bool busy;
   final VoidCallback onTap;
@@ -294,6 +359,9 @@ class _FileCard extends StatefulWidget {
   const _FileCard({
     super.key,
     required this.file,
+    required this.picking,
+    required this.checked,
+    required this.onToggleChecked,
     required this.expanded,
     required this.busy,
     required this.onTap,
@@ -377,7 +445,11 @@ class _FileCardState extends State<_FileCard> {
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           // Also swallows taps inside the card so they don't reach the
           // list's "tap outside to collapse".
-          onTap: widget.expanded ? () {} : widget.onTap,
+          onTap: widget.picking
+              ? widget.onToggleChecked
+              : widget.expanded
+                  ? () {}
+                  : widget.onTap,
           child: AnimatedSize(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
@@ -402,7 +474,15 @@ class _FileCardState extends State<_FileCard> {
     final renaming = _renameController != null;
     return Row(
       children: [
-        Icon(iconForFileName(file.name), color: AppTheme.primaryOrange),
+        if (widget.picking)
+          Checkbox(
+            value: widget.checked,
+            activeColor: AppTheme.primaryOrange,
+            visualDensity: VisualDensity.compact,
+            onChanged: (_) => widget.onToggleChecked(),
+          )
+        else
+          Icon(iconForFileName(file.name), color: AppTheme.primaryOrange),
         const SizedBox(width: 14),
         Expanded(
           child: Column(

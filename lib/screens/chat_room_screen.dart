@@ -13,6 +13,7 @@ import '../services/supabase_service.dart';
 import '../utils/dates.dart';
 import '../utils/file_types.dart';
 import 'chat_list_screen.dart' show ChatAvatar, formatChatTime;
+import 'files_screen.dart';
 
 /// How much history the conversation shows. The messages are never
 /// deleted - this only narrows what's on screen, so a phone handed to
@@ -202,6 +203,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  Future<void> _sendFromFiles() async {
+    final sent = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FilesScreen(
+          sendToRoomId: widget.room.id,
+          sendToLabel: widget.room.partnerLabel(_myEmail),
+        ),
+      ),
+    );
+    if (sent == null || sent == 0 || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(sent == 1 ? 'Arquivo enviado' : '$sent arquivos enviados'),
+      backgroundColor: AppTheme.darkBrown,
+    ));
+  }
+
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _sending) return;
@@ -231,6 +249,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       backgroundColor: AppTheme.creamBackground,
       appBar: AppBar(
         titleSpacing: 0,
+        // Back button plus "send files from Arquivos" at the top left.
+        leadingWidth: 104,
+        leading: Row(
+          children: [
+            const BackButton(),
+            IconButton(
+              tooltip: 'Enviar arquivos de Arquivos',
+              icon: const Icon(Icons.folder_outlined),
+              onPressed: _sendFromFiles,
+            ),
+          ],
+        ),
         title: Row(
           children: [
             ChatAvatar(label: label, size: 34),

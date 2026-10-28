@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app_theme.dart';
@@ -722,6 +723,10 @@ class _MessageBubbleState extends State<_MessageBubble>
     super.dispose();
   }
 
+  /// Long text messages get a copy button; attachments don't.
+  bool get _showCopy =>
+      !widget.message.hasFile && widget.message.content.length > 60;
+
   @override
   Widget build(BuildContext context) {
     final mine = widget.isMine;
@@ -750,10 +755,22 @@ class _MessageBubbleState extends State<_MessageBubble>
                 ),
                 boxShadow: AppTheme.softShadow,
               ),
-              child: Column(
+              child: _wrapIntrinsic(Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (_showCopy)
+                    // Mine: the column already aligns to the right. Theirs:
+                    // pin it to the left (IntrinsicWidth keeps the bubble
+                    // from stretching to its max width because of this).
+                    Align(
+                      alignment:
+                          mine ? Alignment.centerRight : Alignment.centerLeft,
+                      child: _CopyButton(
+                        text: widget.message.content,
+                        mine: mine,
+                      ),
+                    ),
                   if (widget.message.hasFile)
                     _AttachmentTile(message: widget.message, mine: mine)
                   else
@@ -777,8 +794,59 @@ class _MessageBubbleState extends State<_MessageBubble>
                     ),
                   ),
                 ],
-              ),
+              )),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Align expands to the available width; IntrinsicWidth makes the bubble
+  /// shrink-wrap its text again when the copy button row is present.
+  Widget _wrapIntrinsic(Widget child) =>
+      _showCopy ? IntrinsicWidth(child: child) : child;
+}
+
+/// Small copy-to-clipboard icon shown at the top corner of long messages
+/// (right for my messages, left for others').
+class _CopyButton extends StatefulWidget {
+  final String text;
+  final bool mine;
+
+  const _CopyButton({required this.text, required this.mine});
+
+  @override
+  State<_CopyButton> createState() => _CopyButtonState();
+}
+
+class _CopyButtonState extends State<_CopyButton> {
+  bool _copied = false;
+
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.text));
+    if (!mounted) return;
+    setState(() => _copied = true);
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (mounted) setState(() => _copied = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.mine
+        ? Colors.white.withValues(alpha: 0.85)
+        : AppTheme.mediumBrown;
+    return Tooltip(
+      message: _copied ? 'Copied' : 'Copy',
+      child: InkResponse(
+        onTap: _copy,
+        radius: 16,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Icon(
+            _copied ? Icons.check_rounded : Icons.copy_rounded,
+            size: 16,
+            color: color,
           ),
         ),
       ),

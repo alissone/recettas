@@ -129,13 +129,24 @@ class Api:
         midnight = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
         cutoff = midnight.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         rows = self._request("GET", "/rest/v1/todos", params={
-            "select": "id,title,is_completed,sort_order",
+            "select": "id,title,is_completed,sort_order,category_id",
             "is_archived": "eq.false",
             "or": f"(is_completed.eq.false,completed_at.gte.{cutoff})",
             "order": "is_completed.asc,sort_order.asc,created_at.desc",
         })
         return [{"id": r["id"], "title": r["title"], "done": bool(r["is_completed"]),
-                 "order": r["sort_order"] or 0} for r in rows]
+                 "order": r["sort_order"] or 0, "category": r.get("category_id")} for r in rows]
+
+    def categories(self):
+        rows = self._request("GET", "/rest/v1/todo_categories", params={
+            "select": "id,name",
+            "user_id": f"eq.{self.session['user_id']}",
+            "order": "created_at.asc",
+        })
+        return [{"id": r["id"], "name": r["name"]} for r in rows]
+
+    def set_category(self, todo_id, category_id):
+        self._patch(todo_id, {"category_id": category_id})
 
     def add(self, title):
         rows = self._request(
@@ -212,14 +223,19 @@ def one_line(title):
     return first + (f" {NEWLINE_GLYPH}…" if rest else "")
 
 
-def prompt_line(label, text="", mask=False, hint="Enter confirm · Esc cancel"):
+def prompt_line(label, text="", mask=False, hint="Enter confirm · Esc cancel", on_change=None):
     """Single-row editor on the bottom line. Returns the text, or None on Esc.
 
     Ctrl+J (or Ctrl+Enter) inserts a real newline, shown as ↵, so multi-line
-    markdown titles round-trip untouched.
+    markdown titles round-trip untouched. `on_change(text)` runs before each
+    repaint (and once up front), e.g. to redraw a live-filtered list.
     """
     pos = len(text)
+    last = None
     while True:
+        if on_change and text != last:
+            on_change(text)
+            last = text
         cols, rows = shutil.get_terminal_size()
         shown = "*" * len(text) if mask else text.replace("\r", "").replace("\n", NEWLINE_GLYPH)
         avail = max(cols - len(label) - 1, 1)
@@ -283,10 +299,43 @@ def login_screen(api, notice=""):
             notice, saved_email = str(e), email
 
 
+def pick(title, options):
+    """Full-screen single choice. `options` is a list of labels; returns the
+    chosen index, or None on Esc. Up/Down or j/k move, Enter picks, 1-9 jump."""
+    sel = 0
+    while True:
+        cols, rows = shutil.get_terminal_size()
+        h = max(rows - 4, 1)
+        top = max(0, min(sel - h // 2, len(options) - h))
+        lines = [f"{BOLD} {title}{RESET}", DIM + "─" * cols + RESET]
+        for i in range(top, min(top + h, len(options))):
+            row = clip(f" {i + 1 if i < 9 else ' '} {options[i]}", cols - 1)
+            lines.append(f"{INVERT}{row.ljust(cols - 1)}{RESET}" if i == sel else row)
+        lines += [""] * (2 + h - len(lines))
+        lines += [DIM + "─" * cols + RESET, DIM + " ↑/↓ j/k move · Enter choose · 1-9 jump · Esc cancel" + RESET]
+        out(f"{ESC}[?25l{ESC}[H" + "".join(l + ESC + "[K\n" for l in lines[:-1]) + lines[-1] + ESC + "[K")
+        k = read_key()
+        if k in ("esc", "ctrl-c", "q"):
+            return None
+        elif k == "enter":
+            return sel
+        elif k in ("down", "j"):
+            sel = min(sel + 1, len(options) - 1)
+        elif k in ("up", "k"):
+            sel = max(sel - 1, 0)
+        elif k in ("home", "g"):
+            sel = 0
+        elif k in ("end", "G"):
+            sel = len(options) - 1
+        elif len(k) == 1 and k in "123456789" and int(k) <= len(options):
+            return int(k) - 1
+
+
 class App:
     def __init__(self, api):
         self.api = api
         self.todos = []
+        self.cats = []
         self.sel = 0
         self.top = 0
         self.status = ""
@@ -294,7 +343,19 @@ class App:
     def reload(self, select_id=None):
         keep = select_id or (self.todos[self.sel]["id"] if self.todos else None)
         self.todos = self.api.todos()
+        self.cats = self.api.categories()
         self.sel = next((i for i, t in enumerate(self.todos) if t["id"] == keep), min(self.sel, max(len(self.todos) - 1, 0)))
+
+    @staticmethod
+    def list_h():
+        return max(shutil.get_terminal_size()[1] - 4 - 5, 1)
+
+    def center(self):
+        """Like vim's zz: scroll so the selected row sits mid-list."""
+        self.top = max(self.sel - self.list_h() // 2, 0)
+
+    def cat_name(self, t):
+        return next((c["name"] for c in self.cats if c["id"] == t.get("category")), None)
 
     def draw(self):
         cols, rows = shutil.get_terminal_size()
@@ -321,7 +382,9 @@ class App:
         lines += [""] * (2 + list_h - len(lines))
 
         # Raw view of the selected task, shown exactly as stored.
-        lines.append(DIM + "─" * cols + RESET)
+        cat = self.cat_name(self.todos[self.sel]) if self.todos else None
+        label = f" {cat} " if cat else ""
+        lines.append(DIM + "─" * 2 + label + "─" * max(cols - 2 - len(label), 0) + RESET)
         raw = self.todos[self.sel]["title"].replace("\r", "").replace("\t", "    ").split("\n") if self.todos else []
         for i in range(detail_h):
             if i < len(raw):
@@ -330,7 +393,7 @@ class App:
             else:
                 lines.append("")
 
-        keys = " space done·a add·e edit·t/b top/bottom·d archive·r reload·L logout·q quit"
+        keys = " space done·a add·e edit·s search·c category·z center·t/b top/bottom·d archive·r reload·L logout·q quit"
         lines.append(DIM + clip(keys, cols - 1) + RESET)
         lines.append((RED + self.status + RESET) if self.status else "")
         out(f"{ESC}[?25l{ESC}[H" + "".join(l + ESC + "[K\n" for l in lines[:-1]) + lines[-1] + ESC + "[K")
@@ -371,6 +434,56 @@ class App:
                 self.move(top=k == "t")
             elif self.todos and k == "d":
                 self.archive()
+            elif k == "z":
+                self.center()
+            elif k == "s" and self.todos:
+                self.search()
+            elif k == "c" and self.todos:
+                self.categorize()
+
+    def search(self):
+        """Filter the list live while typing. Enter keeps the highlighted task
+        and scrolls to it in the full list; Esc goes back where you were."""
+        everything = self.todos
+        origin = everything[self.sel]["id"]
+
+        def matches(t, q):
+            return q in t["title"].lower() or q in (self.cat_name(t) or "").lower()
+
+        def apply(text):
+            q = text.strip().lower()
+            self.todos = [t for t in everything if matches(t, q)] if q else everything
+            self.sel, self.top = 0, 0
+            self.draw()
+
+        text = prompt_line("Search: ", hint="type to filter · Enter jump to first match · Esc cancel", on_change=apply)
+        target = origin
+        if text is not None:
+            if self.todos and text.strip():
+                target = self.todos[self.sel]["id"]
+            elif text.strip():
+                self.status = f"No task matches “{text.strip()}”"
+        self.todos = everything
+        self.sel = next((i for i, t in enumerate(everything) if t["id"] == target), 0)
+        if text is not None:
+            self.center()
+
+    def categorize(self):
+        t = self.todos[self.sel]
+        if not self.cats and not self.guard(lambda: setattr(self, "cats", self.api.categories()), "Loading categories…"):
+            return
+        if not self.cats:
+            self.status = "No categories yet. Create one in the app."
+            return
+        names = ["(none)"] + [c["name"] for c in self.cats]
+        idx = pick(f"Category for: {clip(one_line(t['title']), 60)}", names)
+        if idx is None:
+            return
+        new = self.cats[idx - 1]["id"] if idx else None
+        if new == t.get("category"):
+            return
+        if self.guard(self.api.set_category, "Saving…", t["id"], new):
+            t["category"] = new
 
     def guard(self, fn, busy="", *args):
         """Run a network call, turning failures into a status line."""

@@ -103,6 +103,7 @@ class _TodoScreenState extends State<TodoScreen> {
   final Set<String> _collapsedGroups = {};
   bool _searchVisible = false;
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   String _surpriseDescription = _surpriseDescriptions[
       Random().nextInt(_surpriseDescriptions.length)];
   final _textController = TextEditingController();
@@ -154,6 +155,7 @@ class _TodoScreenState extends State<TodoScreen> {
     _authSubscription?.cancel();
     _textController.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     _focusNode.dispose();
     _screenFocusNode.dispose();
     super.dispose();
@@ -288,6 +290,13 @@ class _TodoScreenState extends State<TodoScreen> {
       _searchVisible = !_searchVisible;
       if (!_searchVisible) _searchController.clear();
     });
+    if (_searchVisible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocusNode.requestFocus();
+      });
+    } else {
+      _screenFocusNode.requestFocus();
+    }
   }
 
   void _toggleGroupCollapsed(String key) {
@@ -706,6 +715,7 @@ class _TodoScreenState extends State<TodoScreen> {
         ),
         child: TextField(
           controller: _searchController,
+          focusNode: _searchFocusNode,
           autofocus: true,
           style: AppTheme.bodyText,
           decoration: InputDecoration(

@@ -6,7 +6,8 @@ import '../models/todo_tags.dart';
 
 /// Slack-style "@" autocomplete for a todo text field: while the word at
 /// the cursor starts with "@", shows a row of matching nicknames (plus
-/// `@today`); tapping one completes the word. Renders nothing otherwise.
+/// `@today` and `@daily`); tapping one completes the word. Renders
+/// nothing otherwise.
 class MentionSuggestions extends StatefulWidget {
   final TextEditingController controller;
   final List<Contact> contacts;
@@ -76,6 +77,13 @@ class _MentionSuggestionsState extends State<MentionSuggestions> {
           label: TodoTags.todayToken,
           onTap: () =>
               _complete(match.start, TodoTags.todayToken.substring(1)),
+        ),
+      if (TodoTags.dailyWords.any((w) => w.startsWith(query)))
+        _chip(
+          icon: Icons.repeat,
+          label: TodoTags.dailyToken,
+          onTap: () =>
+              _complete(match.start, TodoTags.dailyToken.substring(1)),
         ),
       for (final c in widget.contacts)
         if (c.nickname.toLowerCase().startsWith(query))

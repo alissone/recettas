@@ -291,8 +291,8 @@ class _ContactDialogState extends State<_ContactDialog> {
     if (!TodoTags.nicknamePattern.hasMatch(nickname)) {
       error = 'Apelido: uma palavra só, sem espaços '
           '(letras, números, _ . -)';
-    } else if (TodoTags.isTodayWord(nickname)) {
-      error = '"$nickname" é reservado para @today';
+    } else if (TodoTags.isReservedWord(nickname)) {
+      error = '"$nickname" é reservado (@today, @daily)';
     } else if (!email.contains('@')) {
       error = 'E-mail inválido';
     }

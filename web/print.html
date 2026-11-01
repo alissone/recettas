@@ -5,12 +5,15 @@
   data straight from Supabase (same project and anon key as the app);
   sign-in is remembered by supabase-js in localStorage.
 
-  Sections: "Hoje" (todos pinned with @today), the remaining todos,
+  Sections: "Hoje" (todos pinned with @today, and @daily ones due
+  today), the remaining todos,
   upcoming events, and one box per person tagged with @nickname. The page
   is always exactly one A4 sheet: whatever doesn't fit is left out, and
   hiding an item (screen only, never saved) lets the next one in.
 
-  Parsing mirrors lib/models/todo_card.dart and lib/models/todo_tags.dart.
+  Parsing mirrors lib/models/todo_card.dart, todo_tags.dart and
+  todo_daily.dart (this page only reads: rolling a @daily todo over to
+  today is written by the app).
   It is copied into build/web_chat by `flutter build web`, so it deploys
   with the web app as /print.html.
 -->
@@ -486,8 +489,10 @@ async function load() {
   const uid = state.user.id;
   const [todosRes, contactsRes, profileRes] = await Promise.all([
     sb.from('todos')
-      .select('id, user_id, title, sort_order, created_at, assignee_ids, today_on')
-      .eq('is_completed', false)
+      .select('id, user_id, title, is_completed, completed_at, sort_order, ' +
+              'created_at, assignee_ids, today_on')
+      // Ticked @daily todos too (loose match): they may be due again.
+      .or('is_completed.eq.false,title.like.*daily*')
       .eq('is_archived', false)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
@@ -515,10 +520,32 @@ async function load() {
 
   for (const row of todosRes.data) {
     const card = parseCard(row.title);
-    const isToday = row.today_on === todayKey;
+    let isToday = row.today_on === todayKey;
     const mine = row.user_id === uid;
 
-    if (card.kind === 'event') {
+    // @daily (see TodoDaily): once today's start time has passed, an
+    // occurrence from an earlier day counts as today's, open and pinned,
+    // even before the app gets to write that. Otherwise a ticked one is
+    // done for now. A postponed one shows as a normal upcoming event.
+    const daily = card.kind === 'event' && card.meta.repeat === 'daily';
+    let dailyTime = null;
+    if (daily) {
+      const date = parseDate(card.meta.date);
+      dailyTime = validTime(card.meta.start) || '09:00';
+      const [h, m] = dailyTime.split(':').map(Number);
+      const due = now >= new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+      if (!date || date < midnight) {
+        if (due) isToday = true;
+        else if (row.is_completed) continue;
+      } else if (row.is_completed) {
+        continue;
+      }
+      if (date && date > midnight) dailyTime = null;
+    } else if (row.is_completed) {
+      continue;
+    }
+
+    if (card.kind === 'event' && !dailyTime) {
       const date = parseDate(card.meta.date);
       if (date && date < midnight) continue;     // already happened
       const item = {
@@ -532,7 +559,11 @@ async function load() {
     }
 
     let main, subs;
-    if (card.kind === 'move') {
+    if (dailyTime) {
+      const parts = bodyParts(card.body);
+      main = card.meta.title || parts.shift()?.text || '';
+      subs = parts;
+    } else if (card.kind === 'move') {
       main = `Levar: ${card.meta.from || '?'} → ${card.meta.to || '?'}`;
       subs = bodyParts(card.body);
     } else {
@@ -542,6 +573,7 @@ async function load() {
     }
     const item = {
       id: row.id, kind: card.kind, main, subs, isToday,
+      repeat: dailyTime ? `todo dia ${dailyTime}` : null,
       from: mine ? null : (byUser.get(row.user_id)?.nickname ?? 'compartilhada'),
     };
     state.byId.set(row.id, item);
@@ -585,9 +617,10 @@ function itemHtml(item, drop) {
   const main = item.kind === 'move' ? esc(item.main) : inline(item.main, drop);
   const today = drop && item.isToday ? '<span class="tag-today">HOJE</span>' : '';
   const from = item.from ? ` <span class="from">· de ${esc(item.from)}</span>` : '';
+  const repeat = item.repeat ? ` <span class="from">↻ ${esc(item.repeat)}</span>` : '';
   return `<li class="item">
     <span class="circle"></span>
-    <div class="text">${main}${today}${from}${subsHtml(item.subs, drop)}</div>
+    <div class="text">${main}${today}${repeat}${from}${subsHtml(item.subs, drop)}</div>
     <button class="hide-btn no-print" data-hide="${item.id}" title="Não imprimir">ocultar</button>
   </li>`;
 }

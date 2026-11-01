@@ -7,7 +7,9 @@ import 'todo_card.dart';
 /// and is what decides who the todo is shared with. `@today` (or `@hoje`)
 /// pins the todo to the top of the list for the rest of the day: it is
 /// stripped from the text on save and stored as `today_on` instead, so an
-/// expired pin doesn't leave a stale "@today" behind.
+/// expired pin doesn't leave a stale "@today" behind. `@daily` (or
+/// `@diario`) turns the todo into an event that repeats every day; it is
+/// stripped too, and kept as `repeat: daily` on the card (see TodoDaily).
 ///
 /// web/print.html has a JavaScript copy of [mention]; keep them in sync.
 class TodoTags {
@@ -30,27 +32,50 @@ class TodoTags {
   /// the pin round-trips (deleting it unpins).
   static const todayToken = '@today';
 
+  static const dailyWords = {'daily', 'diario', 'diário'};
+
+  static const dailyToken = '@daily';
+
   static bool isTodayWord(String handle) =>
       todayWords.contains(handle.toLowerCase());
 
-  static final _todayTag = RegExp(
-    r'[ \t]?(?<![\p{L}\p{N}_@.])@(today|hoje)(?![\p{L}\p{N}_.\-]*[\p{L}\p{N}_])',
-    caseSensitive: false,
-    unicode: true,
-  );
+  static bool isDailyWord(String handle) =>
+      dailyWords.contains(handle.toLowerCase());
+
+  /// Words that can't be a contact's nickname.
+  static bool isReservedWord(String handle) =>
+      isTodayWord(handle) || isDailyWord(handle);
+
+  /// One of [words] as a whole tag, plus the space before it.
+  static RegExp _tag(Set<String> words) => RegExp(
+        r'[ \t]?(?<![\p{L}\p{N}_@.])@(' +
+            words.join('|') +
+            r')(?![\p{L}\p{N}_.\-]*[\p{L}\p{N}_])',
+        caseSensitive: false,
+        unicode: true,
+      );
+
+  static final _todayTag = _tag(todayWords);
+  static final _dailyTag = _tag(dailyWords);
 
   static bool hasToday(String text) => _todayTag.hasMatch(text);
 
   static String stripToday(String text) =>
       text.replaceAll(_todayTag, '').trim();
 
-  /// The handles tagged in [text], without `@today`, in order, once each.
+  static bool hasDaily(String text) => _dailyTag.hasMatch(text);
+
+  static String stripDaily(String text) =>
+      text.replaceAll(_dailyTag, '').trim();
+
+  /// The handles tagged in [text], without `@today`/`@daily`, in order,
+  /// once each.
   static List<String> handles(String text) {
     final seen = <String>{};
     final result = <String>[];
     for (final m in mention.allMatches(text)) {
       final handle = m.group(1)!;
-      if (isTodayWord(handle)) continue;
+      if (isReservedWord(handle)) continue;
       if (seen.add(handle.toLowerCase())) result.add(handle);
     }
     return result;

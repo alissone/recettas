@@ -11,6 +11,7 @@ import '../models/contact.dart';
 import '../models/todo.dart';
 import '../models/todo_card.dart';
 import '../models/todo_category.dart';
+import '../models/todo_daily.dart';
 import '../models/todo_tags.dart';
 import '../services/category_store.dart';
 import '../services/supabase_service.dart';
@@ -1561,8 +1562,15 @@ class _TodoCardBody extends StatelessWidget {
         ? AppTheme.mediumBrown.withValues(alpha: 0.6)
         : AppTheme.primaryOrange;
 
+    // A daily event's date is just today's occurrence; only a postponed
+    // one is worth showing.
     final when = [
-      if (date != null) _eventDateLabel(date),
+      if (date != null &&
+          (!card.isDaily ||
+              DateTime(date.year, date.month, date.day).isAfter(
+                  DateTime(now.year, now.month, now.day))))
+        _eventDateLabel(date),
+      if (card.isDaily) 'Todo dia',
       if (start != null)
         end != null
             ? '${TodoCard.formatTime(start)} – ${TodoCard.formatTime(end)}'
@@ -1773,6 +1781,8 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
   DateTime? _date;
   TimeOfDay? _start;
   TimeOfDay? _end;
+  // "@daily": repeats every day until deleted (see TodoDaily).
+  bool _daily = false;
   bool _showPreview = false;
 
   @override
@@ -1787,6 +1797,7 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
     _date = card.date;
     _start = card.start;
     _end = card.end;
+    _daily = card.isDaily;
   }
 
   @override
@@ -1811,6 +1822,7 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
           if (_date != null) 'date': TodoCard.formatDate(_date!),
           if (_start != null) 'start': TodoCard.formatTime(_start!),
           if (_end != null) 'end': TodoCard.formatTime(_end!),
+          if (_daily) 'repeat': 'daily',
         };
     }
     return TodoCard(kind: _kind, meta: meta, body: _controller.text);
@@ -2216,6 +2228,26 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
               onTap: () => _pickTime(end: true),
               onClear:
                   _end == null ? null : () => setState(() => _end = null),
+            ),
+            FilterChip(
+              avatar: Icon(Icons.repeat,
+                  size: 18,
+                  color: _daily ? Colors.white : AppTheme.primaryOrange),
+              label: const Text('Todo dia'),
+              selected: _daily,
+              showCheckmark: false,
+              selectedColor: AppTheme.primaryOrange,
+              labelStyle: TextStyle(
+                color: _daily ? Colors.white : AppTheme.darkBrown,
+                fontWeight: FontWeight.w600,
+              ),
+              backgroundColor: AppTheme.white,
+              side: BorderSide(color: AppTheme.borderOrange),
+              onSelected: (v) => setState(() {
+                _daily = v;
+                // Comes back at its start time, so give it one.
+                if (v) _start ??= TodoDaily.defaultStart;
+              }),
             ),
           ],
         ),

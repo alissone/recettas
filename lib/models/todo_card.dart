@@ -111,6 +111,10 @@ class TodoCard {
   TimeOfDay? get start => parseTime(meta['start']);
   TimeOfDay? get end => parseTime(meta['end']);
 
+  /// `repeat: daily` — an "@daily" event that comes back every day (see
+  /// TodoDaily). Its `date` is the current occurrence.
+  bool get isDaily => kind == TodoKind.event && meta['repeat'] == 'daily';
+
   static TimeOfDay? parseTime(String? value) {
     final match = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(value ?? '');
     if (match == null) return null;

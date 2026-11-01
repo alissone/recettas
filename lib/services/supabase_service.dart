@@ -234,12 +234,14 @@ class SupabaseService {
 
   /// Open (not completed, not archived) todos in their manual order:
   /// the user's own plus the ones someone tagged them on (RLS returns
-  /// exactly those). "@today" pins aren't applied here.
+  /// exactly those). "@today" pins aren't applied here. Also returns
+  /// ticked "@daily" todos (loosely matched), which may be due to come
+  /// back - see TodoDaily.
   static Future<List<Todo>> getOpenTodos() async {
     final data = await _client
         .from('todos')
         .select()
-        .eq('is_completed', false)
+        .or('is_completed.eq.false,title.like.*daily*')
         .eq('is_archived', false)
         .order('sort_order', ascending: true)
         .order('created_at', ascending: false);

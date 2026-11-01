@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../models/contact.dart';
 import '../models/todo.dart';
 import '../models/todo_category.dart';
+import '../models/todo_daily.dart';
 import '../models/todo_tags.dart';
 import 'local_db.dart';
 
@@ -49,6 +50,7 @@ class TodoRepository {
   bool _syncing = false;
   bool _syncAgain = false;
   Timer? _retryTimer;
+  Timer? _dailyTimer;
   AppLifecycleListener? _lifecycle;
 
   SupabaseClient get _client => Supabase.instance.client;
@@ -77,21 +79,34 @@ class TodoRepository {
 
   // --- Reads (local cache, instant) ---
 
+  /// Own todos plus the ones someone else tagged this user on.
+  static const _visibleWhere = '(user_id = ? OR assignee_ids LIKE ?) AND '
+      'is_archived = 0';
+
+  /// Front matter line of "@daily" todos (see TodoDaily).
+  static const _dailyLike = '%repeat: daily%';
+
   Future<List<Todo>> getTodos() async {
     final uid = _userId;
     if (uid == null) return [];
+    await _rolloverDaily(uid);
     final db = await LocalDb.instance;
     final rows = await db.query(
       'todos',
       // Completed todos from a previous day stay in the database (and on
       // the server) but drop out of the list once the day has passed;
       // legacy rows with no completed_at (completed before this existed)
-      // count as "old" too.
-      // Own todos plus the ones someone else tagged this user on.
-      where: '(user_id = ? OR assignee_ids LIKE ?) AND is_archived = 0 AND '
-          '(is_completed = 0 OR (completed_at IS NOT NULL AND '
-          "strftime('%s', completed_at) >= strftime('%s', ?)))",
-      whereArgs: [uid, '%"$uid"%', _startOfTodayUtc().toIso8601String()],
+      // count as "old" too. Daily ones are read regardless, since a
+      // rollover may be pending: TodoDaily.isListed has the last word.
+      where: '$_visibleWhere AND '
+          '(is_completed = 0 OR title LIKE ? OR (completed_at IS NOT NULL '
+          "AND strftime('%s', completed_at) >= strftime('%s', ?)))",
+      whereArgs: [
+        uid,
+        '%"$uid"%',
+        _dailyLike,
+        _startOfTodayUtc().toIso8601String(),
+      ],
       // Completed items sink to the bottom of the list; todos pinned with
       // "@today" float to the top until the day is over, then fall back
       // to their manual position. todayKey() is a generated YYYY-MM-DD.
@@ -99,7 +114,49 @@ class TodoRepository {
           "COALESCE(today_on = '${TodoTags.todayKey()}', 0) DESC, "
           'sort_order ASC, created_at DESC',
     );
-    return rows.map(Todo.fromDb).toList();
+    final todos = rows.map(Todo.fromDb).toList();
+    _scheduleDailyRefresh(todos);
+    return todos.where(TodoDaily.isListed).toList();
+  }
+
+  /// Brings "@daily" todos whose time has come back to today (unticked,
+  /// pinned on top), locally and on the server.
+  Future<void> _rolloverDaily(String uid) async {
+    final db = await LocalDb.instance;
+    final rows = await db.query(
+      'todos',
+      where: '$_visibleWhere AND title LIKE ?',
+      whereArgs: [uid, '%"$uid"%', _dailyLike],
+    );
+    var rolled = false;
+    for (final todo in rows.map(Todo.fromDb)) {
+      final fields = TodoDaily.rollover(todo);
+      if (fields == null) continue;
+      await db.update(
+        'todos',
+        {...fields, 'is_completed': 0},
+        where: 'id = ?',
+        whereArgs: [todo.id],
+      );
+      // Straight into the queue: going through _enqueue would bump and
+      // re-enter getTodos for every row.
+      await db.insert('pending_ops', {
+        'type': 'todo_update',
+        'payload': jsonEncode({'id': todo.id, 'fields': fields}),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+      });
+      rolled = true;
+    }
+    if (rolled) sync();
+  }
+
+  /// Reloads the list when the next "@daily" todo is due today, so it pops
+  /// back up at its time even if nothing else happens.
+  void _scheduleDailyRefresh(List<Todo> todos) {
+    _dailyTimer?.cancel();
+    final next = TodoDaily.nextRollover(todos);
+    if (next == null) return;
+    _dailyTimer = Timer(next.difference(DateTime.now()), _bump);
   }
 
   /// Midnight in the device's local timezone, expressed in UTC — the
@@ -142,7 +199,7 @@ class TodoRepository {
   Future<void> addTodo(String text) async {
     final uid = _userId;
     if (uid == null) return;
-    final title = TodoTags.stripToday(text);
+    final title = _applyDaily(TodoTags.stripToday(text));
     if (title.isEmpty) return;
     final todo = Todo(
       id: _uuid.v4(),
@@ -150,7 +207,9 @@ class TodoRepository {
       title: title,
       createdAt: DateTime.now().toUtc(),
       assigneeIds: TodoTags.assigneeIds(title, await getContacts()),
-      todayOn: TodoTags.hasToday(text) ? TodoTags.todayKey() : null,
+      todayOn: TodoTags.hasToday(text) || TodoTags.hasDaily(text)
+          ? TodoTags.todayKey()
+          : null,
     );
     final db = await LocalDb.instance;
     await db.insert('todos', todo.toDb());
@@ -168,12 +227,14 @@ class TodoRepository {
   /// (see [TodoTags.withToday]), so its absence unpins. Assignees follow
   /// the tags too, but only on the owner's side — it's their contacts.
   Future<void> editTodo(Todo todo, String text) async {
-    final title = TodoTags.stripToday(text);
+    final title = _applyDaily(TodoTags.stripToday(text));
     if (title.isEmpty) return;
     final assigneeIds = todo.userId == _userId
         ? TodoTags.assigneeIds(title, await getContacts())
         : null;
-    final todayOn = TodoTags.hasToday(text) ? TodoTags.todayKey() : null;
+    final todayOn = TodoTags.hasToday(text) || TodoTags.hasDaily(text)
+        ? TodoTags.todayKey()
+        : null;
     final db = await LocalDb.instance;
     await db.update(
       'todos',
@@ -211,6 +272,13 @@ class TodoRepository {
       'id': id,
       'fields': {'is_completed': isCompleted, 'completed_at': completedAt},
     });
+  }
+
+  /// "@daily" in [text] makes it a daily event (see TodoDaily.toDaily).
+  String _applyDaily(String text) {
+    if (!TodoTags.hasDaily(text)) return text;
+    final rest = TodoTags.stripDaily(text);
+    return rest.isEmpty ? '' : TodoDaily.toDaily(rest);
   }
 
   /// "Deleting" from the UI only archives: the row stays in the database
@@ -434,7 +502,10 @@ class TodoRepository {
     final todosData = await _client
         .from('todos')
         .select()
-        .or('is_completed.eq.false,completed_at.gte.$cutoff')
+        // ...except "@daily" ones, which come back (see TodoDaily).
+        // Loose match; getTodos filters precisely.
+        .or('is_completed.eq.false,completed_at.gte.$cutoff,'
+            'title.like.*daily*')
         .order('sort_order', ascending: true)
         .order('created_at', ascending: false);
     final catsData =

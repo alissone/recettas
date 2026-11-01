@@ -6,6 +6,7 @@ import '../models/contact.dart';
 import '../models/todo.dart';
 import '../models/todo_card.dart';
 import '../models/todo_category.dart';
+import '../models/todo_daily.dart';
 import '../models/todo_tags.dart';
 import '../services/supabase_service.dart';
 import 'web_common.dart';
@@ -42,7 +43,8 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
         SupabaseService.getContacts(),
       ]);
       if (!mounted) return;
-      final todos = results[0] as List<Todo>;
+      final todos = await _rolloverDaily(results[0] as List<Todo>);
+      if (!mounted) return;
       setState(() {
         // Same as the app: "@today" pins first, then the manual order.
         _todos = [
@@ -62,6 +64,29 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
     }
   }
 
+  /// Brings "@daily" todos whose time has come back to today, as the app
+  /// does (see TodoDaily), and drops ticked ones still waiting for it.
+  Future<List<Todo>> _rolloverDaily(List<Todo> todos) async {
+    final result = <Todo>[];
+    for (final todo in todos) {
+      final fields = TodoDaily.rollover(todo);
+      if (fields != null) {
+        await SupabaseService.updateTodo(todo.id, fields);
+        result.add(Todo.fromJson({
+          'id': todo.id,
+          'user_id': todo.userId,
+          'category_id': todo.categoryId,
+          'sort_order': todo.sortOrder,
+          'assignee_ids': todo.assigneeIds,
+          ...fields,
+        }));
+      } else if (TodoDaily.isListed(todo)) {
+        result.add(todo);
+      }
+    }
+    return result;
+  }
+
   /// Runs a write; on failure shows the error and reloads so the list
   /// matches the server again.
   Future<void> _write(Future<void> Function() action) async {
@@ -75,12 +100,19 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
   }
 
   Future<void> _add(String text) => _write(() async {
-        final title = TodoTags.stripToday(text);
+        var title = TodoTags.stripToday(text);
+        final daily = TodoTags.hasDaily(title);
+        if (daily) {
+          final rest = TodoTags.stripDaily(title);
+          title = rest.isEmpty ? '' : TodoDaily.toDaily(rest);
+        }
         if (title.isEmpty) return;
         final todo = await SupabaseService.addTodo(
           title,
           assigneeIds: TodoTags.assigneeIds(title, _contacts),
-          todayOn: TodoTags.hasToday(text) ? TodoTags.todayKey() : null,
+          todayOn: TodoTags.hasToday(text) || daily
+              ? TodoTags.todayKey()
+              : null,
         );
         // New rows get sort_order 0, which the app also puts on top
         // (below today's pins, unless it is one).

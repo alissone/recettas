@@ -6,7 +6,8 @@
   sign-in is remembered by supabase-js in localStorage.
 
   Sections: "Hoje" (todos pinned with @today, and @daily ones due
-  today), the remaining todos,
+  today), the top todos of each category in CATEGORY_SECTIONS, the
+  remaining todos,
   upcoming events, and one box per person tagged with @nickname. The page
   is always exactly one A4 sheet: whatever doesn't fit is left out, and
   hiding an item (screen only, never saved) lets the next one in.
@@ -181,6 +182,7 @@
   }
   .today-box ul { columns: 2; column-gap: 8mm; }
   .today-box .item { border-bottom: 0; }
+  .category { margin-bottom: 4mm; }
 
   .cols {
     flex: 1;
@@ -352,6 +354,13 @@ const SUPABASE_URL = 'https://jixjuabvprbyupmaqtma.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppeGp1YWJ2cHJieXVwbWFxdG1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NTE1MDgsImV4cCI6MjA5NzIyNzUwOH0.RSCK1BMUSA_6M3THDOVnJQzP9RpcPspCL75R7UcBnbk';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Categories that get their own section above "Tarefas", in this order,
+// matched by name (case-insensitive). Each shows its first PER_CATEGORY
+// todos; the rest of that category's todos fall through to "Tarefas".
+// Categories not listed here only appear in "Tarefas".
+const CATEGORY_SECTIONS = ['MVC', 'Tether', 'Levar', 'Casa'];
+const PER_CATEGORY = 5;
+
 const app = document.getElementById('app');
 
 // --- Parsing (mirrors lib/models/todo_card.dart and todo_tags.dart) ---
@@ -474,7 +483,8 @@ const state = {
   user: null,
   ownerName: '',
   today: [],
-  tasks: [],
+  tasks: [],           // everything for the left column; see splitTasks()
+  categories: [],      // CATEGORY_SECTIONS found: [{ key, name }]
   events: [],
   people: [],          // [{ key, nickname, items }]
   byId: new Map(),     // id → item, for the hidden panel
@@ -487,9 +497,9 @@ const state = {
 
 async function load() {
   const uid = state.user.id;
-  const [todosRes, contactsRes, profileRes] = await Promise.all([
+  const [todosRes, contactsRes, profileRes, catsRes] = await Promise.all([
     sb.from('todos')
-      .select('id, user_id, title, is_completed, completed_at, sort_order, ' +
+      .select('id, user_id, title, is_completed, completed_at, category_id, sort_order, ' +
               'created_at, assignee_ids, today_on')
       // Ticked @daily todos too (loose match): they may be due again.
       .or('is_completed.eq.false,title.like.*daily*')
@@ -498,9 +508,22 @@ async function load() {
       .order('created_at', { ascending: false }),
     sb.from('contacts').select('nickname, email, contact_user_id').eq('owner_id', uid),
     sb.from('profiles').select('display_name, email').eq('id', uid).maybeSingle(),
+    sb.from('todo_categories').select('id, name').eq('user_id', uid),
   ]);
-  for (const res of [todosRes, contactsRes, profileRes]) {
+  for (const res of [todosRes, contactsRes, profileRes, catsRes]) {
     if (res.error) throw res.error;
+  }
+
+  // Only our own categories: a shared todo's category_id is its owner's,
+  // so those always land in "Tarefas".
+  const wanted = CATEGORY_SECTIONS.map(n => n.trim().toLowerCase());
+  const catKeyById = new Map();
+  state.categories = [];
+  for (const name of wanted) {
+    const cat = catsRes.data.find(c => c.name.trim().toLowerCase() === name);
+    if (!cat) continue;
+    catKeyById.set(cat.id, 'c:' + cat.id);
+    state.categories.push({ key: 'c:' + cat.id, name: cat.name });
   }
 
   const contacts = contactsRes.data;
@@ -574,6 +597,7 @@ async function load() {
     const item = {
       id: row.id, kind: card.kind, main, subs, isToday,
       repeat: dailyTime ? `todo dia ${dailyTime}` : null,
+      catKey: catKeyById.get(row.category_id) ?? null,
       from: mine ? null : (byUser.get(row.user_id)?.nickname ?? 'compartilhada'),
     };
     state.byId.set(row.id, item);
@@ -673,10 +697,26 @@ function moreHtml(left) {
     : '';
 }
 
+/** Splits the left column: each listed category takes its first
+ *  PER_CATEGORY visible todos, everything else is "Tarefas". Worked out on
+ *  every render, so hiding one of a category's todos pulls in its next
+ *  one (out of "Tarefas"), and no todo shows up twice. */
+function splitTasks() {
+  const byCat = new Map(state.categories.map(c => [c.key, []]));
+  const rest = [];
+  for (const item of visible(state.tasks)) {
+    const list = item.catKey && byCat.get(item.catKey);
+    if (list && list.length < PER_CATEGORY) list.push(item);
+    else rest.push(item);
+  }
+  return { byCat, rest };
+}
+
 function count(key) {
   if (key === 'today') return take('today', state.today).items.length;
-  if (key === 'tasks') return take('tasks', state.tasks).items.length;
+  if (key === 'tasks') return take('tasks', splitTasks().rest).items.length;
   if (key === 'events') return take('events', state.events).items.length;
+  if (key.startsWith('c:')) return take(key, splitTasks().byCat.get(key) ?? []).items.length;
   const p = state.people.find(p => p.key === key);
   return p ? take(key, p.items).items.length : 0;
 }
@@ -687,7 +727,11 @@ function renderSheet() {
   const day = now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const today = take('today', state.today);
-  const tasks = take('tasks', state.tasks);
+  const split = splitTasks();
+  const tasks = take('tasks', split.rest);
+  const categories = state.categories
+    .map(c => ({ c, ...take(c.key, split.byCat.get(c.key)) }))
+    .filter(x => x.items.length || x.left);
   const events = take('events', state.events);
   const people = state.people
     .map(p => ({ p, ...take(p.key, p.items) }))
@@ -736,6 +780,11 @@ function renderSheet() {
 
       <div class="cols" id="cols">
         <div class="col" id="colLeft">
+          ${categories.map(({ c, items, left }) => `<section class="category">
+            <h2 class="section-title">${esc(c.name)}</h2>
+            <ul class="items">${items.map(i => itemHtml(i)).join('')}</ul>
+            ${moreHtml(left)}
+          </section>`).join('')}
           <h2 class="section-title">Tarefas</h2>
           ${tasks.items.length
             ? `<ul class="items">${tasks.items.map(i => itemHtml(i)).join('')}</ul>`
@@ -797,7 +846,16 @@ function nextToTrim() {
   if (cols.clientHeight < 70 * MM) {
     return largestPerson(2) ?? (count('today') > 0 ? 'today' : null) ?? largestPerson(0);
   }
-  if (overflows(document.getElementById('colLeft')) && count('tasks') > 0) return 'tasks';
+  if (overflows(document.getElementById('colLeft'))) {
+    // General todos go first; then the category sections shrink, biggest
+    // first, keeping one todo each for as long as possible.
+    if (count('tasks') > 0) return 'tasks';
+    const cats = state.categories
+      .map(c => ({ key: c.key, n: count(c.key) }))
+      .sort((a, b) => b.n - a.n);
+    const victim = cats.find(x => x.n > 1) ?? cats.find(x => x.n > 0);
+    if (victim) return victim.key;
+  }
   if (overflows(document.getElementById('colRight')) && count('events') > 0) return 'events';
   return null;
 }

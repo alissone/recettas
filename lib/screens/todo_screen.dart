@@ -801,6 +801,7 @@ class _TodoScreenState extends State<TodoScreen> {
             child: TextField(
               controller: _textController,
               focusNode: _focusNode,
+              textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
                 hintText: 'O que precisa fazer?',
                 hintStyle: TextStyle(

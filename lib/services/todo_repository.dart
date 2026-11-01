@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../models/contact.dart';
 import '../models/todo.dart';
 import '../models/todo_category.dart';
+import '../models/todo_tags.dart';
 import 'local_db.dart';
 
 enum SyncState {
@@ -21,7 +23,8 @@ enum SyncState {
   offline,
 }
 
-/// Offline-first store for todos and their categories.
+/// Offline-first store for todos, their categories and the contacts
+/// ("Pessoas") that "@" tags resolve against.
 ///
 /// All reads and writes hit the local SQLite cache first, so the UI is
 /// instant and works with no connection. Every write is also queued in
@@ -46,6 +49,7 @@ class TodoRepository {
   bool _syncing = false;
   bool _syncAgain = false;
   Timer? _retryTimer;
+  AppLifecycleListener? _lifecycle;
 
   SupabaseClient get _client => Supabase.instance.client;
   String? get _userId => _client.auth.currentUser?.id;
@@ -63,6 +67,9 @@ class TodoRepository {
           break;
       }
     });
+    // Todos other people tag you on only arrive with a pull, so coming
+    // back to the app is a good moment for one.
+    _lifecycle ??= AppLifecycleListener(onResume: sync);
     sync();
   }
 
@@ -80,12 +87,17 @@ class TodoRepository {
       // the server) but drop out of the list once the day has passed;
       // legacy rows with no completed_at (completed before this existed)
       // count as "old" too.
-      where: 'user_id = ? AND is_archived = 0 AND '
+      // Own todos plus the ones someone else tagged this user on.
+      where: '(user_id = ? OR assignee_ids LIKE ?) AND is_archived = 0 AND '
           '(is_completed = 0 OR (completed_at IS NOT NULL AND '
           "strftime('%s', completed_at) >= strftime('%s', ?)))",
-      whereArgs: [uid, _startOfTodayUtc().toIso8601String()],
-      // Completed items sink to the bottom of the list.
-      orderBy: 'is_completed ASC, sort_order ASC, created_at DESC',
+      whereArgs: [uid, '%"$uid"%', _startOfTodayUtc().toIso8601String()],
+      // Completed items sink to the bottom of the list; todos pinned with
+      // "@today" float to the top until the day is over, then fall back
+      // to their manual position. todayKey() is a generated YYYY-MM-DD.
+      orderBy: 'is_completed ASC, '
+          "COALESCE(today_on = '${TodoTags.todayKey()}', 0) DESC, "
+          'sort_order ASC, created_at DESC',
     );
     return rows.map(Todo.fromDb).toList();
   }
@@ -110,16 +122,35 @@ class TodoRepository {
     return rows.map(TodoCategory.fromDb).toList();
   }
 
+  Future<List<Contact>> getContacts() async {
+    final uid = _userId;
+    if (uid == null) return [];
+    final db = await LocalDb.instance;
+    final rows = await db.query(
+      'contacts',
+      where: 'owner_id = ?',
+      whereArgs: [uid],
+      orderBy: 'nickname COLLATE NOCASE ASC',
+    );
+    return rows.map(Contact.fromDb).toList();
+  }
+
   // --- Todo writes (optimistic: local first, then queued push) ---
 
-  Future<void> addTodo(String title) async {
+  /// [text] may carry "@" tags: "@today" pins the todo for the day and
+  /// "@nickname" shares it with that contact (see [TodoTags]).
+  Future<void> addTodo(String text) async {
     final uid = _userId;
     if (uid == null) return;
+    final title = TodoTags.stripToday(text);
+    if (title.isEmpty) return;
     final todo = Todo(
       id: _uuid.v4(),
       userId: uid,
       title: title,
       createdAt: DateTime.now().toUtc(),
+      assigneeIds: TodoTags.assigneeIds(title, await getContacts()),
+      todayOn: TodoTags.hasToday(text) ? TodoTags.todayKey() : null,
     );
     final db = await LocalDb.instance;
     await db.insert('todos', todo.toDb());
@@ -127,6 +158,40 @@ class TodoRepository {
       'id': todo.id,
       'user_id': uid,
       'title': title,
+      'assignee_ids': todo.assigneeIds,
+      'today_on': todo.todayOn,
+    });
+  }
+
+  /// Saves the editor's text. Unlike [updateTodoTitle], the "@today" tag
+  /// is authoritative here: the editor shows it on todos pinned for today
+  /// (see [TodoTags.withToday]), so its absence unpins. Assignees follow
+  /// the tags too, but only on the owner's side — it's their contacts.
+  Future<void> editTodo(Todo todo, String text) async {
+    final title = TodoTags.stripToday(text);
+    if (title.isEmpty) return;
+    final assigneeIds = todo.userId == _userId
+        ? TodoTags.assigneeIds(title, await getContacts())
+        : null;
+    final todayOn = TodoTags.hasToday(text) ? TodoTags.todayKey() : null;
+    final db = await LocalDb.instance;
+    await db.update(
+      'todos',
+      {
+        'title': title,
+        'today_on': todayOn,
+        if (assigneeIds != null) 'assignee_ids': jsonEncode(assigneeIds),
+      },
+      where: 'id = ?',
+      whereArgs: [todo.id],
+    );
+    await _enqueue('todo_update', {
+      'id': todo.id,
+      'fields': {
+        'title': title,
+        'today_on': todayOn,
+        if (assigneeIds != null) 'assignee_ids': assigneeIds,
+      },
     });
   }
 
@@ -149,17 +214,24 @@ class TodoRepository {
   }
 
   /// "Deleting" from the UI only archives: the row stays in the database
-  /// (local and server) but disappears from the list.
-  Future<void> archiveTodo(String id) async {
+  /// (local and server) but disappears from the list. On a todo someone
+  /// else tagged this user on, it removes the tag instead — the owner
+  /// keeps the todo.
+  Future<void> archiveTodo(Todo todo) async {
     final db = await LocalDb.instance;
+    if (todo.userId != _userId) {
+      await db.delete('todos', where: 'id = ?', whereArgs: [todo.id]);
+      await _enqueue('todo_leave', {'id': todo.id});
+      return;
+    }
     await db.update(
       'todos',
       {'is_archived': 1},
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: [todo.id],
     );
     await _enqueue('todo_update', {
-      'id': id,
+      'id': todo.id,
       'fields': {'is_archived': true},
     });
   }
@@ -333,6 +405,8 @@ class TodoRepository {
         await _client.from('todos').update(p['fields']).eq('id', p['id']);
       case 'todo_delete':
         await _client.from('todos').delete().eq('id', p['id']);
+      case 'todo_leave':
+        await _client.rpc('leave_todo', params: {'todo_id': p['id']});
       case 'todo_reorder':
         final ids = (p['ids'] as List).cast<String>();
         await Future.wait(ids.asMap().entries.map((e) => _client
@@ -365,6 +439,7 @@ class TodoRepository {
         .order('created_at', ascending: false);
     final catsData =
         await _client.from('todo_categories').select().order('created_at');
+    final contactsData = await _client.from('contacts').select();
 
     final db = await LocalDb.instance;
     // New local writes may have arrived while we were fetching; applying
@@ -379,13 +454,18 @@ class TodoRepository {
 
     await db.transaction((txn) async {
       final batch = txn.batch();
-      batch.delete('todos', where: 'user_id = ?', whereArgs: [uid]);
+      // Not just this user's rows: shared todos belong to someone else.
+      batch.delete('todos');
       for (final json in todosData) {
         batch.insert('todos', Todo.fromJson(json).toDb());
       }
       batch.delete('todo_categories', where: 'user_id = ?', whereArgs: [uid]);
       for (final json in catsData) {
         batch.insert('todo_categories', TodoCategory.fromJson(json).toDb());
+      }
+      batch.delete('contacts');
+      for (final json in contactsData) {
+        batch.insert('contacts', Contact.fromJson(json).toDb());
       }
       await batch.commit(noResult: true);
     });
@@ -396,6 +476,7 @@ class TodoRepository {
     final db = await LocalDb.instance;
     await db.delete('todos');
     await db.delete('todo_categories');
+    await db.delete('contacts');
     await db.delete('pending_ops');
     syncState.value = SyncState.synced;
     _bump();

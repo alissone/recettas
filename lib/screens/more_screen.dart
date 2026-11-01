@@ -12,6 +12,7 @@ import 'harpa_screen.dart';
 import 'home_shell.dart' show showNoInternetBanner;
 import 'product_scanner_screen.dart';
 import 'nutrition_report_screen.dart';
+import 'people_screen.dart';
 import 'profile_screen.dart';
 import 'recipes_screen.dart';
 import 'relays_screen.dart';
@@ -87,6 +88,12 @@ class _MoreScreenState extends State<MoreScreen> {
             const SizedBox(height: 20),
             _buildProfileCard(),
             const SizedBox(height: 24),
+            _buildUtilityTile(
+              icon: Icons.alternate_email,
+              title: 'Pessoas',
+              subtitle: 'Apelidos para marcar com @ nas tarefas',
+              screen: const PeopleScreen(),
+            ),
             _buildUtilityTile(
               icon: Icons.restaurant_menu_outlined,
               title: 'Receitas',

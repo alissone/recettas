@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'todo_tags.dart';
+
 class Todo {
   final String id;
   final String userId;
@@ -9,6 +13,13 @@ class Todo {
   final DateTime? createdAt;
   final DateTime? completedAt;
 
+  /// Accounts tagged on this todo (see [TodoTags]); they see and can tick
+  /// it too.
+  final List<String> assigneeIds;
+
+  /// Local date (`YYYY-MM-DD`) the todo was pinned with "@today".
+  final String? todayOn;
+
   Todo({
     required this.id,
     required this.userId,
@@ -19,7 +30,12 @@ class Todo {
     this.isArchived = false,
     this.createdAt,
     this.completedAt,
+    this.assigneeIds = const [],
+    this.todayOn,
   });
+
+  /// Pinned to the top for the rest of the day.
+  bool get isToday => todayOn != null && todayOn == TodoTags.todayKey();
 
   factory Todo.fromJson(Map<String, dynamic> json) {
     return Todo(
@@ -36,6 +52,9 @@ class Todo {
       completedAt: json['completed_at'] != null
           ? DateTime.tryParse(json['completed_at'])
           : null,
+      assigneeIds:
+          (json['assignee_ids'] as List?)?.cast<String>() ?? const [],
+      todayOn: json['today_on'],
     );
   }
 
@@ -49,6 +68,8 @@ class Todo {
         'is_archived': isArchived ? 1 : 0,
         'created_at': createdAt?.toIso8601String(),
         'completed_at': completedAt?.toIso8601String(),
+        'assignee_ids': jsonEncode(assigneeIds),
+        'today_on': todayOn,
       };
 
   factory Todo.fromDb(Map<String, dynamic> row) {
@@ -66,6 +87,10 @@ class Todo {
       completedAt: row['completed_at'] != null
           ? DateTime.tryParse(row['completed_at'])
           : null,
+      assigneeIds: row['assignee_ids'] != null
+          ? (jsonDecode(row['assignee_ids']) as List).cast<String>()
+          : const [],
+      todayOn: row['today_on'],
     );
   }
 }

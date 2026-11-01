@@ -7,14 +7,17 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../models/category_base.dart';
+import '../models/contact.dart';
 import '../models/todo.dart';
 import '../models/todo_card.dart';
 import '../models/todo_category.dart';
+import '../models/todo_tags.dart';
 import '../services/category_store.dart';
 import '../services/supabase_service.dart';
 import '../services/todo_repository.dart';
 import '../services/voice_note_repository.dart';
 import '../widgets/categorize_overlay.dart';
+import '../widgets/mention_suggestions.dart';
 import '../widgets/swipe_action_card.dart';
 import '../widgets/sync_indicator.dart';
 import '../widgets/voice_recorder_sheet.dart';
@@ -85,6 +88,8 @@ class _TodoScreenState extends State<TodoScreen> {
 
   List<Todo> _todos = [];
   List<TodoCategory> _categories = [];
+  // "Pessoas", for "@" autocomplete and the tag badges on cards.
+  List<Contact> _contacts = [];
   bool _isLoading = true;
   bool _isAdding = false;
   // UI-only grouping: never touches the stored order. The flag and the
@@ -200,6 +205,7 @@ class _TodoScreenState extends State<TodoScreen> {
         setState(() {
           _todos = [];
           _categories = [];
+          _contacts = [];
           _isLoading = false;
         });
       }
@@ -209,11 +215,13 @@ class _TodoScreenState extends State<TodoScreen> {
       final results = await Future.wait([
         _repo.getTodos(),
         _repo.getCategories(),
+        _repo.getContacts(),
       ]);
       if (mounted) {
         setState(() {
           _todos = results[0] as List<Todo>;
           _categories = results[1] as List<TodoCategory>;
+          _contacts = results[2] as List<Contact>;
           _isLoading = false;
         });
       }
@@ -309,8 +317,9 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Future<void> _deleteTodo(Todo todo) async {
-    // Archive instead of delete: the row is kept in the database.
-    await _repo.archiveTodo(todo.id);
+    // Archive instead of delete: the row is kept in the database. (On a
+    // todo someone else tagged us on, this removes our tag instead.)
+    await _repo.archiveTodo(todo);
   }
 
   void _onReorder(int oldIndex, int newIndex) {
@@ -378,18 +387,23 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Future<void> _editTodo(Todo todo) async {
+    // A pin for today shows up as "@today" in the editor; deleting it
+    // there unpins (see TodoRepository.editTodo).
+    final initial =
+        todo.isToday ? TodoTags.withToday(todo.title) : todo.title;
     final newTitle = await Navigator.push<String>(
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => _EditTodoScreen(initialTitle: todo.title),
+        builder: (_) =>
+            _EditTodoScreen(initialTitle: initial, contacts: _contacts),
       ),
     );
     _screenFocusNode.requestFocus();
     final title = newTitle?.trim();
-    if (title == null || title.isEmpty || title == todo.title) return;
+    if (title == null || title.isEmpty || title == initial) return;
     // The repo change listener reloads the list.
-    await _repo.updateTodoTitle(todo.id, title);
+    await _repo.editTodo(todo, title);
   }
 
   Future<void> _recordVoiceNote() async {
@@ -424,6 +438,38 @@ class _TodoScreenState extends State<TodoScreen> {
     );
     _loadAll();
     _screenFocusNode.requestFocus();
+  }
+
+  /// Pills under a card: the "@today" pin, and who it's shared with: the
+  /// tagged people on our own todos, or who tagged us on theirs. Null when
+  /// there's nothing to show.
+  Widget? _badgesForTodo(Todo todo) {
+    final mine = todo.userId == SupabaseService.currentUser?.id;
+    final badges = <Widget>[
+      if (todo.isToday) const _TodoBadge(icon: Icons.today, label: 'Hoje'),
+      if (mine)
+        for (final c in TodoTags.taggedContacts(todo.title, _contacts))
+          _TodoBadge(
+            icon: Icons.person_outline,
+            label: c.nickname,
+            faded: !c.hasAccount,
+          )
+      else
+        _TodoBadge(
+          icon: Icons.people_outline,
+          label: switch (_contacts
+              .where((c) => c.contactUserId == todo.userId)
+              .firstOrNull) {
+            final c? => 'de ${c.nickname}',
+            null => 'Compartilhada',
+          },
+        ),
+    ];
+    if (badges.isEmpty) return null;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(spacing: 6, runSpacing: 6, children: badges),
+    );
   }
 
   TodoCategory? _categoryForTodo(Todo todo) {
@@ -779,6 +825,11 @@ class _TodoScreenState extends State<TodoScreen> {
             ),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+          child: MentionSuggestions(
+              controller: _textController, contacts: _contacts),
+        ),
         Expanded(
           child: GestureDetector(
             onTap: _saveAndStopAdding,
@@ -818,6 +869,7 @@ class _TodoScreenState extends State<TodoScreen> {
           index: index,
           category: cat,
           hasCategories: _categories.isNotEmpty,
+          footer: _badgesForTodo(todo),
           onToggle: () => _toggleTodo(todo),
           onEdit: () => _editTodo(todo),
           onTitleChanged: (title) => _updateTitle(todo, title),
@@ -1046,6 +1098,7 @@ class _TodoScreenState extends State<TodoScreen> {
       index: 0,
       category: inGroup ? null : _categoryForTodo(todo),
       hasCategories: _categories.isNotEmpty,
+      footer: _badgesForTodo(todo),
       canReorder: false,
       onToggle: () => _toggleTodo(todo),
       onEdit: () => _editTodo(todo),
@@ -1082,6 +1135,9 @@ class _SwipeableTodoItem extends StatelessWidget {
   final int index;
   final TodoCategory? category;
   final bool hasCategories;
+
+  /// Shown under the content (see _badgesForTodo).
+  final Widget? footer;
   final VoidCallback onToggle;
   final VoidCallback onEdit;
   final ValueChanged<String> onTitleChanged;
@@ -1097,6 +1153,7 @@ class _SwipeableTodoItem extends StatelessWidget {
     required this.index,
     required this.category,
     required this.hasCategories,
+    this.footer,
     required this.onToggle,
     required this.onEdit,
     required this.onTitleChanged,
@@ -1197,10 +1254,17 @@ class _SwipeableTodoItem extends StatelessWidget {
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: onEdit,
-                                child: _TodoCardBody(
-                                  card: card,
-                                  completed: todo.isCompleted,
-                                  onChanged: onTitleChanged,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    _TodoCardBody(
+                                      card: card,
+                                      completed: todo.isCompleted,
+                                      onChanged: onTitleChanged,
+                                    ),
+                                    ?footer,
+                                  ],
                                 ),
                               ),
                             ),
@@ -1581,6 +1645,48 @@ class _TodoCardBody extends StatelessWidget {
   }
 }
 
+/// Small pill under a todo card: "Hoje", a tagged person, who shared it.
+class _TodoBadge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  /// For a tagged contact with no account (the tag isn't shared).
+  final bool faded;
+
+  const _TodoBadge({
+    required this.icon,
+    required this.label,
+    this.faded = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = faded ? AppTheme.mediumBrown : AppTheme.primaryOrange;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: faded ? 0.06 : 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: faded ? AppTheme.mediumBrown : AppTheme.darkBrown,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// A place on a "levar" card, colored from its name like a category.
 class _PlacePill extends StatelessWidget {
   final String name;
@@ -1636,7 +1742,13 @@ class _PlacePill extends StatelessWidget {
 class _EditTodoScreen extends StatefulWidget {
   final String initialTitle;
 
-  const _EditTodoScreen({required this.initialTitle});
+  /// For "@" autocomplete in the body.
+  final List<Contact> contacts;
+
+  const _EditTodoScreen({
+    required this.initialTitle,
+    this.contacts = const [],
+  });
 
   @override
   State<_EditTodoScreen> createState() => _EditTodoScreenState();
@@ -1915,6 +2027,8 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
           _buildEventFields(),
         ],
         const SizedBox(height: 8),
+        MentionSuggestions(
+            controller: _controller, contacts: widget.contacts),
         Expanded(
           child: Container(
             width: double.infinity,

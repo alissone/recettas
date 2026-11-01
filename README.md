@@ -135,3 +135,7 @@ values, and `DD/MM/YYYY` date normalization.
 powershell -File scripts/build_chat_web.ps1
 firebase deploy --only hosting
 ```
+
+- The printable A4 todo sheet is `web/print.html` (plain HTML + supabase-js,
+  no Flutter). The web build copies it, so it is served at `/print.html`;
+  it also works opened straight from disk.

@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<!--
+  Printable A4 todo sheet. Standalone: no Flutter, just supabase-js, so it
+  opens instantly and works from file:// too. Every load fetches fresh
+  data straight from Supabase (same project and anon key as the app);
+  sign-in is remembered by supabase-js in localStorage.
+
+  Sections: "Hoje" (todos pinned with @today), the remaining todos,
+  upcoming events, and one box per person tagged with @nickname. The page
+  is always exactly one A4 sheet: whatever doesn't fit is left out, and
+  hiding an item (screen only, never saved) lets the next one in.
+
+  Parsing mirrors lib/models/todo_card.dart and lib/models/todo_tags.dart.
+  It is copied into build/web_chat by `flutter build web`, so it deploys
+  with the web app as /print.html.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Afazeres para imprimir</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --ink: #111;
+    --muted: #555;
+    --faint: #999;
+    --rule: #222;
+    --screen-bg: #e7e5e2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--screen-bg);
+    color: var(--ink);
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+
+  /* --- Screen chrome (never printed) --- */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #fff;
+    border-bottom: 1px solid #d6d3cf;
+    font-size: 14px;
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .who { color: var(--muted); }
+  .btn {
+    border: 1px solid #c9c5c0;
+    background: #fff;
+    border-radius: 8px;
+    padding: 6px 12px;
+  }
+  .btn:hover { background: #f4f2ef; }
+  .btn.primary { background: #111; color: #fff; border-color: #111; }
+  .btn.primary:hover { background: #333; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .hidden-panel {
+    max-width: 210mm;
+    margin: 12px auto 0;
+    padding: 10px 14px;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .hidden-panel ul { margin: 6px 0 0; padding: 0; list-style: none; }
+  .hidden-panel li {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    padding: 3px 0;
+    border-top: 1px solid #eee;
+  }
+  .hidden-panel li span { flex: 1; color: var(--muted); }
+  .link {
+    border: 0;
+    background: none;
+    padding: 0;
+    color: #0b57d0;
+    text-decoration: underline;
+  }
+  .status {
+    max-width: 210mm;
+    margin: 40px auto;
+    text-align: center;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .login {
+    max-width: 340px;
+    margin: 60px auto;
+    padding: 24px;
+    background: #fff;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .login h1 { margin: 0 0 6px; font-size: 20px; }
+  .login input {
+    font: inherit;
+    padding: 9px 10px;
+    border: 1px solid #c9c5c0;
+    border-radius: 8px;
+  }
+  .login .error { color: #b3261e; font-size: 13px; min-height: 1em; }
+
+  /* --- The A4 sheet --- */
+  .sheet-wrap { padding: 16px 0 40px; }
+  .page {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto;
+    padding: 11mm 12mm 9mm;
+    background: #fff;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, .18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 3mm;
+    border-bottom: 1.6pt solid var(--rule);
+    margin-bottom: 4mm;
+  }
+  .page-header h1 {
+    margin: 0;
+    font-size: 24pt;
+    font-weight: 800;
+    letter-spacing: -.5pt;
+    line-height: 1;
+  }
+  .page-header .owner { font-size: 10pt; color: var(--muted); margin-top: 1.5mm; }
+  .page-header .date { text-align: right; line-height: 1.15; }
+  .page-header .weekday {
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 1.2pt;
+    color: var(--muted);
+  }
+  .page-header .day { font-size: 15pt; font-weight: 700; }
+
+  .section-title {
+    display: flex;
+    align-items: baseline;
+    gap: 2mm;
+    margin: 0 0 2mm;
+    font-size: 9pt;
+    font-weight: 800;
+    letter-spacing: 1.4pt;
+    text-transform: uppercase;
+  }
+  .section-title .count { font-weight: 500; letter-spacing: 0; color: var(--faint); }
+
+  .today-box {
+    border: 1.6pt solid var(--rule);
+    border-radius: 2.5mm;
+    padding: 3mm 4mm 2mm;
+    margin-bottom: 5mm;
+    flex: none;
+  }
+  .today-box ul { columns: 2; column-gap: 8mm; }
+  .today-box .item { border-bottom: 0; }
+
+  .cols {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 7mm;
+  }
+  .col { min-height: 0; overflow: hidden; }
+  .col + .col {
+    border-left: .6pt solid #bbb;
+    padding-left: 6mm;
+  }
+
+  ul.items { list-style: none; margin: 0; padding: 0; }
+  .item {
+    position: relative;
+    display: flex;
+    gap: 2.6mm;
+    padding: 1.3mm 0;
+    break-inside: avoid;
+    border-bottom: .4pt solid #ddd;
+    font-size: 10.5pt;
+    line-height: 1.3;
+  }
+  .item:last-child { border-bottom: 0; }
+  .circle {
+    flex: none;
+    width: 4.2mm;
+    height: 4.2mm;
+    margin-top: .5mm;
+    border: 1.2pt solid var(--ink);
+    border-radius: 50%;
+  }
+  .item .text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .item .from {
+    font-size: 8pt;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .item .sub {
+    margin: .6mm 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 8.5pt;
+    color: var(--muted);
+  }
+  .item .sub li { display: flex; gap: 1.5mm; }
+  .item .sub .box {
+    flex: none;
+    width: 2.6mm;
+    height: 2.6mm;
+    margin-top: .6mm;
+    border: .8pt solid var(--muted);
+  }
+  .item .sub .done { text-decoration: line-through; }
+  .tag-today {
+    font-size: 7pt;
+    font-weight: 800;
+    letter-spacing: .8pt;
+    border: .8pt solid var(--ink);
+    border-radius: 1mm;
+    padding: 0 1mm;
+    margin-left: 1mm;
+    vertical-align: 1pt;
+  }
+
+  .event {
+    display: flex;
+    gap: 3mm;
+    padding: 1.6mm 0;
+    border-bottom: .4pt solid #ddd;
+    position: relative;
+    font-size: 10pt;
+    line-height: 1.25;
+  }
+  .event:last-child { border-bottom: 0; }
+  .event .badge {
+    flex: none;
+    width: 11mm;
+    border: 1pt solid var(--ink);
+    border-radius: 1.5mm;
+    text-align: center;
+    line-height: 1;
+    padding: .8mm 0 1mm;
+  }
+  .event .badge .m { font-size: 6.5pt; font-weight: 800; letter-spacing: .6pt; }
+  .event .badge .d { font-size: 13pt; font-weight: 800; }
+  .event .title { font-weight: 700; }
+  .event .when { font-size: 8.5pt; color: var(--muted); }
+  .event .notes { font-size: 8pt; color: var(--muted); margin-top: .4mm; }
+
+  .people {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4mm;
+    margin-top: 5mm;
+    padding-top: 4mm;
+    border-top: 1.6pt solid var(--rule);
+  }
+  .person {
+    border: 1pt dashed var(--ink);
+    border-radius: 2mm;
+    padding: 2.5mm 3mm 1.5mm;
+    min-width: 0;
+  }
+  .person h3 {
+    margin: 0 0 1mm;
+    font-size: 11pt;
+    font-weight: 800;
+  }
+  .person .item { font-size: 9.5pt; }
+
+  .write-in { height: 6.5mm; border-bottom: .5pt solid #bbb; }
+  .empty { font-size: 9pt; color: var(--faint); font-style: italic; padding: 1mm 0; }
+
+  .page-footer {
+    flex: none;
+    margin-top: 3mm;
+    font-size: 7pt;
+    color: var(--faint);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Screen-only bits inside the sheet */
+  .hide-btn {
+    position: absolute;
+    right: -1mm;
+    top: .8mm;
+    border: 0;
+    background: #fff;
+    color: #b3261e;
+    font-size: 12px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    opacity: 0;
+  }
+  .item:hover .hide-btn, .event:hover .hide-btn { opacity: 1; }
+  .hide-btn:hover { background: #fde7e4; }
+  @media (hover: none) { .hide-btn { opacity: .8; } }
+  .more {
+    font-size: 8pt;
+    color: #0b57d0;
+    padding-top: 1mm;
+  }
+
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: none; }
+    .toolbar, .hidden-panel, .no-print { display: none !important; }
+    .sheet-wrap { padding: 0; }
+    .page { box-shadow: none; margin: 0; }
+  }
+  /* Narrow screens: scale the sheet down instead of scrolling sideways. */
+  @media screen and (max-width: 820px) {
+    .sheet-wrap { overflow: hidden; }
+  }
+</style>
+</head>
+<body>
+<div id="app"><p class="status">Carregando…</p></div>
+
+<script>
+'use strict';
+
+const SUPABASE_URL = 'https://jixjuabvprbyupmaqtma.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppeGp1YWJ2cHJieXVwbWFxdG1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NTE1MDgsImV4cCI6MjA5NzIyNzUwOH0.RSCK1BMUSA_6M3THDOVnJQzP9RpcPspCL75R7UcBnbk';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const app = document.getElementById('app');
+
+// --- Parsing (mirrors lib/models/todo_card.dart and todo_tags.dart) ---
+
+// "@" not preceded by a word char (so e-mails don't match), then a handle
+// that doesn't end in "." or "-".
+const MENTION = /(?<![\p{L}\p{N}_@.])@([\p{L}\p{N}_.\-]*[\p{L}\p{N}_])/gu;
+const TODAY_WORDS = new Set(['today', 'hoje']);
+
+const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+                'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const WEEKDAYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+/** Front matter (`---\ntype: event\n...\n---\n`) + body; see TodoCard. */
+function parseCard(text) {
+  const plain = { kind: 'todo', meta: {}, body: text };
+  const normalized = text.replace(/\r\n/g, '\n');
+  if (!normalized.startsWith('---\n')) return plain;
+  const lines = normalized.split('\n');
+  const close = lines.indexOf('---', 1);
+  if (close < 0) return plain;
+  const meta = {};
+  for (const line of lines.slice(1, close)) {
+    const colon = line.indexOf(':');
+    if (colon <= 0) continue;
+    let value = line.slice(colon + 1).trim();
+    if (value.length >= 2 && /^(["']).*\1$/.test(value)) value = value.slice(1, -1);
+    meta[line.slice(0, colon).trim()] = value;
+  }
+  const kind = meta.type;
+  delete meta.type;
+  if (kind !== 'move' && kind !== 'event') return plain;
+  return { kind, meta, body: lines.slice(close + 1).join('\n') };
+}
+
+function handles(text) {
+  const seen = new Set();
+  const out = [];
+  for (const m of text.matchAll(MENTION)) {
+    const h = m[1].toLowerCase();
+    if (TODAY_WORDS.has(h) || seen.has(h)) continue;
+    seen.add(h);
+    out.push(h);
+  }
+  return out;
+}
+
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-` +
+         String(d.getDate()).padStart(2, '0');
+}
+
+function parseDate(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value || '');
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+
+function validTime(value) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value || '');
+  if (!m || +m[1] > 23 || +m[2] > 59) return null;
+  return `${m[1].padStart(2, '0')}:${m[2]}`;
+}
+
+// --- Rendering helpers ---
+
+function esc(s) {
+  return s.replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+}
+
+/** Inline markdown → HTML, with @mentions in bold. `drop` is a set of
+ *  lower-cased handles to remove (the person whose box this is in). */
+function inline(text, drop) {
+  let s = text;
+  if (drop) {
+    s = s.replace(MENTION, (all, h) => drop.has(h.toLowerCase()) ? '' : all)
+         .replace(/\s{2,}/g, ' ').trim();
+  }
+  s = esc(s)
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/__(.+?)__/g, '<b>$1</b>')
+    .replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1<i>$2</i>')
+    .replace(/~~(.+?)~~/g, '<s>$1</s>')
+    .replace(MENTION, '<b>$&</b>');
+  return s;
+}
+
+const CHECK = /^\s*[-*+] \[([ xX])\] ?(.*)$/;
+
+/** A body as one main line plus up to a few sub-lines (checklists keep
+ *  their boxes). */
+function bodyParts(body) {
+  const lines = body.split('\n').map(l => l.trimEnd()).filter(l => l.trim());
+  const subs = lines.map(line => {
+    const c = CHECK.exec(line);
+    if (c) return { box: true, done: c[1] !== ' ', text: c[2] };
+    return { box: false, done: false, text: line.replace(/^\s*(#+\s|[-*+]\s)/, '') };
+  });
+  return subs;
+}
+
+const MAX_SUBS = 4;
+
+function subsHtml(subs, drop) {
+  if (!subs.length) return '';
+  const shown = subs.slice(0, MAX_SUBS);
+  const rest = subs.length - shown.length;
+  return '<ul class="sub">' + shown.map(s =>
+    `<li>${s.box ? '<span class="box"></span>' : '<span>·</span>'}` +
+    `<span class="${s.done ? 'done' : ''}">${inline(s.text, drop)}</span></li>`
+  ).join('') + (rest > 0 ? `<li><span>…mais ${rest}</span></li>` : '') + '</ul>';
+}
+
+// --- State ---
+
+const state = {
+  user: null,
+  ownerName: '',
+  today: [],
+  tasks: [],
+  events: [],
+  people: [],          // [{ key, nickname, items }]
+  byId: new Map(),     // id → item, for the hidden panel
+  hidden: new Set(),   // ids hidden from this print only (never saved)
+  limits: {},          // list key → how many items fit
+  loadedAt: null,
+};
+
+// --- Data ---
+
+async function load() {
+  const uid = state.user.id;
+  const [todosRes, contactsRes, profileRes] = await Promise.all([
+    sb.from('todos')
+      .select('id, user_id, title, sort_order, created_at, assignee_ids, today_on')
+      .eq('is_completed', false)
+      .eq('is_archived', false)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false }),
+    sb.from('contacts').select('nickname, email, contact_user_id').eq('owner_id', uid),
+    sb.from('profiles').select('display_name, email').eq('id', uid).maybeSingle(),
+  ]);
+  for (const res of [todosRes, contactsRes, profileRes]) {
+    if (res.error) throw res.error;
+  }
+
+  const contacts = contactsRes.data;
+  const byNick = new Map(contacts.map(c => [c.nickname.toLowerCase(), c]));
+  const byUser = new Map(contacts.filter(c => c.contact_user_id)
+                                 .map(c => [c.contact_user_id, c]));
+  const todayKey = dateKey(new Date());
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  state.ownerName = profileRes.data?.display_name || state.user.email;
+  state.today = [];
+  state.tasks = [];
+  state.events = [];
+  state.byId = new Map();
+  const people = new Map();
+
+  for (const row of todosRes.data) {
+    const card = parseCard(row.title);
+    const isToday = row.today_on === todayKey;
+    const mine = row.user_id === uid;
+
+    if (card.kind === 'event') {
+      const date = parseDate(card.meta.date);
+      if (date && date < midnight) continue;     // already happened
+      const item = {
+        id: row.id, kind: 'event', card, date,
+        start: validTime(card.meta.start), end: validTime(card.meta.end),
+        label: card.meta.title || bodyParts(card.body)[0]?.text || 'Evento',
+      };
+      state.events.push(item);
+      state.byId.set(row.id, item);
+      continue;
+    }
+
+    let main, subs;
+    if (card.kind === 'move') {
+      main = `Levar: ${card.meta.from || '?'} → ${card.meta.to || '?'}`;
+      subs = bodyParts(card.body);
+    } else {
+      const parts = bodyParts(card.body);
+      main = parts[0]?.text ?? '';
+      subs = parts.slice(1);
+    }
+    const item = {
+      id: row.id, kind: card.kind, main, subs, isToday,
+      from: mine ? null : (byUser.get(row.user_id)?.nickname ?? 'compartilhada'),
+    };
+    state.byId.set(row.id, item);
+
+    // Our own todos tagging someone go to that person's box instead of
+    // our lists (one box per tagged person).
+    const tagged = mine ? handles(row.title).filter(h => byNick.has(h)) : [];
+    if (tagged.length) {
+      for (const h of tagged) {
+        if (!people.has(h)) {
+          people.set(h, { key: 'p:' + h, nickname: byNick.get(h).nickname, items: [] });
+        }
+        people.get(h).items.push(item);
+      }
+    } else if (isToday) {
+      state.today.push(item);
+    } else {
+      state.tasks.push(item);
+    }
+  }
+
+  // "@today" first inside each box, then the list's own order.
+  for (const p of people.values()) {
+    p.items.sort((a, b) => (b.isToday ? 1 : 0) - (a.isToday ? 1 : 0));
+  }
+  state.people = [...people.values()]
+    .sort((a, b) => a.nickname.localeCompare(b.nickname, 'pt-BR'));
+
+  state.events.sort((a, b) => {
+    if (!a.date !== !b.date) return a.date ? -1 : 1;   // undated last
+    if (a.date && b.date && +a.date !== +b.date) return a.date - b.date;
+    return (a.start || '99').localeCompare(b.start || '99');
+  });
+
+  state.loadedAt = new Date();
+}
+
+// --- Views ---
+
+function itemHtml(item, drop) {
+  const main = item.kind === 'move' ? esc(item.main) : inline(item.main, drop);
+  const today = drop && item.isToday ? '<span class="tag-today">HOJE</span>' : '';
+  const from = item.from ? ` <span class="from">· de ${esc(item.from)}</span>` : '';
+  return `<li class="item">
+    <span class="circle"></span>
+    <div class="text">${main}${today}${from}${subsHtml(item.subs, drop)}</div>
+    <button class="hide-btn no-print" data-hide="${item.id}" title="Não imprimir">ocultar</button>
+  </li>`;
+}
+
+function eventWhen(ev) {
+  const parts = [];
+  if (ev.date) {
+    const today = new Date();
+    const midnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const diff = Math.round((ev.date - midnight) / 86400000);
+    parts.push(diff === 0 ? 'Hoje' : diff === 1 ? 'Amanhã'
+      : `${WEEKDAYS[ev.date.getDay()]}, ${ev.date.getDate()} ${MONTHS[ev.date.getMonth()]}`);
+  } else {
+    parts.push('Sem data');
+  }
+  if (ev.start) parts.push(ev.end ? `${ev.start}–${ev.end}` : ev.start);
+  return parts.join(' · ');
+}
+
+function eventHtml(ev) {
+  const badge = ev.date
+    ? `<div class="m">${MONTHS[ev.date.getMonth()].toUpperCase()}</div>
+       <div class="d">${ev.date.getDate()}</div>`
+    : '<div class="d">?</div>';
+  const note = bodyParts(ev.card.body).filter(p => p.text !== ev.label)[0];
+  return `<div class="event">
+    <div class="badge">${badge}</div>
+    <div>
+      <div class="title">${inline(ev.label)}</div>
+      <div class="when">${esc(eventWhen(ev))}</div>
+      ${note ? `<div class="notes">${inline(note.text)}</div>` : ''}
+    </div>
+    <button class="hide-btn no-print" data-hide="${ev.id}" title="Não imprimir">ocultar</button>
+  </div>`;
+}
+
+const visible = list => list.filter(i => !state.hidden.has(i.id));
+
+/** The first `limit` visible items of a list, plus a screen-only note
+ *  for what's left out. */
+function take(key, list) {
+  const items = visible(list);
+  const limit = Math.min(state.limits[key] ?? Infinity, items.length);
+  return { items: items.slice(0, limit), left: items.length - limit };
+}
+
+function moreHtml(left) {
+  return left > 0
+    ? `<div class="more no-print">+${left} não ${left === 1 ? 'coube' : 'couberam'} — oculte algo acima para dar lugar</div>`
+    : '';
+}
+
+function count(key) {
+  if (key === 'today') return take('today', state.today).items.length;
+  if (key === 'tasks') return take('tasks', state.tasks).items.length;
+  if (key === 'events') return take('events', state.events).items.length;
+  const p = state.people.find(p => p.key === key);
+  return p ? take(key, p.items).items.length : 0;
+}
+
+function renderSheet() {
+  const now = new Date();
+  const weekday = now.toLocaleDateString('pt-BR', { weekday: 'long' });
+  const day = now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const today = take('today', state.today);
+  const tasks = take('tasks', state.tasks);
+  const events = take('events', state.events);
+  const people = state.people
+    .map(p => ({ p, ...take(p.key, p.items) }))
+    .filter(x => x.items.length || x.left);
+
+  const todayBody = today.items.length
+    ? `<ul class="items">${today.items.map(i => itemHtml(i)).join('')}</ul>`
+    : '<div class="write-in"></div><div class="write-in"></div>';
+
+  const hiddenCount = state.hidden.size;
+  const hiddenItems = [...state.hidden].map(id => state.byId.get(id)).filter(Boolean);
+
+  app.innerHTML = `
+    <div class="toolbar">
+      <button class="btn primary" id="print">Imprimir</button>
+      <button class="btn" id="reload">Atualizar</button>
+      <button class="btn" id="unhide" ${hiddenCount ? '' : 'disabled'}>
+        Mostrar ocultos${hiddenCount ? ` (${hiddenCount})` : ''}</button>
+      <span class="spacer"></span>
+      <span class="who">${esc(state.user.email)}</span>
+      <button class="btn" id="signout">Sair</button>
+    </div>
+    ${hiddenItems.length ? `<div class="hidden-panel">
+      <b>Ocultos nesta impressão</b> — nada muda no app.
+      <ul>${hiddenItems.map(i => `<li><span>${esc(i.label || i.main)}</span>
+        <button class="link" data-unhide="${i.id}">mostrar</button></li>`).join('')}</ul>
+    </div>` : ''}
+    <div class="sheet-wrap"><div class="page" id="page">
+      <header class="page-header">
+        <div>
+          <h1>Afazeres</h1>
+          <div class="owner">${esc(state.ownerName)}</div>
+        </div>
+        <div class="date">
+          <div class="weekday">${esc(weekday)}</div>
+          <div class="day">${esc(day)}</div>
+        </div>
+      </header>
+
+      <section class="today-box">
+        <h2 class="section-title">Hoje
+          ${today.items.length ? `<span class="count">${today.items.length}</span>` : ''}</h2>
+        ${todayBody}
+        ${moreHtml(today.left)}
+      </section>
+
+      <div class="cols" id="cols">
+        <div class="col" id="colLeft">
+          <h2 class="section-title">Tarefas</h2>
+          ${tasks.items.length
+            ? `<ul class="items">${tasks.items.map(i => itemHtml(i)).join('')}</ul>`
+            : '<div class="empty">Nada pendente.</div>'}
+          ${moreHtml(tasks.left)}
+        </div>
+        <div class="col" id="colRight">
+          <h2 class="section-title">Próximos eventos</h2>
+          ${events.items.length
+            ? events.items.map(eventHtml).join('')
+            : '<div class="empty">Nenhum evento marcado.</div>'}
+          ${moreHtml(events.left)}
+        </div>
+      </div>
+
+      ${people.length ? `<div class="people" id="people">
+        ${people.map(({ p, items, left }) => {
+          const drop = new Set([p.nickname.toLowerCase()]);
+          return `<div class="person">
+            <h3>${esc(p.nickname)}</h3>
+            <ul class="items">${items.map(i => itemHtml(i, drop)).join('')}</ul>
+            ${moreHtml(left)}
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
+      <footer class="page-footer">
+        <span>Atualizado ${state.loadedAt.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+        <span>Recettas</span>
+      </footer>
+    </div></div>`;
+
+  scaleToScreen();
+}
+
+// --- One page, always: trim lists until everything fits ---
+
+const MM = (() => {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;visibility:hidden;width:100mm';
+  document.body.appendChild(probe);
+  const px = probe.getBoundingClientRect().width / 100;
+  probe.remove();
+  return px;
+})();
+
+const overflows = el => el && el.scrollHeight > el.clientHeight + 1;
+
+/** The list to lose its last item next, or null when the page fits. */
+function nextToTrim() {
+  const cols = document.getElementById('cols');
+  const largestPerson = (min) => state.people
+    .map(p => ({ key: p.key, n: count(p.key) }))
+    .filter(x => x.n > min)
+    .sort((a, b) => b.n - a.n)[0]?.key;
+
+  // Today's pins and the person boxes size themselves; the two columns get
+  // what's left, and need at least ~70mm to be worth printing.
+  if (cols.clientHeight < 70 * MM) {
+    return largestPerson(2) ?? (count('today') > 0 ? 'today' : null) ?? largestPerson(0);
+  }
+  if (overflows(document.getElementById('colLeft')) && count('tasks') > 0) return 'tasks';
+  if (overflows(document.getElementById('colRight')) && count('events') > 0) return 'events';
+  return null;
+}
+
+function fit() {
+  state.limits = {};
+  renderSheet();
+  // Each pass drops one item; bounded so a bad layout can't hang the tab.
+  for (let guard = 0; guard < 400; guard++) {
+    const key = nextToTrim();
+    if (!key) break;
+    state.limits[key] = count(key) - 1;
+    renderSheet();
+  }
+}
+
+/** On narrow screens, shrink the preview to the viewport width. */
+function scaleToScreen() {
+  const page = document.getElementById('page');
+  if (!page) return;
+  page.style.transform = '';
+  page.style.transformOrigin = '';
+  const wrap = page.parentElement;
+  wrap.style.height = '';
+  const available = window.innerWidth - 16;
+  const width = page.offsetWidth;
+  if (width > available) {
+    const k = available / width;
+    page.style.transform = `scale(${k})`;
+    page.style.transformOrigin = 'top left';
+    page.style.marginLeft = '8px';
+    wrap.style.height = `${page.offsetHeight * k + 40}px`;
+  } else {
+    page.style.marginLeft = '';
+  }
+}
+
+// --- Events ---
+
+app.addEventListener('click', async (e) => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.hide) {
+    state.hidden.add(t.dataset.hide);
+    fit();
+  } else if (t.dataset.unhide) {
+    state.hidden.delete(t.dataset.unhide);
+    fit();
+  } else if (t.id === 'unhide') {
+    state.hidden.clear();
+    fit();
+  } else if (t.id === 'print') {
+    window.print();
+  } else if (t.id === 'reload') {
+    await refresh();
+  } else if (t.id === 'signout') {
+    await sb.auth.signOut();
+    showLogin();
+  }
+});
+
+window.addEventListener('resize', scaleToScreen);
+// Printing ignores the screen scale; put it back afterwards.
+window.addEventListener('beforeprint', () => {
+  const page = document.getElementById('page');
+  if (page) { page.style.transform = ''; page.style.marginLeft = ''; }
+});
+window.addEventListener('afterprint', scaleToScreen);
+
+async function refresh() {
+  app.querySelector('#reload')?.setAttribute('disabled', '');
+  try {
+    await load();
+    fit();
+  } catch (err) {
+    app.innerHTML = `<p class="status">Erro ao carregar: ${esc(err.message || String(err))}
+      <br><br><button class="btn" onclick="location.reload()">Tentar de novo</button></p>`;
+  }
+}
+
+function showLogin(message = '') {
+  app.innerHTML = `
+    <form class="login" id="login">
+      <h1>Afazeres para imprimir</h1>
+      <input name="email" type="email" placeholder="E-mail" autocomplete="username" required>
+      <input name="password" type="password" placeholder="Senha" autocomplete="current-password" required>
+      <div class="error">${esc(message)}</div>
+      <button class="btn primary" type="submit">Entrar</button>
+    </form>`;
+  app.querySelector('#login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: String(form.get('email')).trim(),
+      password: String(form.get('password')),
+    });
+    if (error) return showLogin(error.message);
+    state.user = data.user;
+    app.innerHTML = '<p class="status">Carregando…</p>';
+    await refresh();
+  });
+}
+
+(async () => {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return showLogin();
+  state.user = data.session.user;
+  await refresh();
+})();
+</script>
+</body>
+</html>

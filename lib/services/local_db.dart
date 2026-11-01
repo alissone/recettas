@@ -6,9 +6,9 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as ffi;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart' as ffi_web;
 
-/// Local SQLite cache. Todos and categories are mirrored here so the UI
-/// reads/writes instantly and offline; pending_ops holds writes that
-/// still need to be pushed to Supabase.
+/// Local SQLite cache. Todos, categories and contacts are mirrored here
+/// so the UI reads/writes instantly and offline; pending_ops holds writes
+/// that still need to be pushed to Supabase.
 class LocalDb {
   LocalDb._();
 
@@ -30,7 +30,7 @@ class LocalDb {
     final dir = await getDatabasesPath();
     _db = await openDatabase(
       p.join(dir, 'recettas_cache.db'),
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE todos (
@@ -42,7 +42,9 @@ class LocalDb {
             sort_order INTEGER NOT NULL DEFAULT 0,
             is_archived INTEGER NOT NULL DEFAULT 0,
             created_at TEXT,
-            completed_at TEXT
+            completed_at TEXT,
+            assignee_ids TEXT NOT NULL DEFAULT '[]',
+            today_on TEXT
           )
         ''');
         await db.execute('''
@@ -66,6 +68,7 @@ class LocalDb {
         await db.execute(_createGpsPointsSql);
         await db.execute(_createGpsPointsIndexSql);
         await db.execute(_createVoiceUploadsSql);
+        await db.execute(_createContactsSql);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -82,6 +85,12 @@ class LocalDb {
         }
         if (oldVersion < 5) {
           await db.execute(_createVoiceUploadsSql);
+        }
+        if (oldVersion < 6) {
+          await db.execute(
+              "ALTER TABLE todos ADD COLUMN assignee_ids TEXT NOT NULL DEFAULT '[]'");
+          await db.execute('ALTER TABLE todos ADD COLUMN today_on TEXT');
+          await db.execute(_createContactsSql);
         }
       },
     );
@@ -122,6 +131,18 @@ class LocalDb {
       file_path TEXT NOT NULL,
       duration_seconds INTEGER NOT NULL,
       recorded_at TEXT NOT NULL
+    )
+  ''';
+
+  /// "Pessoas", needed offline to turn "@nickname" tags into assignees.
+  static const _createContactsSql = '''
+    CREATE TABLE contacts (
+      id TEXT PRIMARY KEY,
+      owner_id TEXT NOT NULL,
+      email TEXT NOT NULL,
+      nickname TEXT NOT NULL,
+      contact_user_id TEXT,
+      created_at TEXT
     )
   ''';
 

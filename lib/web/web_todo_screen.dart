@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../app_theme.dart';
+import '../models/contact.dart';
 import '../models/todo.dart';
 import '../models/todo_card.dart';
 import '../models/todo_category.dart';
+import '../models/todo_tags.dart';
 import '../services/supabase_service.dart';
 import 'web_common.dart';
 
@@ -12,6 +14,7 @@ import 'web_common.dart';
 /// archive and drag to reorder; completed todos are never fetched (one
 /// ticked in this session stays visible, struck through, until reload).
 /// Cards render read-only - editing and categorizing stay in the app.
+/// "@" tags work when adding, as in the app (see [TodoTags]).
 class WebTodoScreen extends StatefulWidget {
   const WebTodoScreen({super.key});
 
@@ -22,6 +25,7 @@ class WebTodoScreen extends StatefulWidget {
 class _WebTodoScreenState extends State<WebTodoScreen> {
   List<Todo> _todos = [];
   Map<String, TodoCategory> _categories = {};
+  List<Contact> _contacts = [];
   bool _isLoading = true;
 
   @override
@@ -35,13 +39,20 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
       final results = await Future.wait([
         SupabaseService.getOpenTodos(),
         SupabaseService.getTodoCategories(),
+        SupabaseService.getContacts(),
       ]);
       if (!mounted) return;
+      final todos = results[0] as List<Todo>;
       setState(() {
-        _todos = results[0] as List<Todo>;
+        // Same as the app: "@today" pins first, then the manual order.
+        _todos = [
+          ...todos.where((t) => t.isToday),
+          ...todos.where((t) => !t.isToday),
+        ];
         _categories = {
           for (final c in results[1] as List<TodoCategory>) c.id: c,
         };
+        _contacts = results[2] as List<Contact>;
         _isLoading = false;
       });
     } catch (e) {
@@ -63,10 +74,19 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
     }
   }
 
-  Future<void> _add(String title) => _write(() async {
-        final todo = await SupabaseService.addTodo(title);
-        // New rows get sort_order 0, which the app also puts on top.
-        if (mounted) setState(() => _todos.insert(0, todo));
+  Future<void> _add(String text) => _write(() async {
+        final title = TodoTags.stripToday(text);
+        if (title.isEmpty) return;
+        final todo = await SupabaseService.addTodo(
+          title,
+          assigneeIds: TodoTags.assigneeIds(title, _contacts),
+          todayOn: TodoTags.hasToday(text) ? TodoTags.todayKey() : null,
+        );
+        // New rows get sort_order 0, which the app also puts on top
+        // (below today's pins, unless it is one).
+        if (!mounted) return;
+        final at = todo.isToday ? 0 : _todos.where((t) => t.isToday).length;
+        setState(() => _todos.insert(at, todo));
       });
 
   Future<void> _toggle(Todo todo) {
@@ -79,9 +99,13 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
         }));
   }
 
-  /// Like the app, "deleting" only archives the row.
+  /// Like the app, "deleting" only archives the row - or, on a todo
+  /// someone else tagged this user on, removes the tag.
   Future<void> _archive(Todo todo) {
     setState(() => _todos.removeWhere((t) => t.id == todo.id));
+    if (todo.userId != SupabaseService.currentUser?.id) {
+      return _write(() => SupabaseService.leaveTodo(todo.id));
+    }
     return _write(
         () => SupabaseService.updateTodo(todo.id, {'is_archived': true}));
   }
@@ -100,6 +124,8 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
         isArchived: old.isArchived,
         createdAt: old.createdAt,
         completedAt: completedAt,
+        assigneeIds: old.assigneeIds,
+        todayOn: old.todayOn,
       );
     });
   }

@@ -6,6 +6,7 @@ import '../models/exercise.dart';
 import '../models/food.dart';
 import '../models/gym_entry.dart';
 import '../models/habit.dart';
+import '../models/contact.dart';
 import '../models/list_invite.dart';
 import '../models/nutrient.dart';
 import '../models/nutrient_recommendation.dart';
@@ -231,12 +232,13 @@ class SupabaseService {
   // offline-first TodoRepository instead; these are for the web build,
   // which has no local SQLite cache.
 
-  /// Open (not completed, not archived) todos in their manual order.
+  /// Open (not completed, not archived) todos in their manual order:
+  /// the user's own plus the ones someone tagged them on (RLS returns
+  /// exactly those). "@today" pins aren't applied here.
   static Future<List<Todo>> getOpenTodos() async {
     final data = await _client
         .from('todos')
         .select()
-        .eq('user_id', currentUser!.id)
         .eq('is_completed', false)
         .eq('is_archived', false)
         .order('sort_order', ascending: true)
@@ -255,10 +257,17 @@ class SupabaseService {
         .toList();
   }
 
-  static Future<Todo> addTodo(String title) async {
+  /// [title] has already had "@today" stripped (see TodoTags).
+  static Future<Todo> addTodo(String title,
+      {List<String> assigneeIds = const [], String? todayOn}) async {
     final data = await _client
         .from('todos')
-        .insert({'user_id': currentUser!.id, 'title': title})
+        .insert({
+          'user_id': currentUser!.id,
+          'title': title,
+          'assignee_ids': assigneeIds,
+          'today_on': todayOn,
+        })
         .select()
         .single();
     return Todo.fromJson(data);
@@ -267,6 +276,11 @@ class SupabaseService {
   static Future<void> updateTodo(
       String id, Map<String, dynamic> fields) async {
     await _client.from('todos').update(fields).eq('id', id);
+  }
+
+  /// Removes the current user's tag from someone else's todo.
+  static Future<void> leaveTodo(String id) async {
+    await _client.rpc('leave_todo', params: {'todo_id': id});
   }
 
   /// Same write as TodoRepository's queued reorder: sort_order = index.
@@ -379,6 +393,38 @@ class SupabaseService {
   }
 
   // Purchase categories ("Importância")
+  // People ("Pessoas"): the nicknames "@" tags on todos resolve against
+  // (see migration 039). The server fills contact_user_id from the email.
+  static Future<List<Contact>> getContacts() async {
+    final data = await _client
+        .from('contacts')
+        .select()
+        .eq('owner_id', currentUser!.id)
+        .order('nickname');
+    return data.map<Contact>((json) => Contact.fromJson(json)).toList();
+  }
+
+  static Future<void> addContact(
+      {required String nickname, required String email}) async {
+    await _client.from('contacts').insert({
+      'owner_id': currentUser!.id,
+      'nickname': nickname.trim(),
+      'email': email.trim().toLowerCase(),
+    });
+  }
+
+  static Future<void> updateContact(String id,
+      {required String nickname, required String email}) async {
+    await _client.from('contacts').update({
+      'nickname': nickname.trim(),
+      'email': email.trim().toLowerCase(),
+    }).eq('id', id);
+  }
+
+  static Future<void> deleteContact(String id) async {
+    await _client.from('contacts').delete().eq('id', id);
+  }
+
   static Future<List<PurchaseCategory>> getPurchaseCategories() async {
     final data = await _client
         .from('purchase_categories')

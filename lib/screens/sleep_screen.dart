@@ -135,7 +135,9 @@ class _SleepScreenState extends State<SleepScreen>
       // Repeated taps of the same button (no opposite event in between)
       // update the last event's time instead of adding a new one, so
       // events always stay a strict sleep/wake/sleep/… alternation.
-      final last = _lastEvent;
+      // Asked from the server: after paging back, the loaded range may
+      // not include the latest event.
+      final last = await SupabaseService.getLastSleepEvent();
       if (last != null && last.eventType == type) {
         await SupabaseService.updateSleepEvent(last.id, occurredAt);
       } else {

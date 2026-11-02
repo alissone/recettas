@@ -235,13 +235,14 @@ class SupabaseService {
   /// Open (not completed, not archived) todos in their manual order:
   /// the user's own plus the ones someone tagged them on (RLS returns
   /// exactly those). "@today" pins aren't applied here. Also returns
-  /// ticked "@daily" todos (loosely matched), which may be due to come
+  /// ticked repeating todos (loosely matched), which may be due to come
   /// back - see TodoDaily.
   static Future<List<Todo>> getOpenTodos() async {
     final data = await _client
         .from('todos')
         .select()
-        .or('is_completed.eq.false,title.like.*daily*')
+        .or('is_completed.eq.false,'
+            'title.like.*daily*,title.like.*monthly*')
         .eq('is_archived', false)
         .order('sort_order', ascending: true)
         .order('created_at', ascending: false);
@@ -573,10 +574,29 @@ class SupabaseService {
     });
   }
 
+  /// The user's most recent sleep event, regardless of what range the
+  /// screen happens to have loaded.
+  static Future<SleepEvent?> getLastSleepEvent() async {
+    final data = await _client
+        .from('sleep_events')
+        .select()
+        .order('occurred_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+    return data == null ? null : SleepEvent.fromJson(data);
+  }
+
   static Future<void> updateSleepEvent(String id, DateTime occurredAt) async {
-    await _client.from('sleep_events').update({
-      'occurred_at': occurredAt.toUtc().toIso8601String(),
-    }).eq('id', id);
+    final rows = await _client
+        .from('sleep_events')
+        .update({'occurred_at': occurredAt.toUtc().toIso8601String()})
+        .eq('id', id)
+        .select('id');
+    // RLS turns a disallowed update into "0 rows" rather than an error;
+    // surface it instead of pretending it worked.
+    if (rows.isEmpty) {
+      throw StateError('evento não atualizado (migração 041 aplicada?)');
+    }
   }
 
   static Future<void> deleteSleepEvent(String id) async {

@@ -5,8 +5,8 @@
   data straight from Supabase (same project and anon key as the app);
   sign-in is remembered by supabase-js in localStorage.
 
-  Sections: "Hoje" (todos pinned with @today, and @daily ones due
-  today), the top todos of each category in CATEGORY_SECTIONS, the
+  Sections: "Hoje" (todos pinned with @today, and @daily/monthly ones
+  due today), the top todos of each category in CATEGORY_SECTIONS, the
   remaining todos, and today's g1 Maranhão headlines filling whatever
   space the events leave (fetched through the `news` Edge Function,
   supabase/functions/news, since the feed has no CORS headers),
@@ -445,6 +445,20 @@ function parseDate(value) {
   return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
 }
 
+// Latest occurrence on or before `today` of a repeating card (see
+// TodoDaily.latestOccurrence): today for a daily one; for a monthly one
+// its day this month or last, a day the month lacks falling on the 1st
+// of the next.
+function latestOccurrence(card, today) {
+  if (card.meta.repeat !== 'monthly') return today;
+  const day = Math.min(31, Math.max(1,
+    parseInt(card.meta.monthday, 10) || parseDate(card.meta.date)?.getDate() || 1));
+  const occ = (y, m) => day <= new Date(y, m + 1, 0).getDate()
+    ? new Date(y, m, day) : new Date(y, m + 1, 1);
+  const here = occ(today.getFullYear(), today.getMonth());
+  return here > today ? occ(today.getFullYear(), today.getMonth() - 1) : here;
+}
+
 function validTime(value) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(value || '');
   if (!m || +m[1] > 23 || +m[2] > 59) return null;
@@ -530,7 +544,7 @@ async function load() {
       .select('id, user_id, title, is_completed, completed_at, category_id, sort_order, ' +
               'created_at, assignee_ids, today_on')
       // Ticked @daily todos too (loose match): they may be due again.
-      .or('is_completed.eq.false,title.like.*daily*')
+      .or('is_completed.eq.false,title.like.*daily*,title.like.*monthly*')
       .eq('is_archived', false)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
@@ -574,18 +588,22 @@ async function load() {
     let isToday = row.today_on === todayKey;
     const mine = row.user_id === uid;
 
-    // @daily (see TodoDaily): once today's start time has passed, an
-    // occurrence from an earlier day counts as today's, open and pinned,
-    // even before the app gets to write that. Otherwise a ticked one is
-    // done for now. A postponed one shows as a normal upcoming event.
-    const daily = card.kind === 'event' && card.meta.repeat === 'daily';
+    // @daily / monthly (see TodoDaily): once a newer occurrence is due
+    // (an earlier day's, or today's from its start time), it counts as
+    // today's, open and pinned, even before the app gets to write that.
+    // Otherwise a ticked one is done for now. A postponed one shows as a
+    // normal upcoming event.
+    const repeat = card.kind === 'event' ? card.meta.repeat : null;
+    const monthly = repeat === 'monthly';
     let dailyTime = null;
-    if (daily) {
+    if (repeat === 'daily' || monthly) {
       const date = parseDate(card.meta.date);
+      const occurrence = latestOccurrence(card, midnight);
       dailyTime = validTime(card.meta.start) || '09:00';
       const [h, m] = dailyTime.split(':').map(Number);
-      const due = now >= new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
-      if (!date || date < midnight) {
+      const due = occurrence < midnight ||
+        now >= new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+      if (!date || date < occurrence) {
         if (due) isToday = true;
         else if (row.is_completed) continue;
       } else if (row.is_completed) {
@@ -624,7 +642,9 @@ async function load() {
     }
     const item = {
       id: row.id, kind: card.kind, main, subs, isToday,
-      repeat: dailyTime ? `todo dia ${dailyTime}` : null,
+      repeat: !dailyTime ? null
+        : monthly ? `todo mês, dia ${card.meta.monthday || parseDate(card.meta.date)?.getDate() || '?'}`
+        : `todo dia ${dailyTime}`,
       catKey: catKeyById.get(row.category_id) ?? null,
       from: mine ? null : (byUser.get(row.user_id)?.nickname ?? 'compartilhada'),
     };

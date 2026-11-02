@@ -83,8 +83,8 @@ class TodoRepository {
   static const _visibleWhere = '(user_id = ? OR assignee_ids LIKE ?) AND '
       'is_archived = 0';
 
-  /// Front matter line of "@daily" todos (see TodoDaily).
-  static const _dailyLike = '%repeat: daily%';
+  /// Front matter line of repeating (daily/monthly) todos (see TodoDaily).
+  static const _dailyLike = '%repeat: %';
 
   Future<List<Todo>> getTodos() async {
     final uid = _userId;
@@ -504,10 +504,10 @@ class TodoRepository {
           .from('todos')
           .select()
           .eq('is_archived', false)
-          // ...except "@daily" ones, which come back (see TodoDaily).
+          // ...except repeating ones, which come back (see TodoDaily).
           // Loose match; getTodos filters precisely.
           .or('is_completed.eq.false,completed_at.gte.$cutoff,'
-              'title.like.*daily*'),
+              'title.like.*daily*,title.like.*monthly*'),
       _client.from('todo_categories').select().order('created_at'),
       _client.from('contacts').select(),
     ]);

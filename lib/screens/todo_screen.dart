@@ -1573,15 +1573,16 @@ class _TodoCardBody extends StatelessWidget {
         ? AppTheme.mediumBrown.withValues(alpha: 0.6)
         : AppTheme.primaryOrange;
 
-    // A daily event's date is just today's occurrence; only a postponed
-    // one is worth showing.
+    // A repeating event's date is just its current occurrence; only a
+    // postponed one is worth showing.
     final when = [
       if (date != null &&
-          (!card.isDaily ||
+          (!card.isRepeating ||
               DateTime(date.year, date.month, date.day).isAfter(
                   DateTime(now.year, now.month, now.day))))
         _eventDateLabel(date),
       if (card.isDaily) 'Todo dia',
+      if (card.isMonthly) 'Todo mês, dia ${card.monthDay}',
       if (start != null)
         end != null
             ? '${TodoCard.formatTime(start)} – ${TodoCard.formatTime(end)}'
@@ -1803,8 +1804,13 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
   DateTime? _date;
   TimeOfDay? _start;
   TimeOfDay? _end;
-  // "@daily": repeats every day until deleted (see TodoDaily).
+  // Repeats every day ("@daily") or every month until deleted (see
+  // TodoDaily).
   bool _daily = false;
+  bool _monthly = false;
+  // The day a monthly event repeats on; follows the date when it's
+  // picked, but not a rollover's date (a 31st rolled into the 1st).
+  int? _monthDay;
   bool _showPreview = false;
 
   @override
@@ -1820,6 +1826,8 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
     _start = card.start;
     _end = card.end;
     _daily = card.isDaily;
+    _monthly = card.isMonthly;
+    _monthDay = card.monthDay;
   }
 
   @override
@@ -1845,6 +1853,10 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
           if (_start != null) 'start': TodoCard.formatTime(_start!),
           if (_end != null) 'end': TodoCard.formatTime(_end!),
           if (_daily) 'repeat': 'daily',
+          if (_monthly) ...{
+            'repeat': 'monthly',
+            'monthday': '${_monthDay ?? _date?.day ?? DateTime.now().day}',
+          },
         };
     }
     return TodoCard(kind: _kind, meta: meta, body: _controller.text);
@@ -1931,7 +1943,11 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
       firstDate: DateTime(now.year - 5),
       lastDate: DateTime(now.year + 10),
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked == null) return;
+    setState(() {
+      _date = picked;
+      _monthDay = picked.day;
+    });
   }
 
   Future<void> _pickTime({required bool end}) async {
@@ -2267,8 +2283,37 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
               side: BorderSide(color: AppTheme.borderOrange),
               onSelected: (v) => setState(() {
                 _daily = v;
+                if (v) _monthly = false;
                 // Comes back at its start time, so give it one.
                 if (v) _start ??= TodoDaily.defaultStart;
+              }),
+            ),
+            FilterChip(
+              avatar: Icon(Icons.event_repeat,
+                  size: 18,
+                  color: _monthly ? Colors.white : AppTheme.primaryOrange),
+              label: Text(_monthly
+                  ? 'Todo mês, dia ${_monthDay ?? _date?.day ?? '?'}'
+                  : 'Todo mês'),
+              selected: _monthly,
+              showCheckmark: false,
+              selectedColor: AppTheme.primaryOrange,
+              labelStyle: TextStyle(
+                color: _monthly ? Colors.white : AppTheme.darkBrown,
+                fontWeight: FontWeight.w600,
+              ),
+              backgroundColor: AppTheme.white,
+              side: BorderSide(color: AppTheme.borderOrange),
+              onSelected: (v) => setState(() {
+                _monthly = v;
+                if (!v) return;
+                _daily = false;
+                // Repeats on the day of its date (pick another date to
+                // change it).
+                final now = DateTime.now();
+                _date ??= DateTime(now.year, now.month, now.day);
+                _monthDay = _date!.day;
+                _start ??= TodoDaily.defaultStart;
               }),
             ),
           ],

@@ -115,6 +115,22 @@ class TodoCard {
   /// TodoDaily). Its `date` is the current occurrence.
   bool get isDaily => kind == TodoKind.event && meta['repeat'] == 'daily';
 
+  /// `repeat: monthly` — comes back every month on day [monthDay] (see
+  /// TodoDaily).
+  bool get isMonthly =>
+      kind == TodoKind.event && meta['repeat'] == 'monthly';
+
+  /// Daily or monthly: rolls over instead of staying done.
+  bool get isRepeating => isDaily || isMonthly;
+
+  /// Day of the month a monthly event repeats on (1–31). Stored apart
+  /// from `date` because a 31st that rolled into the 1st of a short
+  /// month must still come back on the 31st afterwards.
+  int? get monthDay {
+    final day = int.tryParse(meta['monthday'] ?? '') ?? date?.day;
+    return day?.clamp(1, 31);
+  }
+
   static TimeOfDay? parseTime(String? value) {
     final match = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(value ?? '');
     if (match == null) return null;

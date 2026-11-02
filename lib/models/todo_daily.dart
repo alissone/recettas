@@ -4,15 +4,19 @@ import 'todo.dart';
 import 'todo_card.dart';
 import 'todo_tags.dart';
 
-/// "@daily" todos: events with `repeat: daily` that come back every day
-/// until they're deleted.
+/// Repeating todos: events with `repeat: daily` ("@daily") that come back
+/// every day, or `repeat: monthly` that come back every month on day
+/// `monthday`, until they're deleted.
 ///
-/// The card's `date` is the current occurrence. Once a later day reaches
-/// the event's start time (09:00 when none is set), the todo rolls over:
-/// the date moves to today, it's unticked even if it was done, and it's
-/// pinned like "@today" so it sits at the top. Until that time it keeps
-/// yesterday's state — if it was ticked, it stays out of the list, like
-/// any todo completed on an earlier day.
+/// The card's `date` is the current occurrence. Once a newer occurrence's
+/// day reaches the event's start time (09:00 when none is set), the todo
+/// rolls over: the date moves to that occurrence, it's unticked even if it
+/// was done, and it's pinned like "@today" so it sits at the top. Until
+/// then it keeps its previous state — if it was ticked, it stays out of
+/// the list, like any todo completed on an earlier day. A monthly day the
+/// month doesn't have (the 31st in November) falls on the 1st of the next
+/// month; an occurrence missed entirely (app not opened that day) rolls
+/// over as soon as it's seen.
 ///
 /// Nothing runs on the server: whichever client sees the todo first after
 /// the start time writes the rollover (the same fields every time, so two
@@ -56,24 +60,58 @@ class TodoDaily {
 
   static DateTime _midnight(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  /// Its occurrence is from an earlier day (or has no date), so it rolls
-  /// over at today's start time. False for today's or a postponed date.
-  static bool _isBehind(TodoCard card, DateTime now) {
-    final date = card.date;
-    return date == null || _midnight(date).isBefore(_midnight(now));
+  /// A monthly event's occurrence in [year]/[month]: that [day], or the
+  /// 1st of the following month when the month is too short for it.
+  static DateTime monthlyOccurrence(int year, int month, int day) {
+    final length = DateTime(year, month + 1, 0).day;
+    return day <= length
+        ? DateTime(year, month, day)
+        : DateTime(year, month + 1, 1);
   }
 
-  /// The fields that roll [todo] over to today, or null when it isn't a
-  /// daily todo or it isn't time yet.
+  /// The latest occurrence of [card] on or before [now]'s day: today for
+  /// a daily one.
+  static DateTime latestOccurrence(TodoCard card, DateTime now) {
+    final today = _midnight(now);
+    if (!card.isMonthly) return today;
+    final day = card.monthDay ?? 1;
+    final occurrence = monthlyOccurrence(now.year, now.month, day);
+    // Not yet this month: last month's (which may be today's 1st).
+    return occurrence.isAfter(today)
+        ? monthlyOccurrence(now.year, now.month - 1, day)
+        : occurrence;
+  }
+
+  /// A newer occurrence than the card's date (or it has none), so it
+  /// rolls over to [latestOccurrence]. False for the current or a
+  /// postponed date.
+  static bool _isBehind(TodoCard card, DateTime now) {
+    final date = card.date;
+    return date == null ||
+        _midnight(date).isBefore(latestOccurrence(card, now));
+  }
+
+  /// Whether the newer occurrence's time has come: an earlier day's has,
+  /// today's from its start time on.
+  static bool _isDue(TodoCard card, DateTime now) =>
+      latestOccurrence(card, now).isBefore(_midnight(now)) ||
+      !now.isBefore(dueOn(card, now));
+
+  /// The fields that roll [todo] over to its latest occurrence, or null
+  /// when it isn't a repeating todo or it isn't time yet.
   static Map<String, dynamic>? rollover(Todo todo, [DateTime? now]) {
     now ??= DateTime.now();
     final card = TodoCard.parse(todo.title);
-    if (!card.isDaily || !_isBehind(card, now)) return null;
-    if (now.isBefore(dueOn(card, now))) return null;
+    if (!card.isRepeating || !_isBehind(card, now)) return null;
+    if (!_isDue(card, now)) return null;
     return {
       'title': TodoCard(
         kind: card.kind,
-        meta: {...card.meta, 'date': TodoCard.formatDate(now)},
+        meta: {
+          ...card.meta,
+          'date': TodoCard.formatDate(latestOccurrence(card, now)),
+          if (card.isMonthly) 'monthday': '${card.monthDay ?? 1}',
+        },
         body: card.body,
       ).serialize(),
       'is_completed': false,
@@ -89,7 +127,8 @@ class TodoDaily {
     DateTime? next;
     for (final todo in todos) {
       final card = TodoCard.parse(todo.title);
-      if (!card.isDaily || !_isBehind(card, now)) continue;
+      if (!card.isRepeating || !_isBehind(card, now)) continue;
+      if (_isDue(card, now)) continue;
       final due = dueOn(card, now);
       if (due.isAfter(now) && (next == null || due.isBefore(next))) {
         next = due;
@@ -99,8 +138,8 @@ class TodoDaily {
   }
 
   /// Whether [todo] belongs in the list. Ticked todos only stay for the
-  /// day they were ticked on; a daily one ticked yesterday is waiting for
-  /// today's start time (when [rollover] brings it back).
+  /// day they were ticked on; a repeating one ticked earlier is waiting
+  /// for its next occurrence (when [rollover] brings it back).
   static bool isListed(Todo todo, [DateTime? now]) {
     if (!todo.isCompleted) return true;
     final completedAt = todo.completedAt;

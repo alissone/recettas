@@ -82,4 +82,78 @@ void main() {
       expect(TodoDaily.rollover(event, nov1), isNull);
     });
   });
+
+  group('monthly', () {
+    String monthly(String date, int day, {String start = '09:00'}) =>
+        '---\ntype: event\ntitle: Aluguel\ndate: $date\nstart: $start\n'
+        'repeat: monthly\nmonthday: $day\n---\n';
+    DateTime? rolledTo(String title, DateTime now) {
+      final fields = TodoDaily.rollover(_todo(title, done: true), now);
+      return fields == null
+          ? null
+          : TodoCard.parse(fields['title'] as String).date;
+    }
+
+    test('occurrence falls on the 1st when the month is too short', () {
+      expect(TodoDaily.monthlyOccurrence(2026, 11, 31), DateTime(2026, 12, 1));
+      expect(TodoDaily.monthlyOccurrence(2026, 2, 29), DateTime(2026, 3, 1));
+      expect(TodoDaily.monthlyOccurrence(2028, 2, 29), DateTime(2028, 2, 29));
+      expect(TodoDaily.monthlyOccurrence(2026, 12, 15), DateTime(2026, 12, 15));
+    });
+
+    test('stays done until its day, then comes back at its time', () {
+      final title = monthly('2026-10-05', 5);
+      expect(rolledTo(title, DateTime(2026, 11, 4, 23)), isNull);
+      expect(rolledTo(title, DateTime(2026, 11, 5, 8, 59)), isNull);
+      expect(rolledTo(title, DateTime(2026, 11, 5, 9)), DateTime(2026, 11, 5));
+    });
+
+    test('rollover keeps the month day and pins it', () {
+      final fields = TodoDaily.rollover(
+        _todo(monthly('2026-10-05', 5), done: true),
+        DateTime(2026, 11, 5, 10),
+      )!;
+      final card = TodoCard.parse(fields['title'] as String);
+      expect(card.isMonthly, isTrue);
+      expect(card.meta['monthday'], '5');
+      expect(fields['is_completed'], isFalse);
+      expect(fields['today_on'], '2026-11-05');
+    });
+
+    test('a 31st rolls into the 1st of a 30-day month and back', () {
+      final oct = monthly('2026-10-31', 31);
+      expect(rolledTo(oct, DateTime(2026, 11, 30, 12)), isNull);
+      expect(rolledTo(oct, DateTime(2026, 12, 1, 9)), DateTime(2026, 12, 1));
+      // Then the 31st of December, not the 1st of January.
+      final dec1 = monthly('2026-12-01', 31);
+      expect(rolledTo(dec1, DateTime(2026, 12, 30, 12)), isNull);
+      expect(rolledTo(dec1, DateTime(2026, 12, 31, 9)), DateTime(2026, 12, 31));
+    });
+
+    test('a missed occurrence comes back as soon as it is seen', () {
+      final title = monthly('2026-09-05', 5);
+      // Before 09:00 on the 7th: the 5th was already due.
+      expect(rolledTo(title, DateTime(2026, 11, 7, 6)), DateTime(2026, 11, 5));
+    });
+
+    test('monthDay falls back to the date', () {
+      final card = TodoCard.parse(
+        '---\ntype: event\ndate: 2026-11-20\nrepeat: monthly\n---\n',
+      );
+      expect(card.monthDay, 20);
+      expect(card.isRepeating, isTrue);
+    });
+
+    test('nextRollover only counts today\'s pending time', () {
+      final title = monthly('2026-10-05', 5, start: '18:00');
+      expect(
+        TodoDaily.nextRollover([_todo(title)], DateTime(2026, 11, 5, 10)),
+        DateTime(2026, 11, 5, 18),
+      );
+      expect(
+        TodoDaily.nextRollover([_todo(title)], DateTime(2026, 11, 4, 10)),
+        isNull,
+      );
+    });
+  });
 }

@@ -138,4 +138,6 @@ firebase deploy --only hosting
 
 - The printable A4 todo sheet is `web/print.html` (plain HTML + supabase-js,
   no Flutter). The web build copies it, so it is served at `/print.html`;
-  it also works opened straight from disk.
+  it also works opened straight from disk. Its "Notícias" come through the
+  `news` Edge Function (the g1 feed has no CORS headers); deploy it once
+  with `supabase functions deploy news --project-ref jixjuabvprbyupmaqtma`.

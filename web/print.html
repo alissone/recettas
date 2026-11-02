@@ -7,7 +7,9 @@
 
   Sections: "Hoje" (todos pinned with @today, and @daily ones due
   today), the top todos of each category in CATEGORY_SECTIONS, the
-  remaining todos,
+  remaining todos, and today's g1 Maranhão headlines filling whatever
+  space the events leave (fetched through the `news` Edge Function,
+  supabase/functions/news, since the feed has no CORS headers),
   upcoming events, and one box per person tagged with @nickname. The page
   is always exactly one A4 sheet: whatever doesn't fit is left out, and
   hiding an item (screen only, never saved) lets the next one in.
@@ -183,6 +185,27 @@
   .today-box ul { columns: 2; column-gap: 8mm; }
   .today-box .item { border-bottom: 0; }
   .category { margin-bottom: 4mm; }
+
+  .news-section { margin-top: 5mm; }
+  .news {
+    position: relative;
+    padding: 1.6mm 0;
+    border-bottom: .4pt solid #ddd;
+    line-height: 1.25;
+  }
+  .news:last-child { border-bottom: 0; }
+  .news .title { font-size: 9.5pt; font-weight: 700; }
+  .news .summary {
+    font-size: 8pt;
+    color: var(--muted);
+    margin-top: .5mm;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .news .when { font-size: 7pt; color: var(--faint); margin-top: .5mm; }
+  .news:hover .hide-btn { opacity: 1; }
 
   .cols {
     flex: 1;
@@ -361,6 +384,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const CATEGORY_SECTIONS = ['MVC', 'Tether', 'Levar', 'Casa'];
 const PER_CATEGORY = 5;
 
+// Today's headlines are shuffled and as many as fit fill the bottom of
+// the right column; at most this many are considered.
+const MAX_NEWS = 8;
+
 const app = document.getElementById('app');
 
 // --- Parsing (mirrors lib/models/todo_card.dart and todo_tags.dart) ---
@@ -486,6 +513,7 @@ const state = {
   tasks: [],           // everything for the left column; see splitTasks()
   categories: [],      // CATEGORY_SECTIONS found: [{ key, name }]
   events: [],
+  news: [],            // today's headlines, shuffled once per load
   people: [],          // [{ key, nickname, items }]
   byId: new Map(),     // id → item, for the hidden panel
   hidden: new Set(),   // ids hidden from this print only (never saved)
@@ -632,7 +660,42 @@ async function load() {
     return (a.start || '99').localeCompare(b.start || '99');
   });
 
+  state.news = await loadNews();
   state.loadedAt = new Date();
+}
+
+/** Today's items from the g1 feed, shuffled. Never throws: without news
+ *  the sheet just has no "Notícias" section. */
+async function loadNews() {
+  try {
+    const { data, error } = await sb.functions.invoke('news');
+    if (error) throw error;
+    const xml = new DOMParser().parseFromString(String(data), 'application/xml');
+    const todayKey = dateKey(new Date());
+    const items = [];
+    for (const el of xml.getElementsByTagName('item')) {
+      const text = tag => el.getElementsByTagName(tag)[0]?.textContent.trim() ?? '';
+      const date = new Date(text('pubDate'));
+      if (isNaN(date) || dateKey(date) !== todayKey) continue;
+      items.push({
+        id: 'n:' + (text('guid') || text('link')),
+        kind: 'news',
+        label: text('title'),
+        summary: text('atom:subtitle'),
+        time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      });
+    }
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    const news = items.slice(0, MAX_NEWS);
+    for (const n of news) state.byId.set(n.id, n);
+    return news;
+  } catch (err) {
+    console.warn('Notícias indisponíveis:', err);
+    return [];
+  }
 }
 
 // --- Views ---
@@ -681,6 +744,15 @@ function eventHtml(ev) {
   </div>`;
 }
 
+function newsHtml(n) {
+  return `<div class="news">
+    <div class="title">${esc(n.label)}</div>
+    ${n.summary ? `<div class="summary">${esc(n.summary)}</div>` : ''}
+    <div class="when">g1 Maranhão · ${esc(n.time)}</div>
+    <button class="hide-btn no-print" data-hide="${esc(n.id)}" title="Não imprimir">ocultar</button>
+  </div>`;
+}
+
 const visible = list => list.filter(i => !state.hidden.has(i.id));
 
 /** The first `limit` visible items of a list, plus a screen-only note
@@ -716,6 +788,7 @@ function count(key) {
   if (key === 'today') return take('today', state.today).items.length;
   if (key === 'tasks') return take('tasks', splitTasks().rest).items.length;
   if (key === 'events') return take('events', state.events).items.length;
+  if (key === 'news') return take('news', state.news).items.length;
   if (key.startsWith('c:')) return take(key, splitTasks().byCat.get(key) ?? []).items.length;
   const p = state.people.find(p => p.key === key);
   return p ? take(key, p.items).items.length : 0;
@@ -733,6 +806,7 @@ function renderSheet() {
     .map(c => ({ c, ...take(c.key, split.byCat.get(c.key)) }))
     .filter(x => x.items.length || x.left);
   const events = take('events', state.events);
+  const news = take('news', state.news);
   const people = state.people
     .map(p => ({ p, ...take(p.key, p.items) }))
     .filter(x => x.items.length || x.left);
@@ -797,6 +871,10 @@ function renderSheet() {
             ? events.items.map(eventHtml).join('')
             : '<div class="empty">Nenhum evento marcado.</div>'}
           ${moreHtml(events.left)}
+          ${news.items.length ? `<section class="news-section">
+            <h2 class="section-title">Notícias</h2>
+            ${news.items.map(newsHtml).join('')}
+          </section>` : ''}
         </div>
       </div>
 
@@ -856,7 +934,11 @@ function nextToTrim() {
     const victim = cats.find(x => x.n > 1) ?? cats.find(x => x.n > 0);
     if (victim) return victim.key;
   }
-  if (overflows(document.getElementById('colRight')) && count('events') > 0) return 'events';
+  if (overflows(document.getElementById('colRight'))) {
+    // News only fills leftover space, so it goes before any event does.
+    if (count('news') > 0) return 'news';
+    if (count('events') > 0) return 'events';
+  }
   return null;
 }
 

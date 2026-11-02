@@ -496,21 +496,24 @@ class TodoRepository {
     final uid = _userId;
     if (uid == null) return;
 
-    // Completed-and-old todos are neither shown nor needed locally, so skip
-    // pulling them down at all rather than fetching and then filtering.
+    // Archived (deleted) todos and completed-and-old ones are neither shown
+    // nor needed locally, so skip pulling them down at all rather than
+    // fetching and then filtering. Archived rows only ever grow, so this
+    // keeps the pull proportional to the live list.
     final cutoff = _startOfTodayUtc().toIso8601String();
-    final todosData = await _client
-        .from('todos')
-        .select()
-        // ...except "@daily" ones, which come back (see TodoDaily).
-        // Loose match; getTodos filters precisely.
-        .or('is_completed.eq.false,completed_at.gte.$cutoff,'
-            'title.like.*daily*')
-        .order('sort_order', ascending: true)
-        .order('created_at', ascending: false);
-    final catsData =
-        await _client.from('todo_categories').select().order('created_at');
-    final contactsData = await _client.from('contacts').select();
+    final results = await Future.wait([
+      _client
+          .from('todos')
+          .select()
+          .eq('is_archived', false)
+          // ...except "@daily" ones, which come back (see TodoDaily).
+          // Loose match; getTodos filters precisely.
+          .or('is_completed.eq.false,completed_at.gte.$cutoff,'
+              'title.like.*daily*'),
+      _client.from('todo_categories').select().order('created_at'),
+      _client.from('contacts').select(),
+    ]);
+    final [todosData, catsData, contactsData] = results;
 
     final db = await LocalDb.instance;
     // New local writes may have arrived while we were fetching; applying

@@ -1587,9 +1587,20 @@ class _TodoCardBody extends StatelessWidget {
             ? '${TodoCard.formatTime(start)} – ${TodoCard.formatTime(end)}'
             : TodoCard.formatTime(start),
     ].join(' · ');
-    final title = card.eventTitle.isNotEmpty
-        ? card.eventTitle
-        : 'Evento sem título';
+    // Untitled event: the first line of the content becomes the title and
+    // the remaining lines stay as the content.
+    var title = card.eventTitle;
+    var body = card.body.trim();
+    if (title.isEmpty) {
+      final lines = body.split('\n');
+      final firstIdx = lines.indexWhere((l) => l.trim().isNotEmpty);
+      if (firstIdx == -1) {
+        title = 'Evento sem título';
+      } else {
+        title = lines[firstIdx].trim();
+        body = lines.sublist(firstIdx + 1).join('\n').trim();
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1648,13 +1659,13 @@ class _TodoCardBody extends StatelessWidget {
             ),
           ],
         ),
-        if (card.body.trim().isNotEmpty) ...[
+        if (body.isNotEmpty) ...[
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: _eventBodyIndent),
             child: _markdown(
               context,
-              card.body.trim(),
+              body,
               _baseStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
             ),
           ),

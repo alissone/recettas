@@ -476,10 +476,8 @@ class TodoRepository {
       case 'todo_leave':
         await _client.rpc('leave_todo', params: {'todo_id': p['id']});
       case 'todo_reorder':
-        final ids = (p['ids'] as List).cast<String>();
-        await Future.wait(ids.asMap().entries.map((e) => _client
-            .from('todos')
-            .update({'sort_order': e.key}).eq('id', e.value)));
+        // One call for the whole list (migration 040).
+        await _client.rpc('reorder_todos', params: {'ids': p['ids']});
       case 'cat_insert':
         await _client.from('todo_categories').insert(p);
       case 'cat_update':

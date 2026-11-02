@@ -285,11 +285,10 @@ class SupabaseService {
     await _client.rpc('leave_todo', params: {'todo_id': id});
   }
 
-  /// Same write as TodoRepository's queued reorder: sort_order = index.
+  /// Same write as TodoRepository's queued reorder: sort_order = index,
+  /// in one call (migration 040).
   static Future<void> reorderTodos(List<String> ids) async {
-    await Future.wait(ids.asMap().entries.map((e) => _client
-        .from('todos')
-        .update({'sort_order': e.key}).eq('id', e.value)));
+    await _client.rpc('reorder_todos', params: {'ids': ids});
   }
 
   // Shopping list ("Compras": reminders of stuff to buy)

@@ -217,10 +217,64 @@ def clip(s, width):
     return s if len(s) <= width else s[: max(width - 1, 0)] + "…"
 
 
+def parse_card(title):
+    """Split a stored title into (kind, meta, body_lines). Non-plain cards
+    (event/move) keep YAML-style front matter at the top, same as the app's
+    TodoCard.parse; plain todos come back as ("todo", {}, all lines)."""
+    lines = title.replace("\r", "").replace("\t", "    ").split("\n")
+    if lines[0] == "---" and "---" in lines[1:]:
+        close = lines.index("---", 1)
+        meta = {}
+        for line in lines[1:close]:
+            key, sep, value = line.partition(":")
+            if sep and key.strip():
+                meta[key.strip()] = value.strip().strip("\"'")
+        kind = meta.pop("type", None)
+        if kind in ("event", "move"):
+            return kind, meta, lines[close + 1:]
+    return "todo", {}, lines
+
+
+def event_when(meta):
+    """["November 2 10:00 - 14:00 (Repeats daily)"] from an event's metadata,
+    or [] when it has none of date/time/repeat."""
+    parts = []
+    try:
+        d = datetime.strptime(meta.get("date", ""), "%Y-%m-%d")
+        parts.append(f"{d.strftime('%B')} {d.day}")
+    except ValueError:
+        pass
+    start, end = meta.get("start"), meta.get("end")
+    if start and end:
+        parts.append(f"{start} - {end}")
+    elif start or end:
+        parts.append(start or end)
+    text = " ".join(parts)
+    if meta.get("repeat") == "daily":
+        text = f"{text} (Repeats daily)".strip()
+    return [text] if text else []
+
+
+def card_lines(title):
+    """Lines to preview for a task: events show their title, then the content."""
+    kind, meta, body = parse_card(title)
+    if kind == "event":
+        return ([meta["title"]] if meta.get("title") else []) + event_when(meta) + body
+    if kind == "move":
+        return [f"{meta.get('from') or '?'} → {meta.get('to') or '?'}"] + body
+    return body
+
+
 def one_line(title):
-    """Single-line preview of a raw title; the raw text itself is untouched."""
-    first, *rest = title.replace("\r", "").replace("\t", "    ").split("\n")
-    return first + (f" {NEWLINE_GLYPH}…" if rest else "")
+    """Single-line preview of a task; the stored text itself is untouched."""
+    kind, meta, body = parse_card(title)
+    if kind == "todo":
+        first, *rest = body
+        return first + (f" {NEWLINE_GLYPH}…" if rest else "")
+    lines = [l for l in card_lines(title) if l.strip()]
+    if kind == "event":  # row: title + first content line (skip the date line)
+        lines = [l for l in ([meta.get("title", "")] + body) if l.strip()]
+    return " — ".join(lines[:2]) + (f" {NEWLINE_GLYPH}…" if len(lines) > 2 else "")
 
 
 def prompt_line(label, text="", mask=False, hint="Enter confirm · Esc cancel", on_change=None):
@@ -385,7 +439,7 @@ class App:
         cat = self.cat_name(self.todos[self.sel]) if self.todos else None
         label = f" {cat} " if cat else ""
         lines.append(DIM + "─" * 2 + label + "─" * max(cols - 2 - len(label), 0) + RESET)
-        raw = self.todos[self.sel]["title"].replace("\r", "").replace("\t", "    ").split("\n") if self.todos else []
+        raw = card_lines(self.todos[self.sel]["title"]) if self.todos else []
         for i in range(detail_h):
             if i < len(raw):
                 more = i == detail_h - 1 and len(raw) > detail_h

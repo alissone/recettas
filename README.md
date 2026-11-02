@@ -127,6 +127,15 @@ values, and `DD/MM/YYYY` date normalization.
   name, so re-running a report updates the same row instead of duplicating
   it. Run with `-h` for usage.
 
+- `scripts/receitas/` — backs the `/receitas` Claude Code command
+  (`~/.claude/commands/receitas.md`). `fetch_pantry.py` reads the latest
+  day of `pantry_items` (filled by "Guardar o que há na cozinha" in Notas
+  de voz, migration 042) with the transcriber's service role key;
+  Claude writes three recipes and 2–3 juice ideas from it as
+  `receitas.json`, and `render.py`
+  validates that and prints an A4 sheet (HTML + PDF via headless Chrome)
+  in the style of `web/print.html` into `receitas_impressas/<date>/`.
+
 ## Deploying
 
 - Deploying the web app

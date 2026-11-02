@@ -1,6 +1,7 @@
 enum VoiceNoteStatus { queued, processing, done, error }
 
-/// State of a Claude task on a note (summary, shopping list, expenses),
+/// State of a Claude task on a note (summary, shopping list, expenses,
+/// pantry),
 /// each in its own `*_status` column.
 enum VoiceTaskStatus { requested, processing, done, error }
 
@@ -8,7 +9,8 @@ enum VoiceTaskStatus { requested, processing, done, error }
 enum VoiceTask {
   summary('summary_status'),
   shopping('shopping_status'),
-  expenses('expenses_status');
+  expenses('expenses_status'),
+  pantry('pantry_status');
 
   final String statusColumn;
   const VoiceTask(this.statusColumn);
@@ -43,6 +45,18 @@ class VoiceExpense {
   }
 }
 
+/// An ingredient the worker saved from a "what's in the kitchen" note
+/// (also a row in pantry_items).
+class PantryEntry {
+  final String nome;
+  final String? quantidade;
+
+  PantryEntry({required this.nome, this.quantidade});
+
+  factory PantryEntry.fromJson(Map<String, dynamic> json) =>
+      PantryEntry(nome: json['nome'] ?? '', quantidade: json['quantidade']);
+}
+
 /// A voice note on the server, transcribed by the local WhisperX worker
 /// (transcriber/worker.py).
 class VoiceNote {
@@ -58,6 +72,8 @@ class VoiceNote {
   final VoiceTaskStatus? shoppingStatus;
   final List<VoiceExpense> expenses;
   final VoiceTaskStatus? expensesStatus;
+  final List<PantryEntry> pantry;
+  final VoiceTaskStatus? pantryStatus;
   final DateTime recordedAt;
 
   VoiceNote({
@@ -73,6 +89,8 @@ class VoiceNote {
     this.shoppingStatus,
     this.expenses = const [],
     this.expensesStatus,
+    this.pantry = const [],
+    this.pantryStatus,
     required this.recordedAt,
   });
 
@@ -96,6 +114,11 @@ class VoiceNote {
           VoiceExpense.fromJson(Map<String, dynamic>.from(e)),
       ],
       expensesStatus: _taskStatus(json['expenses_status']),
+      pantry: [
+        for (final e in (json['pantry'] as List?) ?? const [])
+          PantryEntry.fromJson(Map<String, dynamic>.from(e)),
+      ],
+      pantryStatus: _taskStatus(json['pantry_status']),
       recordedAt: DateTime.parse(json['recorded_at']),
     );
   }
@@ -111,6 +134,7 @@ class VoiceNote {
         VoiceTask.summary => summaryStatus,
         VoiceTask.shopping => shoppingStatus,
         VoiceTask.expenses => expensesStatus,
+        VoiceTask.pantry => pantryStatus,
       };
 
   /// Summary lines ("- item" / "- [ ] item") as plain todo titles.

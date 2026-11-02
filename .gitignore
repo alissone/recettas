@@ -46,3 +46,6 @@ app.*.map.json
 
 # Firmware credentials (Wi-Fi password, API token)
 firmware/**/secrets.h
+
+# /receitas output (scripts/receitas)
+/receitas_impressas/

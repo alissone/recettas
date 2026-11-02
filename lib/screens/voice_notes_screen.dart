@@ -15,7 +15,8 @@ import '../utils/dates.dart';
 /// Voice notes queue: recordings still on the phone, notes waiting for
 /// the WhisperX worker, and finished transcripts that can be copied,
 /// shared, turned into todos, or handed to Claude (summary -> todos,
-/// shopping list -> Compras, spoken purchases -> Gastos).
+/// shopping list -> Compras, spoken purchases -> Gastos, ingredients at
+/// home -> pantry_items, which the /receitas Claude command cooks from).
 class VoiceNotesScreen extends StatefulWidget {
   const VoiceNotesScreen({super.key});
 
@@ -426,6 +427,8 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
         'O que comprar, para adicionar em Compras'),
     VoiceTask.expenses: (Icons.receipt_long_outlined, 'Lançar em Gastos',
         'Compras ditas com valor são lançadas direto'),
+    VoiceTask.pantry: (Icons.kitchen_outlined, 'Guardar o que há na cozinha',
+        'Ingredientes do dia, para as receitas'),
   };
 
   /// One task row plus, when done, its result right below it.
@@ -503,6 +506,7 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
                 onAdd: () => _addShoppingItems(note),
               ),
             VoiceTask.expenses => _expensesResult(note),
+            VoiceTask.pantry => _pantryResult(note),
           },
       ],
     );
@@ -621,6 +625,30 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
       Text(
         '${expenses.length} ${expenses.length == 1 ? 'gasto lançado' : 'gastos lançados'}'
         ' em Gastos • total ${formatBrl(total)}',
+        style: AppTheme.caption.copyWith(color: Colors.green.shade700),
+      ),
+    ]);
+  }
+
+  Widget _pantryResult(VoiceNote note) {
+    final items = note.pantry;
+    if (items.isEmpty) {
+      return _resultBox([
+        const Text('Nenhum ingrediente encontrado na nota.',
+            style: AppTheme.bodyText),
+      ]);
+    }
+    return _resultBox([
+      for (final e in items)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(
+              '•  ${e.nome}${e.quantidade == null ? '' : ' (${e.quantidade})'}',
+              style: AppTheme.bodyText),
+        ),
+      Text(
+        '${items.length} ${items.length == 1 ? 'ingrediente guardado' : 'ingredientes guardados'}'
+        ' para ${formatDayMonth(note.recordedAt.toLocal())}',
         style: AppTheme.caption.copyWith(color: Colors.green.shade700),
       ),
     ]);

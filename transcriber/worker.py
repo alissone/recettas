@@ -10,8 +10,10 @@ For each queued note: download the audio from the "voice-notes" bucket,
 run WhisperX (transcribe_one.bat), write the transcript to the row and
 delete the audio. Claude tasks are requested by setting a status column
 to 'requested': summary_status (action-item bullets -> summary),
-shopping_status (things to buy -> shopping) and expenses_status (spoken
-purchases -> rows in purchases, echoed in expenses).
+shopping_status (things to buy -> shopping), expenses_status (spoken
+purchases -> rows in purchases, echoed in expenses) and pantry_status
+(ingredients at home -> rows in pantry_items, echoed in pantry; read by
+the /receitas Claude command, see scripts/receitas).
 """
 import asyncio
 import json
@@ -59,6 +61,27 @@ EXPENSES_SCHEMA = {
                     "categoria": {"type": ["string", "null"]},
                 },
                 "required": ["item", "valor", "local", "data", "categoria"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["itens"],
+    "additionalProperties": False,
+}
+PANTRY_PROMPT = (SCRIPT_DIR / "pantry_prompt.md").read_text(encoding="utf-8")
+# Structured output for "Guardar o que há na cozinha" (see pantry_prompt.md).
+PANTRY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "itens": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "nome": {"type": "string"},
+                    "quantidade": {"type": ["string", "null"]},
+                },
+                "required": ["nome", "quantidade"],
                 "additionalProperties": False,
             },
         },
@@ -288,11 +311,40 @@ async def expenses_work(sb: AsyncClient, client: anthropic.Anthropic, note: dict
     return {"expenses": items}
 
 
+async def pantry_work(sb: AsyncClient, client: anthropic.Anthropic, note: dict) -> dict:
+    """Save the ingredients said in the note as that day's pantry."""
+    note_id = note["id"]
+    recorded = datetime.fromisoformat(note["recorded_at"]).astimezone().date()
+    text = await asyncio.to_thread(
+        ask_claude, client, PANTRY_PROMPT, transcript_message(note), "low", PANTRY_SCHEMA)
+    items, seen = [], set()
+    for it in json.loads(text)["itens"]:
+        name = (it.get("nome") or "").strip()
+        if not name or name.casefold() in seen:
+            continue
+        seen.add(name.casefold())
+        items.append({"nome": name, "quantidade": (it.get("quantidade") or "").strip() or None})
+    if not await still_claimed(sb, note_id, "pantry_status"):
+        raise TaskCancelled
+    # Replace what an earlier run for this note saved ("Refazer").
+    await sb.table("pantry_items").delete().eq("voice_note_id", note_id).execute()
+    if items:
+        await sb.table("pantry_items").insert([{
+            "user_id": note["user_id"],
+            "voice_note_id": note_id,
+            "name": it["nome"],
+            "quantity": it["quantidade"],
+            "seen_on": recorded.isoformat(),
+        } for it in items]).execute()
+    return {"pantry": items}
+
+
 # status column -> (log label, work)
 TASKS = {
     "summary_status": ("Resumindo", summary_work),
     "shopping_status": ("Lista de compras de", shopping_work),
     "expenses_status": ("Lançando gastos de", expenses_work),
+    "pantry_status": ("Guardando a cozinha de", pantry_work),
 }
 
 

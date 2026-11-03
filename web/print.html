@@ -527,6 +527,7 @@ const state = {
   tasks: [],           // everything for the left column; see splitTasks()
   categories: [],      // CATEGORY_SECTIONS found: [{ key, name }]
   events: [],
+  overdue: [],         // today's events whose start time already passed
   news: [],            // today's headlines, shuffled once per load
   people: [],          // [{ key, nickname, items }]
   byId: new Map(),     // id → item, for the hidden panel
@@ -580,6 +581,7 @@ async function load() {
   state.today = [];
   state.tasks = [];
   state.events = [];
+  state.overdue = [];
   state.byId = new Map();
   const people = new Map();
 
@@ -622,7 +624,12 @@ async function load() {
         start: validTime(card.meta.start), end: validTime(card.meta.end),
         label: card.meta.title || bodyParts(card.body)[0]?.text || 'Evento',
       };
-      state.events.push(item);
+      // Today's events whose start time already went by are "atrasados".
+      const startsAt = item.start && date && +date === +midnight
+        ? new Date(date.getFullYear(), date.getMonth(), date.getDate(),
+                   ...item.start.split(':').map(Number))
+        : null;
+      (startsAt && startsAt < now ? state.overdue : state.events).push(item);
       state.byId.set(row.id, item);
       continue;
     }
@@ -674,11 +681,13 @@ async function load() {
   state.people = [...people.values()]
     .sort((a, b) => a.nickname.localeCompare(b.nickname, 'pt-BR'));
 
-  state.events.sort((a, b) => {
+  const byStart = (a, b) => {
     if (!a.date !== !b.date) return a.date ? -1 : 1;   // undated last
     if (a.date && b.date && +a.date !== +b.date) return a.date - b.date;
     return (a.start || '99').localeCompare(b.start || '99');
-  });
+  };
+  state.events.sort(byStart);
+  state.overdue.sort(byStart);
 
   state.news = await loadNews();
   state.loadedAt = new Date();
@@ -808,6 +817,7 @@ function count(key) {
   if (key === 'today') return take('today', state.today).items.length;
   if (key === 'tasks') return take('tasks', splitTasks().rest).items.length;
   if (key === 'events') return take('events', state.events).items.length;
+  if (key === 'overdue') return take('overdue', state.overdue).items.length;
   if (key === 'news') return take('news', state.news).items.length;
   if (key.startsWith('c:')) return take(key, splitTasks().byCat.get(key) ?? []).items.length;
   const p = state.people.find(p => p.key === key);
@@ -826,6 +836,7 @@ function renderSheet() {
     .map(c => ({ c, ...take(c.key, split.byCat.get(c.key)) }))
     .filter(x => x.items.length || x.left);
   const events = take('events', state.events);
+  const overdue = take('overdue', state.overdue);
   const news = take('news', state.news);
   const people = state.people
     .map(p => ({ p, ...take(p.key, p.items) }))
@@ -886,6 +897,11 @@ function renderSheet() {
           ${moreHtml(tasks.left)}
         </div>
         <div class="col" id="colRight">
+          ${overdue.items.length || overdue.left ? `<section class="category">
+            <h2 class="section-title">Eventos atrasados</h2>
+            ${overdue.items.map(eventHtml).join('')}
+            ${moreHtml(overdue.left)}
+          </section>` : ''}
           <h2 class="section-title">Próximos eventos</h2>
           ${events.items.length
             ? events.items.map(eventHtml).join('')
@@ -957,6 +973,7 @@ function nextToTrim() {
   if (overflows(document.getElementById('colRight'))) {
     // News only fills leftover space, so it goes before any event does.
     if (count('news') > 0) return 'news';
+    if (count('overdue') > 0) return 'overdue';
     if (count('events') > 0) return 'events';
   }
   return null;

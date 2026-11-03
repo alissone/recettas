@@ -21,12 +21,16 @@ from __future__ import annotations
 import json
 import os
 import queue
+import re
+import shutil
+import subprocess
 import sys
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -268,6 +272,100 @@ def one_line(title):
     return " — ".join(lines[:2]) + (f" {NEWLINE_GLYPH}…" if len(lines) > 2 else "")
 
 
+_URL = re.compile(r"(?:https?://|www\.)[^\s<>()\[\]\"'`]+", re.IGNORECASE)
+
+
+def find_links(title):
+    """Unique URLs in a task, in order. Handles bare links and markdown
+    [text](url); trailing punctuation from the sentence is dropped."""
+    seen = []
+    for m in _URL.finditer(title):
+        url = m.group(0).rstrip(".,;:!?*_~")
+        if url.lower().startswith("www."):
+            url = "https://" + url
+        if url not in seen:
+            seen.append(url)
+    return seen
+
+
+# --- Clipboard (native; OSC 52 doesn't work in conhost or macOS Terminal) ----
+
+
+def clipboard_copy(text: str) -> bool:
+    try:
+        if sys.platform == "win32":
+            return _win_clipboard(text)
+        if sys.platform == "darwin":
+            subprocess.run(["pbcopy"], input=text.encode("utf-8"), check=True, timeout=5)
+            return True
+        for cmd in (["wl-copy"], ["xclip", "-selection", "clipboard"], ["xsel", "--clipboard", "--input"]):
+            if shutil.which(cmd[0]):
+                subprocess.run(cmd, input=text.encode("utf-8"), check=True, timeout=5)
+                return True
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return False
+
+
+def clipboard_paste() -> str | None:
+    try:
+        if sys.platform == "win32":
+            return _win_clipboard()
+        if sys.platform == "darwin":
+            return subprocess.run(["pbpaste"], capture_output=True, check=True, timeout=5).stdout.decode("utf-8", "replace")
+        for cmd in (["wl-paste", "--no-newline"], ["xclip", "-selection", "clipboard", "-o"], ["xsel", "--clipboard", "--output"]):
+            if shutil.which(cmd[0]):
+                return subprocess.run(cmd, capture_output=True, check=True, timeout=5).stdout.decode("utf-8", "replace")
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return None
+
+
+def _win_clipboard(text: str | None = None):
+    """Write `text` to the Windows clipboard (returns bool), or read it
+    (text=None; returns str, "" when it holds no text, None on failure)."""
+    import ctypes
+    from ctypes import wintypes
+
+    CF_UNICODETEXT, GMEM_MOVEABLE = 13, 0x0002
+    user32, kernel32 = ctypes.WinDLL("user32"), ctypes.WinDLL("kernel32")
+    kernel32.GlobalAlloc.restype = wintypes.HGLOBAL
+    kernel32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
+    kernel32.GlobalLock.restype = wintypes.LPVOID
+    kernel32.GlobalLock.argtypes = [wintypes.HGLOBAL]
+    kernel32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
+    user32.SetClipboardData.restype = wintypes.HANDLE
+    user32.SetClipboardData.argtypes = [wintypes.UINT, wintypes.HANDLE]
+    user32.GetClipboardData.restype = wintypes.HANDLE
+    user32.GetClipboardData.argtypes = [wintypes.UINT]
+
+    for _ in range(10):  # another app may hold the clipboard for a moment
+        if user32.OpenClipboard(None):
+            break
+        kernel32.Sleep(20)
+    else:
+        return None if text is None else False
+    try:
+        if text is None:
+            handle = user32.GetClipboardData(CF_UNICODETEXT)
+            if not handle:
+                return ""
+            ptr = kernel32.GlobalLock(handle)
+            try:
+                return ctypes.wstring_at(ptr)
+            finally:
+                kernel32.GlobalUnlock(handle)
+        data = text.encode("utf-16-le") + b"\0\0"
+        user32.EmptyClipboard()
+        handle = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(data))
+        ptr = kernel32.GlobalLock(handle)
+        ctypes.memmove(ptr, data, len(data))
+        kernel32.GlobalUnlock(handle)
+        return bool(user32.SetClipboardData(CF_UNICODETEXT, handle))
+    finally:
+        user32.CloseClipboard()
+
+
 # --- Background sync ---------------------------------------------------------
 
 
@@ -360,6 +458,9 @@ class TaskList(OptionList):
         Binding("k", "cursor_up", show=False),
         Binding("g", "first", show=False),
         Binding("G", "last", show=False),
+        Binding("o", "app.open_link", "Open link"),
+        Binding("C", "app.copy", "Copy"),
+        Binding("P", "app.paste", "Paste new"),
         Binding("L", "app.logout", "Logout", show=False),
     ]
 
@@ -888,7 +989,54 @@ class TasksApp(App):
         self.sync.submit("Completing…" if new else "Reopening…",
                          lambda: self.api.set_done(t["id"], new), on_err=undo, task=t)
 
-    def action_add(self) -> None:
+    def action_copy(self) -> None:
+        t = self.current()
+        if not t:
+            return
+        if clipboard_copy(t["title"]):
+            n = t["title"].count("\n") + 1
+            self.notify(f"Copied {n} line{'s' if n > 1 else ''} to the clipboard", timeout=2)
+        else:
+            self.notify("Couldn't reach the clipboard", severity="error")
+
+    def action_paste(self) -> None:
+        text = clipboard_paste()
+        if text is None:
+            self.notify("Couldn't read the clipboard", severity="error")
+        elif not text.strip():
+            self.notify("Clipboard is empty", severity="warning")
+        else:
+            self.action_add(text.replace("\r\n", "\n").strip("\n"), "New task from clipboard")
+
+    def check_action(self, action: str, parameters: tuple) -> bool | None:
+        if action == "open_link":  # only offered (and shown in the footer) when there is a link
+            t = self.current() if self.screen_stack and self.screen_stack[0].query(TaskList) else None
+            return bool(t and find_links(t["title"]))
+        return True
+
+    @on(OptionList.OptionHighlighted, "#list")
+    def _highlight_changed(self) -> None:
+        self.refresh_bindings()
+
+    def action_open_link(self) -> None:
+        t = self.current()
+        links = find_links(t["title"]) if t else []
+        if len(links) == 1:
+            return self._open(links[0])
+
+        def done(idx):
+            if idx is not None:
+                self._open(links[idx])
+        if links:
+            self.push_screen(PickScreen("Open link", links), done)
+
+    def _open(self, url: str) -> None:
+        if webbrowser.open(url):
+            self.notify(f"Opening {url[:70]}", timeout=2)
+        else:
+            self.notify(f"No browser found for {url[:70]}", severity="error")
+
+    def action_add(self, text: str = "", heading: str = "New task") -> None:
         def done(title):
             if title is None or not title.strip():
                 return
@@ -907,7 +1055,7 @@ class TasksApp(App):
                     self.rebuild()
             self.sync.submit("Adding…", go, on_err=undo, task=t)
             self.reload_wanted = True  # pick up the server's ordering once idle
-        self.push_screen(EditScreen("New task"), done)
+        self.push_screen(EditScreen(heading, text), done)
 
     def action_edit(self) -> None:
         t = self.current()

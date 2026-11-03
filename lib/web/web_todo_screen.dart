@@ -8,7 +8,9 @@ import '../models/todo_card.dart';
 import '../models/todo_category.dart';
 import '../models/todo_daily.dart';
 import '../models/todo_tags.dart';
+import '../screens/clipboard_screen.dart';
 import '../services/supabase_service.dart';
+import '../utils/links.dart';
 import 'web_common.dart';
 
 /// Web "Afazeres": the open todos in their manual order. Add, tick,
@@ -172,6 +174,15 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
     final open = _todos.where((t) => !t.isCompleted).length;
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
+      floatingActionButton: FloatingActionButton.small(
+        heroTag: 'web_todo_clipboard_fab',
+        tooltip: 'Área de transferência compartilhada',
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ClipboardScreen()),
+        ),
+        child: const Icon(Icons.content_paste_go),
+      ),
       body: SafeArea(
         child: WebPage(
           child: Column(
@@ -246,9 +257,13 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: _TodoContent(
-                      card: TodoCard.parse(todo.title),
-                      completed: todo.isCompleted,
+                    child: GestureDetector(
+                      // Hold to copy the link; tapping it opens it.
+                      onLongPress: () => Links.copyFrom(context, todo.title),
+                      child: _TodoContent(
+                        card: TodoCard.parse(todo.title),
+                        completed: todo.isCompleted,
+                      ),
                     ),
                   ),
                 ),
@@ -345,10 +360,18 @@ class _TodoContent extends StatelessWidget {
           MarkdownBody(
             data: body,
             softLineBreak: true,
+            onTapLink: (text, href, _) => Links.open(context, href ?? text),
             styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
                 .copyWith(
               p: _style,
-              a: _style,
+              a: _style.copyWith(
+                color: AppTheme.primaryOrange,
+                decoration: TextDecoration.combine([
+                  _style.decoration ?? TextDecoration.none,
+                  TextDecoration.underline,
+                ]),
+                decorationColor: AppTheme.primaryOrange,
+              ),
               listBullet: _style,
               blockSpacing: 4,
               listIndent: 20,

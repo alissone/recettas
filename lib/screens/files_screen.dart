@@ -1,8 +1,11 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../app_theme.dart';
 import '../models/cloud_file.dart';
+import '../services/clipboard_repository.dart';
 import '../services/cloud_file_repository.dart';
 import '../utils/dates.dart';
 import '../utils/file_types.dart';
@@ -120,6 +123,40 @@ class _FilesScreenState extends State<FilesScreen> {
       if (mounted) _toast('"${file.name}" baixado');
     } catch (e) {
       if (mounted) _toast('Erro ao baixar: $e');
+    } finally {
+      if (mounted) setState(() => _busy.remove(file.id));
+    }
+  }
+
+  /// Opens the system share sheet so the file can go straight into
+  /// another app (on iOS that avoids the detour through the Files app).
+  Future<void> _share(CloudFile file) async {
+    setState(() => _busy.add(file.id));
+    try {
+      final bytes = await _repo.download(file);
+      await SharePlus.instance.share(ShareParams(
+        files: [
+          XFile.fromData(bytes,
+              name: file.name,
+              mimeType: file.mimeType ?? mimeTypeForName(file.name)),
+        ],
+        fileNameOverrides: [file.name],
+      ));
+    } catch (e) {
+      if (mounted) _toast('Erro ao compartilhar: $e');
+    } finally {
+      if (mounted) setState(() => _busy.remove(file.id));
+    }
+  }
+
+  Future<void> _copyImage(CloudFile file) async {
+    setState(() => _busy.add(file.id));
+    try {
+      final bytes = await _repo.download(file);
+      await ClipboardRepository.instance.writeImage(bytes);
+      if (mounted) _toast('Imagem copiada');
+    } catch (e) {
+      if (mounted) _toast('Erro ao copiar: $e');
     } finally {
       if (mounted) setState(() => _busy.remove(file.id));
     }
@@ -329,6 +366,8 @@ class _FilesScreenState extends State<FilesScreen> {
       busy: _busy.contains(file.id),
       onTap: () => setState(() => _selectedId = selected ? null : file.id),
       onDownload: () => _download(file),
+      onShare: kIsWeb ? null : () => _share(file),
+      onCopyImage: isImageFile(file) ? () => _copyImage(file) : null,
       onRename: (name) => _rename(file, name),
       onDelete: () => _delete(file),
     );
@@ -361,6 +400,12 @@ class _FileCard extends StatefulWidget {
   final bool busy;
   final VoidCallback onTap;
   final VoidCallback onDownload;
+
+  /// Null where the platform has no share sheet (web).
+  final VoidCallback? onShare;
+
+  /// Null unless the file is an image.
+  final VoidCallback? onCopyImage;
   final ValueChanged<String> onRename;
   final VoidCallback onDelete;
 
@@ -374,6 +419,8 @@ class _FileCard extends StatefulWidget {
     required this.busy,
     required this.onTap,
     required this.onDownload,
+    required this.onShare,
+    required this.onCopyImage,
     required this.onRename,
     required this.onDelete,
   });
@@ -587,6 +634,18 @@ class _FileCardState extends State<_FileCard> {
               icon: const Icon(Icons.download, size: 18),
               label: const Text('Baixar'),
             ),
+            if (widget.onShare != null)
+              OutlinedButton.icon(
+                onPressed: widget.busy ? null : widget.onShare,
+                icon: const Icon(Icons.ios_share, size: 18),
+                label: const Text('Compartilhar'),
+              ),
+            if (widget.onCopyImage != null)
+              OutlinedButton.icon(
+                onPressed: widget.busy ? null : widget.onCopyImage,
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Copiar imagem'),
+              ),
             OutlinedButton.icon(
               onPressed: widget.busy ? null : _startRenaming,
               icon: const Icon(Icons.edit_outlined, size: 18),
@@ -640,4 +699,10 @@ class _FileCardState extends State<_FileCard> {
       ),
     );
   }
+}
+
+/// True for files the clipboard can hold as an image.
+bool isImageFile(CloudFile file) {
+  final mime = file.mimeType ?? mimeTypeForName(file.name) ?? '';
+  return mime.startsWith('image/');
 }

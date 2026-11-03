@@ -17,11 +17,13 @@ import '../services/category_store.dart';
 import '../services/supabase_service.dart';
 import '../services/todo_repository.dart';
 import '../services/voice_note_repository.dart';
+import '../utils/links.dart';
 import '../widgets/categorize_overlay.dart';
 import '../widgets/mention_suggestions.dart';
 import '../widgets/swipe_action_card.dart';
 import '../widgets/sync_indicator.dart';
 import '../widgets/voice_recorder_sheet.dart';
+import 'clipboard_screen.dart';
 import 'edit_categories_screen.dart';
 import 'home_shell.dart';
 import 'voice_notes_screen.dart';
@@ -439,6 +441,14 @@ class _TodoScreenState extends State<TodoScreen> {
     _screenFocusNode.requestFocus();
   }
 
+  void _openClipboard() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ClipboardScreen()),
+    );
+    _screenFocusNode.requestFocus();
+  }
+
   void _openEditCategories() async {
     await Navigator.push(
       context,
@@ -523,6 +533,13 @@ class _TodoScreenState extends State<TodoScreen> {
               ? Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    FloatingActionButton.small(
+                      heroTag: 'todo_clipboard_fab',
+                      tooltip: 'Área de transferência compartilhada',
+                      onPressed: _openClipboard,
+                      child: const Icon(Icons.content_paste_go),
+                    ),
+                    const SizedBox(height: 12),
                     // Recordings are files on disk; no web support.
                     if (!kIsWeb) ...[
                       FloatingActionButton.small(
@@ -1266,6 +1283,10 @@ class _SwipeableTodoItem extends StatelessWidget {
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: onEdit,
+                                // Tapping a link opens it (see
+                                // _TodoCardBody); holding copies it.
+                                onLongPress: () =>
+                                    Links.copyFrom(context, todo.title),
                                 child: Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.start,
@@ -1324,6 +1345,18 @@ class _SwipeableTodoItem extends StatelessWidget {
 // Markdown styling shared by the card preview and the fullscreen editor
 // ---------------------------------------------------------------------------
 
+/// Links: orange and underlined (still struck through when done).
+TextStyle _linkStyle(TextStyle base) => base.copyWith(
+      color: base.decoration == TextDecoration.lineThrough
+          ? base.color
+          : AppTheme.primaryOrange,
+      decoration: TextDecoration.combine(
+          [base.decoration ?? TextDecoration.none, TextDecoration.underline]),
+      decorationColor: base.decoration == TextDecoration.lineThrough
+          ? base.color
+          : AppTheme.primaryOrange,
+    );
+
 /// Builds on the theme defaults (so paddings/decorations the package
 /// expects are never null) and overrides just the bits that need to match
 /// [base] — the same style the plain-text title used to render with.
@@ -1333,7 +1366,7 @@ MarkdownStyleSheet _todoMarkdownStyleSheet(
       [base.decoration ?? TextDecoration.none, TextDecoration.lineThrough]);
   return MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
     p: base,
-    a: base,
+    a: _linkStyle(base),
     listBullet: base,
     blockSpacing: 4,
     listIndent: 20,
@@ -1444,6 +1477,7 @@ class _TodoCardBody extends StatelessWidget {
       selectable: false,
       softLineBreak: true,
       styleSheet: _todoMarkdownStyleSheet(context, style),
+      onTapLink: (text, href, _) => Links.open(context, href ?? text),
     );
   }
 

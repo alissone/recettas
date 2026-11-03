@@ -1,25 +1,48 @@
 #!/usr/bin/env python3
-"""Keyboard-only terminal client for the recettas tasks.
+"""Keyboard-first terminal client for the recettas tasks.
 
 Talks to the same Supabase project as the app (same login, same `todos`
 table), so tasks added here show up in the app and vice versa. A task's
 title is shown and edited exactly as stored: raw markdown, never reformatted.
 
-Windows only (uses msvcrt for key input). No third-party dependencies.
+Built on Textual (the Python counterpart of the Ink renderer Claude Code
+uses), so it runs in Windows Terminal / PowerShell / CMD and macOS
+Terminal / iTerm alike.
 
-    python scripts/tasks.py
+Every change is applied on screen immediately and saved in the background,
+in order, by a single sync thread. The top-right corner shows what is still
+saving; a failed save is rolled back and reported.
+
+    pip install textual
+    python scripts/tasks.py          # python3 on macOS
 """
+from __future__ import annotations
+
 import json
-import msvcrt
 import os
-import shutil
+import queue
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+try:
+    from rich.syntax import Syntax
+    from rich.text import Text
+    from textual import on, work
+    from textual.app import App, ComposeResult
+    from textual.binding import Binding
+    from textual.containers import Horizontal, Vertical, VerticalScroll
+    from textual.message import Message
+    from textual.screen import ModalScreen, Screen
+    from textual.widgets import Footer, Input, Label, OptionList, Static, TextArea
+    from textual.widgets.option_list import Option
+except ImportError:
+    sys.exit("tasks.py needs Textual:  pip install textual")
 
 SUPABASE_URL = "https://jixjuabvprbyupmaqtma.supabase.co"
 # Publishable (anon) key, the same one lib/main.dart ships with the app.
@@ -28,9 +51,23 @@ ANON_KEY = (
     "peGp1YWJ2cHJieXVwbWFxdG1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NTE1MDgsImV4"
     "cCI6MjA5NzIyNzUwOH0.RSCK1BMUSA_6M3THDOVnJQzP9RpcPspCL75R7UcBnbk"
 )
-SESSION_FILE = Path(os.environ.get("APPDATA", Path.home())) / "recettas-tasks" / "session.json"
+
+
+def _config_dir() -> Path:
+    if os.name == "nt":
+        return Path(os.environ.get("APPDATA", Path.home())) / "recettas-tasks"
+    return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "recettas-tasks"
+
+
+SESSION_FILE = _config_dir() / "session.json"
+SETTINGS_FILE = _config_dir() / "settings.json"
 
 NEWLINE_GLYPH = "↵"
+SPINNER = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+THEMES = ["tokyo-night", "catppuccin-mocha", "dracula", "nord", "gruvbox",
+          "monokai", "rose-pine", "textual-dark", "catppuccin-latte", "textual-light"]
+# Category pills: mid-tones that stay readable with dark text on any theme.
+PILL_COLORS = ["#7aa2f7", "#9ece6a", "#e0af68", "#bb9af7", "#7dcfff", "#f7768e", "#73daca", "#ff9e64"]
 
 
 class ApiError(Exception):
@@ -47,6 +84,7 @@ class AuthError(ApiError):
 class Api:
     def __init__(self, session):
         self.session = session
+        self._lock = threading.RLock()  # login (UI worker) vs. sync thread
 
     @property
     def email(self):
@@ -65,27 +103,28 @@ class Api:
             return str(e)
 
     def _request(self, method, path, body=None, headers=None, params=None, auth=True, retry=True):
-        url = SUPABASE_URL + path
-        if params:
-            url += "?" + urllib.parse.urlencode(params, safe="(),.:")
-        if auth and self.session.get("expires_at", 0) - time.time() < 60:
-            self.refresh()
-        h = {"apikey": ANON_KEY, "Content-Type": "application/json", **(headers or {})}
-        if auth:
-            h["Authorization"] = "Bearer " + self.session["access_token"]
-        data = json.dumps(body).encode() if body is not None else None
-        req = urllib.request.Request(url, data=data, method=method, headers=h)
-        try:
-            with urllib.request.urlopen(req, timeout=15) as r:
-                raw = r.read()
-        except urllib.error.HTTPError as e:
-            if e.code == 401 and auth and retry:
+        with self._lock:
+            url = SUPABASE_URL + path
+            if params:
+                url += "?" + urllib.parse.urlencode(params, safe="(),.:")
+            if auth and self.session.get("expires_at", 0) - time.time() < 60:
                 self.refresh()
-                return self._request(method, path, body, headers, params, auth, retry=False)
-            raise ApiError(self._error_message(e)) from None
-        except (urllib.error.URLError, TimeoutError, OSError) as e:
-            raise ApiError(f"offline ({getattr(e, 'reason', e)})") from None
-        return json.loads(raw) if raw else None
+            h = {"apikey": ANON_KEY, "Content-Type": "application/json", **(headers or {})}
+            if auth:
+                h["Authorization"] = "Bearer " + self.session["access_token"]
+            data = json.dumps(body).encode() if body is not None else None
+            req = urllib.request.Request(url, data=data, method=method, headers=h)
+            try:
+                with urllib.request.urlopen(req, timeout=15) as r:
+                    raw = r.read()
+            except urllib.error.HTTPError as e:
+                if e.code == 401 and auth and retry:
+                    self.refresh()
+                    return self._request(method, path, body, headers, params, auth, retry=False)
+                raise ApiError(self._error_message(e)) from None
+            except (urllib.error.URLError, TimeoutError, OSError) as e:
+                raise ApiError(f"offline ({getattr(e, 'reason', e)})") from None
+            return json.loads(raw) if raw else None
 
     def _adopt(self, tokens):
         self.session.update(
@@ -122,6 +161,7 @@ class Api:
             SESSION_FILE.unlink()
         except FileNotFoundError:
             pass
+        self.session = {"email": self.email}
 
     # Same visibility rules as the app: not archived, and completed tasks only
     # until the day they were completed on has passed.
@@ -152,9 +192,11 @@ class Api:
         rows = self._request(
             "POST", "/rest/v1/todos", {"user_id": self.session["user_id"], "title": title},
             headers={"Prefer": "return=representation"})
-        return rows[0]["id"]
+        return rows[0]
 
     def _patch(self, todo_id, fields):
+        if todo_id is None:
+            raise ApiError("task was never created")
         self._request("PATCH", "/rest/v1/todos", fields, params={"id": f"eq.{todo_id}"})
 
     def set_done(self, todo_id, done):
@@ -171,50 +213,7 @@ class Api:
         self._patch(todo_id, {"is_archived": True})
 
 
-# --- Terminal ---------------------------------------------------------------
-
-ESC = "\x1b"
-INVERT, DIM, BOLD, RESET = ESC + "[7m", ESC + "[2m", ESC + "[1m", ESC + "[0m"
-RED = ESC + "[31m"
-
-_ARROWS = {"H": "up", "P": "down", "K": "left", "M": "right", "G": "home",
-           "O": "end", "S": "del", "I": "pgup", "Q": "pgdn"}
-
-
-def read_key():
-    ch = msvcrt.getwch()
-    if ch in ("\x00", "\xe0"):
-        return _ARROWS.get(msvcrt.getwch(), "?")
-    if ch == "\r":
-        return "enter"
-    if ch == "\n":
-        return "ctrl-j"
-    if ch == ESC:
-        return "esc"
-    if ch in ("\x08", "\x7f"):
-        return "bs"
-    if ch == "\x03":
-        return "ctrl-c"
-    if ch == "\x01":
-        return "home"
-    if ch == "\x05":
-        return "end"
-    if ch == "\x15":
-        return "ctrl-u"
-    if ch < " ":
-        return "?"
-    if "\ud800" <= ch <= "\udbff":  # emoji arrive as two surrogate halves
-        ch = (ch + msvcrt.getwch()).encode("utf-16", "surrogatepass").decode("utf-16")
-    return ch
-
-
-def out(s):
-    sys.stdout.write(s)
-    sys.stdout.flush()
-
-
-def clip(s, width):
-    return s if len(s) <= width else s[: max(width - 1, 0)] + "…"
+# --- Card parsing (mirrors the app's TodoCard.parse) ------------------------
 
 
 def parse_card(title):
@@ -236,8 +235,8 @@ def parse_card(title):
 
 
 def event_when(meta):
-    """["November 2 10:00 - 14:00 (Repeats daily)"] from an event's metadata,
-    or [] when it has none of date/time/repeat."""
+    """"November 2 10:00 - 14:00 (Repeats daily)" from an event's metadata,
+    or "" when it has none of date/time/repeat."""
     parts = []
     try:
         d = datetime.strptime(meta.get("date", ""), "%Y-%m-%d")
@@ -252,17 +251,7 @@ def event_when(meta):
     text = " ".join(parts)
     if meta.get("repeat") == "daily":
         text = f"{text} (Repeats daily)".strip()
-    return [text] if text else []
-
-
-def card_lines(title):
-    """Lines to preview for a task: events show their title, then the content."""
-    kind, meta, body = parse_card(title)
-    if kind == "event":
-        return ([meta["title"]] if meta.get("title") else []) + event_when(meta) + body
-    if kind == "move":
-        return [f"{meta.get('from') or '?'} → {meta.get('to') or '?'}"] + body
-    return body
+    return text
 
 
 def one_line(title):
@@ -270,365 +259,790 @@ def one_line(title):
     kind, meta, body = parse_card(title)
     if kind == "todo":
         first, *rest = body
-        return first + (f" {NEWLINE_GLYPH}…" if rest else "")
-    lines = [l for l in card_lines(title) if l.strip()]
-    if kind == "event":  # row: title + first content line (skip the date line)
-        lines = [l for l in ([meta.get("title", "")] + body) if l.strip()]
+        return first + (f" {NEWLINE_GLYPH}…" if any(l.strip() for l in rest) else "")
+    if kind == "move":
+        lines = [f"{meta.get('from') or '?'} → {meta.get('to') or '?'}"] + body
+    else:
+        lines = [meta.get("title", "")] + body
+    lines = [l for l in lines if l.strip()]
     return " — ".join(lines[:2]) + (f" {NEWLINE_GLYPH}…" if len(lines) > 2 else "")
 
 
-def prompt_line(label, text="", mask=False, hint="Enter confirm · Esc cancel", on_change=None):
-    """Single-row editor on the bottom line. Returns the text, or None on Esc.
-
-    Ctrl+J (or Ctrl+Enter) inserts a real newline, shown as ↵, so multi-line
-    markdown titles round-trip untouched. `on_change(text)` runs before each
-    repaint (and once up front), e.g. to redraw a live-filtered list.
-    """
-    pos = len(text)
-    last = None
-    while True:
-        if on_change and text != last:
-            on_change(text)
-            last = text
-        cols, rows = shutil.get_terminal_size()
-        shown = "*" * len(text) if mask else text.replace("\r", "").replace("\n", NEWLINE_GLYPH)
-        avail = max(cols - len(label) - 1, 1)
-        start = max(0, pos - avail + 1)
-        visible = shown[start:start + avail]
-        out(f"{ESC}[{rows - 1};1H{ESC}[K{DIM}{clip(hint, cols - 1)}{RESET}"
-            f"{ESC}[{rows};1H{ESC}[K{BOLD}{label}{RESET}{visible}"
-            f"{ESC}[{rows};{len(label) + pos - start + 1}H{ESC}[?25h")
-        k = read_key()
-        if k == "enter":
-            out(ESC + "[?25l")
-            return text
-        if k in ("esc", "ctrl-c"):
-            out(ESC + "[?25l")
-            return None
-        if k == "left":
-            pos = max(pos - 1, 0)
-        elif k == "right":
-            pos = min(pos + 1, len(text))
-        elif k == "home":
-            pos = 0
-        elif k == "end":
-            pos = len(text)
-        elif k == "bs" and pos > 0:
-            text, pos = text[:pos - 1] + text[pos:], pos - 1
-        elif k == "del":
-            text = text[:pos] + text[pos + 1:]
-        elif k == "ctrl-u":
-            text, pos = "", 0
-        elif k == "ctrl-j":
-            text, pos = text[:pos] + "\n" + text[pos:], pos + 1
-        elif len(k) >= 1 and k not in _ARROWS.values() and k not in ("?", "pgup", "pgdn"):
-            text, pos = text[:pos] + k + text[pos:], pos + len(k)
+# --- Background sync ---------------------------------------------------------
 
 
-def confirm(question):
-    cols, rows = shutil.get_terminal_size()
-    out(f"{ESC}[{rows};1H{ESC}[K{BOLD}{clip(question, cols - 1)} (y/N) {RESET}")
-    return read_key() in ("y", "Y")
+class Sync:
+    """One daemon thread that runs network jobs strictly in submission order,
+    so e.g. toggling a task twice quickly always ends in the right state, and
+    edits to a just-added task wait for its id."""
 
+    def __init__(self, app: "TasksApp"):
+        self.app = app
+        self.q: queue.Queue = queue.Queue()
+        self.pending = 0  # touched only on the UI thread
+        threading.Thread(target=self._loop, daemon=True).start()
 
-def login_screen(api, notice=""):
-    saved_email = api.session.get("email", "")
-    while True:
-        out(f"{ESC}[2J{ESC}[H{BOLD} recettas tasks — sign in{RESET}\n")
-        if notice:
-            out(f"\n {RED}{notice}{RESET}\n")
-        cols, rows = shutil.get_terminal_size()
-        out(f"{ESC}[{rows - 3};1H")  # keep the prompt rows at the bottom
-        email = prompt_line("Email: ", saved_email, hint="Enter next · Esc quit")
-        if email is None:
-            return False
-        password = prompt_line("Password: ", mask=True, hint="Enter sign in · Esc back")
-        if password is None:
-            continue
-        out(f"{ESC}[{rows};1H{ESC}[K{DIM}Signing in…{RESET}")
-        try:
-            api.login(email.strip(), password)
-            return True
-        except ApiError as e:
-            notice, saved_email = str(e), email
+    def submit(self, label, fn, on_ok=None, on_err=None, task=None):
+        self.pending += 1
+        if task is not None:
+            task["_busy"] = task.get("_busy", 0) + 1
+        self.q.put((label, fn, on_ok, on_err, task))
+        self.app.sync_changed(label)
 
-
-def pick(title, options):
-    """Full-screen single choice. `options` is a list of labels; returns the
-    chosen index, or None on Esc. Up/Down or j/k move, Enter picks, 1-9 jump."""
-    sel = 0
-    while True:
-        cols, rows = shutil.get_terminal_size()
-        h = max(rows - 4, 1)
-        top = max(0, min(sel - h // 2, len(options) - h))
-        lines = [f"{BOLD} {title}{RESET}", DIM + "─" * cols + RESET]
-        for i in range(top, min(top + h, len(options))):
-            row = clip(f" {i + 1 if i < 9 else ' '} {options[i]}", cols - 1)
-            lines.append(f"{INVERT}{row.ljust(cols - 1)}{RESET}" if i == sel else row)
-        lines += [""] * (2 + h - len(lines))
-        lines += [DIM + "─" * cols + RESET, DIM + " ↑/↓ j/k move · Enter choose · 1-9 jump · Esc cancel" + RESET]
-        out(f"{ESC}[?25l{ESC}[H" + "".join(l + ESC + "[K\n" for l in lines[:-1]) + lines[-1] + ESC + "[K")
-        k = read_key()
-        if k in ("esc", "ctrl-c", "q"):
-            return None
-        elif k == "enter":
-            return sel
-        elif k in ("down", "j"):
-            sel = min(sel + 1, len(options) - 1)
-        elif k in ("up", "k"):
-            sel = max(sel - 1, 0)
-        elif k in ("home", "g"):
-            sel = 0
-        elif k in ("end", "G"):
-            sel = len(options) - 1
-        elif len(k) == 1 and k in "123456789" and int(k) <= len(options):
-            return int(k) - 1
-
-
-class App:
-    def __init__(self, api):
-        self.api = api
-        self.todos = []
-        self.cats = []
-        self.sel = 0
-        self.top = 0
-        self.status = ""
-
-    def reload(self, select_id=None):
-        keep = select_id or (self.todos[self.sel]["id"] if self.todos else None)
-        self.todos = self.api.todos()
-        self.cats = self.api.categories()
-        self.sel = next((i for i, t in enumerate(self.todos) if t["id"] == keep), min(self.sel, max(len(self.todos) - 1, 0)))
-
-    @staticmethod
-    def list_h():
-        return max(shutil.get_terminal_size()[1] - 4 - 5, 1)
-
-    def center(self):
-        """Like vim's zz: scroll so the selected row sits mid-list."""
-        self.top = max(self.sel - self.list_h() // 2, 0)
-
-    def cat_name(self, t):
-        return next((c["name"] for c in self.cats if c["id"] == t.get("category")), None)
-
-    def draw(self):
-        cols, rows = shutil.get_terminal_size()
-        detail_h = 5
-        list_h = max(rows - 4 - detail_h, 1)
-        self.sel = max(0, min(self.sel, len(self.todos) - 1))
-        if self.sel < self.top:
-            self.top = self.sel
-        elif self.sel >= self.top + list_h:
-            self.top = self.sel - list_h + 1
-
-        open_n = sum(not t["done"] for t in self.todos)
-        lines = [f"{BOLD} Tasks{RESET}{DIM}  {open_n} open · {len(self.todos)} shown · {self.api.email}{RESET}",
-                 DIM + "─" * cols + RESET]
-        if not self.todos:
-            lines.append(f"{DIM}  Nothing here. Press a to add a task.{RESET}")
-        for i in range(self.top, min(self.top + list_h, len(self.todos))):
-            t = self.todos[i]
-            row = clip(f" [{'x' if t['done'] else ' '}] {one_line(t['title'])}", cols - 1)
-            if i == self.sel:
-                lines.append(f"{INVERT}{row.ljust(cols - 1)}{RESET}")
-            else:
-                lines.append(f"{DIM if t['done'] else ''}{row}{RESET}")
-        lines += [""] * (2 + list_h - len(lines))
-
-        # Raw view of the selected task, shown exactly as stored.
-        cat = self.cat_name(self.todos[self.sel]) if self.todos else None
-        label = f" {cat} " if cat else ""
-        lines.append(DIM + "─" * 2 + label + "─" * max(cols - 2 - len(label), 0) + RESET)
-        raw = card_lines(self.todos[self.sel]["title"]) if self.todos else []
-        for i in range(detail_h):
-            if i < len(raw):
-                more = i == detail_h - 1 and len(raw) > detail_h
-                lines.append(" " + clip(raw[i], cols - 3) + (f" {DIM}(+{len(raw) - detail_h + 1} more lines){RESET}" if more else ""))
-            else:
-                lines.append("")
-
-        keys = " space done·a add·e edit·s search·c category·z center·t/b top/bottom·d archive·r reload·L logout·q quit"
-        lines.append(DIM + clip(keys, cols - 1) + RESET)
-        lines.append((RED + self.status + RESET) if self.status else "")
-        out(f"{ESC}[?25l{ESC}[H" + "".join(l + ESC + "[K\n" for l in lines[:-1]) + lines[-1] + ESC + "[K")
-
-    def run(self):
-        self.guard(self.reload, "Loading…")
+    def drop_queued(self):
+        """Throw away jobs that haven't started (after an auth failure)."""
+        dropped = 0
         while True:
-            self.draw()
-            k = read_key()
-            self.status = ""
-            page = max(shutil.get_terminal_size()[1] - 9, 1)
-            if k in ("q", "esc", "ctrl-c"):
-                return "quit"
-            elif k in ("down", "j"):
-                self.sel += 1
-            elif k in ("up", "k"):
-                self.sel -= 1
-            elif k in ("home", "g"):
-                self.sel = 0
-            elif k in ("end", "G"):
-                self.sel = len(self.todos) - 1
-            elif k == "pgdn":
-                self.sel += page
-            elif k == "pgup":
-                self.sel -= page
-            elif k == "r":
-                self.guard(self.reload, "Refreshing…")
-            elif k == "L":
-                self.api.logout()
-                return "logout"
-            elif k in ("a", "n"):
-                self.add()
-            elif self.todos and k in (" ", "x"):
-                self.toggle()
-            elif self.todos and k in ("e", "enter"):
-                self.edit()
-            elif self.todos and k in ("t", "b"):
-                self.move(top=k == "t")
-            elif self.todos and k == "d":
-                self.archive()
-            elif k == "z":
-                self.center()
-            elif k == "s" and self.todos:
-                self.search()
-            elif k == "c" and self.todos:
-                self.categorize()
+            try:
+                job = self.q.get_nowait()
+            except queue.Empty:
+                return dropped
+            dropped += 1
+            self._finish(job)
 
-    def search(self):
-        """Filter the list live while typing. Enter keeps the highlighted task
-        and scrolls to it in the full list; Esc goes back where you were."""
-        everything = self.todos
-        origin = everything[self.sel]["id"]
+    def _finish(self, job):
+        task = job[4]
+        self.pending -= 1
+        if task is not None:
+            task["_busy"] -= 1
+        self.app.sync_changed(None)
 
-        def matches(t, q):
-            return q in t["title"].lower() or q in (self.cat_name(t) or "").lower()
-
-        def apply(text):
-            q = text.strip().lower()
-            self.todos = [t for t in everything if matches(t, q)] if q else everything
-            self.sel, self.top = 0, 0
-            self.draw()
-
-        text = prompt_line("Search: ", hint="type to filter · Enter jump to first match · Esc cancel", on_change=apply)
-        target = origin
-        if text is not None:
-            if self.todos and text.strip():
-                target = self.todos[self.sel]["id"]
-            elif text.strip():
-                self.status = f"No task matches “{text.strip()}”"
-        self.todos = everything
-        self.sel = next((i for i, t in enumerate(everything) if t["id"] == target), 0)
-        if text is not None:
-            self.center()
-
-    def categorize(self):
-        t = self.todos[self.sel]
-        if not self.cats and not self.guard(lambda: setattr(self, "cats", self.api.categories()), "Loading categories…"):
-            return
-        if not self.cats:
-            self.status = "No categories yet. Create one in the app."
-            return
-        names = ["(none)"] + [c["name"] for c in self.cats]
-        idx = pick(f"Category for: {clip(one_line(t['title']), 60)}", names)
-        if idx is None:
-            return
-        new = self.cats[idx - 1]["id"] if idx else None
-        if new == t.get("category"):
-            return
-        if self.guard(self.api.set_category, "Saving…", t["id"], new):
-            t["category"] = new
-
-    def guard(self, fn, busy="", *args):
-        """Run a network call, turning failures into a status line."""
-        if busy:
-            cols, rows = shutil.get_terminal_size()
-            out(f"{ESC}[{rows};1H{ESC}[K{DIM}{busy}{RESET}")
+    def _ui(self, fn, *args):
         try:
-            fn(*args)
-            return True
-        except AuthError:
-            raise
+            self.app.call_from_thread(fn, *args)
+        except Exception:
+            pass  # app is shutting down
+
+    def _loop(self):
+        while True:
+            job = self.q.get()
+            label, fn, on_ok, on_err, task = job
+            try:
+                result = fn()
+            except AuthError as e:
+                self._ui(self.app.auth_failed, e)
+            except ApiError as e:
+                self._ui(self.app.job_failed, label, e, on_err)
+            except Exception as e:  # bug, not network: still roll back
+                self._ui(self.app.job_failed, label, e, on_err)
+            else:
+                if on_ok:
+                    self._ui(on_ok, result)
+            self._ui(self._finish, job)
+
+
+# --- Widgets & screens -------------------------------------------------------
+
+DIALOG_CSS = """
+.dialog {
+    width: 80%; max-width: 100; height: auto; max-height: 90%;
+    padding: 1 2; border: thick $accent; background: $panel;
+}
+.dialog .title { text-style: bold; color: $accent; margin-bottom: 1; }
+.dialog .hint { color: $text-muted; margin-top: 1; }
+.dialog .error { color: $error; margin-bottom: 1; }
+"""
+
+
+class TaskList(OptionList):
+    BINDINGS = [
+        Binding("space,x", "app.toggle", "Done"),
+        Binding("a,n", "app.add", "Add"),
+        Binding("enter,e", "app.edit", "Edit"),
+        Binding("s,slash", "app.search", "Search"),
+        Binding("c", "app.categorize", "Category"),
+        Binding("t", "app.move(True)", "Top"),
+        Binding("b", "app.move(False)", "Bottom"),
+        Binding("d,delete", "app.archive", "Archive"),
+        Binding("r", "app.reload", "Reload"),
+        Binding("z", "center", "Center", show=False),
+        Binding("j", "cursor_down", show=False),
+        Binding("k", "cursor_up", show=False),
+        Binding("g", "first", show=False),
+        Binding("G", "last", show=False),
+        Binding("L", "app.logout", "Logout", show=False),
+    ]
+
+    def action_center(self) -> None:
+        if self.highlighted is not None:
+            self.scroll_to(y=max(self.highlighted - self.scrollable_content_region.height // 2, 0), animate=False)
+
+
+class SearchInput(Input):
+    BINDINGS = [
+        Binding("escape", "app.cancel_search", "Cancel"),
+        Binding("down", "app.list_cursor(1)", "Next", show=False),
+        Binding("up", "app.list_cursor(-1)", "Prev", show=False),
+    ]
+
+
+class TitleArea(TextArea):
+    """Enter submits; Ctrl+J (or Shift/Ctrl+Enter where the terminal reports
+    it) inserts a real newline, so multi-line markdown round-trips."""
+
+    class Submit(Message):
+        pass
+
+    async def _on_key(self, event) -> None:
+        if event.key == "enter":
+            event.stop()
+            event.prevent_default()
+            self.post_message(self.Submit())
+        elif event.key in ("ctrl+j", "shift+enter", "ctrl+enter", "alt+enter"):
+            event.stop()
+            event.prevent_default()
+            self.insert("\n")
+
+
+class EditScreen(ModalScreen):
+    DEFAULT_CSS = "EditScreen { align: center middle; }" + DIALOG_CSS + """
+    EditScreen TitleArea { height: auto; min-height: 3; max-height: 20; }
+    """
+    BINDINGS = [Binding("escape", "cancel", "Cancel")]
+
+    def __init__(self, title: str, text: str = ""):
+        super().__init__()
+        self.title_text, self.text = title, text
+
+    def compose(self) -> ComposeResult:
+        with Vertical(classes="dialog"):
+            yield Label(self.title_text, classes="title")
+            yield TitleArea(self.text, soft_wrap=True, show_line_numbers=False)
+            yield Label("Enter save · Ctrl+J newline · Esc cancel", classes="hint")
+
+    def on_mount(self) -> None:
+        area = self.query_one(TitleArea)
+        area.focus()
+        area.move_cursor(area.document.end)
+
+    @on(TitleArea.Submit)
+    def submit(self) -> None:
+        self.dismiss(self.query_one(TitleArea).text)
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+
+class ConfirmScreen(ModalScreen):
+    DEFAULT_CSS = "ConfirmScreen { align: center middle; }" + DIALOG_CSS
+    BINDINGS = [Binding("y,enter", "answer(True)", "Yes"), Binding("n,escape", "answer(False)", "No")]
+
+    def __init__(self, question: str):
+        super().__init__()
+        self.question = question
+
+    def compose(self) -> ComposeResult:
+        with Vertical(classes="dialog"):
+            yield Label(self.question, classes="title")
+            yield Label("y / Enter yes · n / Esc no", classes="hint")
+
+    def action_answer(self, yes: bool) -> None:
+        self.dismiss(yes)
+
+
+class PickScreen(ModalScreen):
+    DEFAULT_CSS = "PickScreen { align: center middle; }" + DIALOG_CSS + """
+    PickScreen OptionList, PickScreen OptionList:focus { height: auto; max-height: 20; border: none; background: $panel; }
+    """
+    BINDINGS = [Binding("escape,q", "cancel", "Cancel"),
+                Binding("j", "move(1)", show=False), Binding("k", "move(-1)", show=False),
+                *[Binding(str(i), f"jump({i - 1})", show=False) for i in range(1, 10)]]
+
+    def __init__(self, title: str, options: list, current: int = 0):
+        super().__init__()
+        self.title_text, self.options, self.current = title, options, current
+
+    def compose(self) -> ComposeResult:
+        with Vertical(classes="dialog"):
+            yield Label(self.title_text, classes="title")
+            yield OptionList(*[Option(Text.assemble((f"{i + 1 if i < 9 else ' '}  ", "dim"), o))
+                               for i, o in enumerate(self.options)])
+            yield Label("↑/↓ j/k move · Enter choose · 1-9 jump · Esc cancel", classes="hint")
+
+    def on_mount(self) -> None:
+        ol = self.query_one(OptionList)
+        ol.highlighted = self.current
+        ol.focus()
+
+    @on(OptionList.OptionSelected)
+    def chosen(self, event: OptionList.OptionSelected) -> None:
+        self.dismiss(event.option_index)
+
+    def action_move(self, d: int) -> None:
+        ol = self.query_one(OptionList)
+        ol.action_cursor_down() if d > 0 else ol.action_cursor_up()
+
+    def action_jump(self, i: int) -> None:
+        if i < len(self.options):
+            self.dismiss(i)
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+
+class LoginScreen(Screen):
+    DEFAULT_CSS = "LoginScreen { align: center middle; }" + DIALOG_CSS + """
+    LoginScreen .dialog { max-width: 60; }
+    LoginScreen Input { margin-bottom: 1; }
+    LoginScreen #logo { color: $accent; text-style: bold; content-align: center middle; width: 1fr; margin-bottom: 1; }
+    """
+    BINDINGS = [Binding("escape", "app.quit", "Quit")]
+
+    def __init__(self, api: Api, notice: str = ""):
+        super().__init__()
+        self.api, self.notice = api, notice
+
+    def compose(self) -> ComposeResult:
+        with Vertical(classes="dialog"):
+            yield Static("✓ recettas tasks", id="logo")
+            yield Label(self.notice, classes="error", id="error")
+            yield Input(self.api.email, placeholder="Email", id="email")
+            yield Input(placeholder="Password", password=True, id="password")
+            yield Label("Enter next / sign in · Esc quit", classes="hint")
+
+    def on_mount(self) -> None:
+        self.query_one("#error").display = bool(self.notice)
+        self.query_one("#password" if self.api.email else "#email", Input).focus()
+
+    @on(Input.Submitted, "#email")
+    def next_field(self) -> None:
+        self.query_one("#password", Input).focus()
+
+    @on(Input.Submitted, "#password")
+    def sign_in(self) -> None:
+        email = self.query_one("#email", Input).value.strip()
+        password = self.query_one("#password", Input).value
+        if not email or not password:
+            return
+        self.query_one(".dialog").loading = True
+        self._login(email, password)
+
+    @work(thread=True, exclusive=True)
+    def _login(self, email: str, password: str) -> None:
+        try:
+            self.api.login(email, password)
         except ApiError as e:
-            self.status = str(e)
-            return False
+            self.app.call_from_thread(self._failed, str(e))
+        else:
+            self.app.call_from_thread(self.dismiss, True)
 
-    def add(self):
-        title = prompt_line("New task: ", hint="Enter add · Ctrl+J newline · Esc cancel")
-        if title is None or not title.strip():
-            return
-        def go():
-            new_id = self.api.add(title)
-            self.reload(select_id=new_id)
-        self.guard(go, "Adding…")
-
-    def edit(self):
-        t = self.todos[self.sel]
-        title = prompt_line("Edit: ", t["title"], hint="Enter save · Ctrl+J newline · Esc cancel")
-        if title is None or title == t["title"] or not title.strip():
-            return
-        if self.guard(self.api.set_title, "Saving…", t["id"], title):
-            t["title"] = title
-
-    def toggle(self):
-        t = self.todos[self.sel]
-        if self.guard(self.api.set_done, "Saving…", t["id"], not t["done"]):
-            t["done"] = not t["done"]  # stays in place until the next refresh
-
-    def move(self, top):
-        """Send the task to the top/bottom of the list. The cursor stays on the
-        same row, so it ends up on the task that was right below it."""
-        if self.sel == (0 if top else len(self.todos) - 1):
-            return  # already there
-        t = self.todos[self.sel]
-        orders = [x["order"] for x in self.todos]
-        new = min(orders) - 1 if top else max(orders) + 1
-        if not self.guard(self.api.set_order, "Moving…", t["id"], new):
-            return
-        t["order"] = new
-        del self.todos[self.sel]
-        self.todos.insert(0 if top else len(self.todos), t)
-        if top:
-            self.sel = min(self.sel + 1, len(self.todos) - 1)  # tasks above it shifted down; follow the one below
-
-    def archive(self):
-        t = self.todos[self.sel]
-        if not confirm(f"Archive “{clip(one_line(t['title']), 40)}”?"):
-            return
-        if self.guard(self.api.archive, "Archiving…", t["id"]):
-            del self.todos[self.sel]
+    def _failed(self, msg: str) -> None:
+        self.query_one(".dialog").loading = False
+        err = self.query_one("#error", Label)
+        err.update(msg)
+        err.display = True
+        pw = self.query_one("#password", Input)
+        pw.value = ""
+        pw.focus()
 
 
-def load_session():
+# --- App ---------------------------------------------------------------------
+
+
+def load_json(path: Path) -> dict:
     try:
-        return json.loads(SESSION_FILE.read_text())
+        return json.loads(path.read_text())
     except (OSError, ValueError):
         return {}
+
+
+class TasksApp(App):
+    TITLE = "recettas tasks"
+    CSS = """
+    Screen { background: $background; }
+    #topbar { dock: top; height: 1; background: $boost; }
+    #brand { width: auto; padding: 0 1; background: $accent; color: $text; text-style: bold; }
+    #counts { width: 1fr; padding: 0 1; color: $text-muted; }
+    #sync { width: auto; padding: 0 1; }
+    #main { height: 1fr; }
+    TaskList {
+        width: 3fr; height: 1fr; border: round $primary-darken-2; background: $surface;
+        border-title-color: $text-muted; padding: 0;
+        text-wrap: nowrap; text-overflow: ellipsis;
+    }
+    TaskList:focus { border: round $accent; border-title-color: $accent; }
+    TaskList > .option-list--option-highlighted { background: $accent 25%; }
+    TaskList:focus > .option-list--option-highlighted { background: $accent 40%; }
+    #detail {
+        width: 2fr; height: 1fr; border: round $primary-darken-2; background: $surface;
+        padding: 0 1; border-title-color: $text-muted;
+    }
+    #detail-head { margin-bottom: 1; }
+    #main.narrow { layout: vertical; }
+    #main.narrow TaskList { width: 1fr; }
+    #main.narrow #detail { width: 1fr; height: 40%; }
+    #search { dock: bottom; display: none; height: 3; border: round $accent; }
+    #search.on { display: block; }
+    """
+    BINDINGS = [
+        Binding("q", "quit", "Quit"),
+        Binding("T", "cycle_theme", "Theme"),
+        Binding("ctrl+c", "quit", show=False, priority=True),
+    ]
+
+    def __init__(self):
+        super().__init__()
+        self.api = Api(load_json(SESSION_FILE))
+        self.settings = load_json(SETTINGS_FILE)
+        self.todos: list[dict] = []
+        self.cats: list[dict] = []
+        self.shown: list[dict] = []  # what the list displays (filtered while searching)
+        self.query_text: str | None = None  # None = not searching
+        self.search_origin = None
+        self.sync = Sync(self)
+        self.reload_wanted = False
+        self.last_sync: str | None = None
+        self.last_error: str | None = None
+        self.sync_label = ""
+        self.frame = 0
+        self.quit_armed = 0.0
+
+    # ---- layout ----
+
+    def compose(self) -> ComposeResult:
+        with Horizontal(id="topbar"):
+            yield Static("✓ tasks", id="brand")
+            yield Static(id="counts")
+            yield Static(id="sync")
+        with Horizontal(id="main"):
+            yield TaskList(id="list")
+            with VerticalScroll(id="detail"):
+                yield Static(id="detail-head")
+                yield Static(id="detail-body")
+        yield SearchInput(placeholder="Search tasks and categories…", id="search")
+        yield Footer()
+
+    def on_mount(self) -> None:
+        theme = self.settings.get("theme", "tokyo-night")
+        self.theme = theme if theme in self.available_themes else "tokyo-night"
+        self.ui("#list").border_title = "Tasks"
+        self.ui("#detail").border_title = "Details"
+        self.set_interval(0.08, self._spin)
+        self.set_interval(60, self.auto_reload)
+        if self.api.session.get("refresh_token"):
+            self.start()
+        else:
+            self.push_screen(LoginScreen(self.api), self._after_login)
+
+    def on_resize(self, event) -> None:
+        self.ui("#main").set_class(event.size.width < 100, "narrow")
+
+    def watch_theme(self, theme: str) -> None:
+        self.settings["theme"] = theme
+        try:
+            SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            SETTINGS_FILE.write_text(json.dumps(self.settings))
+        except OSError:
+            pass
+        if self.screen_stack and self.screen_stack[0].query(TaskList):
+            self.rebuild()
+
+    def ui(self, selector, expect=None):
+        """query_one on the main screen, even while a dialog is on top."""
+        main = self.screen_stack[0]
+        return main.query_one(selector, expect) if expect else main.query_one(selector)
+
+    def action_cycle_theme(self) -> None:
+        names = [t for t in THEMES if t in self.available_themes]
+        i = names.index(self.theme) if self.theme in names else -1
+        self.theme = names[(i + 1) % len(names)]
+        self.notify(f"Theme: {self.theme}  (Ctrl+P → Change theme for all)", timeout=2)
+
+    def color(self, name: str, fallback: str) -> str:
+        return getattr(self.current_theme, name, None) or fallback
+
+    # ---- session ----
+
+    def _after_login(self, ok) -> None:
+        if ok:
+            self.start()
+
+    def start(self) -> None:
+        self.ui("#list").loading = not self.todos
+        self.ui("#list").focus()
+        self.reload()
+
+    def auth_failed(self, e) -> None:
+        dropped = self.sync.drop_queued()
+        self.api.logout()
+        self.todos, self.cats = [], []
+        self.rebuild()
+        if not isinstance(self.screen, LoginScreen):
+            note = f"Session expired: {e}" + (f" ({dropped} unsaved change(s) discarded)" if dropped else "")
+            self.push_screen(LoginScreen(self.api, note), self._after_login)
+
+    def action_logout(self) -> None:
+        self.sync.drop_queued()
+        self.api.logout()
+        self.todos, self.cats = [], []
+        self.rebuild()
+        self.push_screen(LoginScreen(self.api), self._after_login)
+
+    def action_quit(self) -> None:
+        if self.sync.pending and time.monotonic() - self.quit_armed > 3:
+            self.quit_armed = time.monotonic()
+            self.notify(f"{self.sync.pending} change(s) still saving. Press q again to quit anyway.",
+                        severity="warning", timeout=3)
+            return
+        self.exit()
+
+    # ---- sync status ----
+
+    def sync_changed(self, label) -> None:
+        if label:
+            self.sync_label = label
+        if self.sync.pending == 0 and self.reload_wanted:
+            self.reload_wanted = False
+            self.reload(quiet=True)
+        self._render_sync()
+        self.refresh_rows()
+
+    def job_failed(self, label, e, on_err) -> None:
+        self.last_error = str(e)
+        if on_err:
+            on_err()
+        self.notify(f"{label.rstrip('…')} failed: {e}", severity="error", timeout=6)
+
+    def _spin(self) -> None:
+        if self.sync.pending:
+            self.frame = (self.frame + 1) % len(SPINNER)
+            self._render_sync()
+
+    def _render_sync(self) -> None:
+        t = Text()
+        if self.sync.pending:
+            t.append(SPINNER[self.frame] + " ", style=self.color("warning", "yellow"))
+            t.append(self.sync_label or "Saving…")
+            if self.sync.pending > 1:
+                t.append(f" +{self.sync.pending - 1}", style="dim")
+        elif self.last_error:
+            t.append("⚠ ", style=self.color("error", "red")).append(self.last_error[:40], style="dim")
+        elif self.last_sync:
+            t.append("● ", style=self.color("success", "green")).append(f"synced {self.last_sync}", style="dim")
+        self.ui("#sync", Static).update(t)
+
+    # ---- data ----
+
+    def reload(self, quiet=False) -> None:
+        def fetch():
+            return self.api.todos(), self.api.categories()
+        self.sync.submit("Syncing…" if quiet else "Loading…", fetch, on_ok=self._loaded,
+                         on_err=lambda: setattr(self.ui("#list"), "loading", False))
+
+    def action_reload(self) -> None:
+        self.reload()
+
+    def auto_reload(self) -> None:
+        if (self.api.session.get("refresh_token") and not self.sync.pending
+                and len(self.screen_stack) == 1 and self.query_text is None):
+            self.reload(quiet=True)
+
+    def _loaded(self, result) -> None:
+        self.ui("#list").loading = False
+        if self.query_text is None and len(self.screen_stack) == 1:
+            self.ui(TaskList).focus()
+        if self.sync.pending > 1:  # more local changes queued after this fetch
+            self.reload_wanted = True
+            return
+        keep = self.current()
+        self.todos, self.cats = result
+        self.last_sync, self.last_error = datetime.now().strftime("%H:%M"), None
+        ids = [t["id"] for t in self.todos]
+        self.rebuild(select=ids.index(keep["id"]) if keep and keep["id"] in ids else None)
+
+    def current(self) -> dict | None:
+        ol = self.ui(TaskList)
+        if ol.highlighted is None or ol.highlighted >= len(self.shown):
+            return None
+        return self.shown[ol.highlighted]
+
+    def cat_name(self, t) -> str | None:
+        return next((c["name"] for c in self.cats if c["id"] == t.get("category")), None)
+
+    def cat_color(self, cid) -> str:
+        idx = next((i for i, c in enumerate(self.cats) if c["id"] == cid), 0)
+        return PILL_COLORS[idx % len(PILL_COLORS)]
+
+    # ---- rendering ----
+
+    def row(self, t: dict) -> Text:
+        kind, meta, _ = parse_card(t["title"])
+        accent = self.color("accent", "cyan")
+        if t.get("_busy"):
+            mark = Text("◌ ", style=self.color("warning", "yellow"))
+        elif t["done"]:
+            mark = Text("✓ ", style=f"bold {self.color('success', 'green')}")
+        else:
+            mark = Text("○ ", style=accent)
+        text = Text(" ", no_wrap=True, overflow="ellipsis") + mark
+        if kind == "event":
+            when = " ".join(x for x in (meta.get("start"), meta.get("date") and meta["date"][5:]) if x)
+            text.append("◷ " + (when + " " if when else ""), style=self.color("warning", "yellow"))
+        elif kind == "move":
+            text.append("⇢ ", style=self.color("secondary", "magenta"))
+        title = Text(one_line(t["title"]), style="dim strike" if t["done"] else "")
+        if self.query_text:
+            title.highlight_words([self.query_text], style=f"bold reverse {accent}", case_sensitive=False)
+        text.append_text(title)
+        name = self.cat_name(t)
+        if name:
+            text.append("  ")
+            text.append(f" {name} ", style=f"#1a1b26 on {self.cat_color(t['category'])}")
+        return text
+
+    def rebuild(self, select: int | None = None) -> None:
+        """Re-render the whole list. `select` is an index into self.todos."""
+        ol = self.ui(TaskList)
+        prev = self.current()
+        q = (self.query_text or "").strip().lower()
+        self.shown = [t for t in self.todos
+                      if not q or q in t["title"].lower() or q in (self.cat_name(t) or "").lower()]
+        target = self.todos[select] if select is not None and select < len(self.todos) else prev
+        old = ol.highlighted
+        ol.clear_options()
+        ol.add_options([Option(self.row(t)) for t in self.shown])
+        if self.shown:
+            idx = next((i for i, t in enumerate(self.shown) if t is target), None)
+            ol.highlighted = idx if idx is not None else min(old or 0, len(self.shown) - 1)
+        self.render_counts()
+        self.render_detail()
+
+    def refresh_rows(self) -> None:
+        """Cheap repaint of each row's prompt without rebuilding the list."""
+        ol = self.ui(TaskList)
+        if ol.option_count != len(self.shown):
+            return self.rebuild()
+        for i, t in enumerate(self.shown):
+            ol.replace_option_prompt_at_index(i, self.row(t))
+        self.render_counts()
+        self.render_detail()
+
+    def render_counts(self) -> None:
+        open_n = sum(not t["done"] for t in self.todos)
+        done_n = len(self.todos) - open_n
+        t = Text()
+        t.append(f"{open_n} open", style="bold")
+        t.append(f" · {done_n} done today", style="dim")
+        if self.query_text is not None:
+            t.append(f" · {len(self.shown)} match", style=self.color("accent", "cyan"))
+        if self.api.email:
+            t.append(f" · {self.api.email}", style="dim")
+        self.ui("#counts", Static).update(t)
+        self.ui(TaskList).border_subtitle = f"{len(self.shown)}"
+
+    @on(OptionList.OptionHighlighted, "#list")
+    def render_detail(self, _=None) -> None:
+        head = self.ui("#detail-head", Static)
+        body = self.ui("#detail-body", Static)
+        t = self.current()
+        if not t:
+            msg = "Nothing here. Press a to add a task." if not self.todos else "No task matches."
+            head.update(Text(msg, style="dim"))
+            body.update("")
+            return
+        kind, meta, lines = parse_card(t["title"])
+        h = Text()
+        if t["done"]:
+            h.append(" ✓ Done ", style=f"bold #1a1b26 on {self.color('success', 'green')}")
+        else:
+            h.append(" ○ Open ", style=f"bold #1a1b26 on {self.color('accent', 'cyan')}")
+        if kind != "todo":
+            h.append(" ")
+            h.append(f" {kind} ", style=f"bold #1a1b26 on {self.color('warning', 'yellow')}")
+        name = self.cat_name(t)
+        if name:
+            h.append(" ")
+            h.append(f" {name} ", style=f"#1a1b26 on {self.cat_color(t['category'])}")
+        if t.get("_busy"):
+            h.append("  ◌ saving…", style=self.color("warning", "yellow"))
+        if kind == "event":
+            if meta.get("title"):
+                h.append("\n\n").append(meta["title"], style="bold")
+            when = event_when(meta)
+            if when:
+                h.append("\n").append("◷ " + when, style=self.color("warning", "yellow"))
+        elif kind == "move":
+            h.append("\n\n").append(f"{meta.get('from') or '?'} → {meta.get('to') or '?'}", style="bold")
+        head.update(h)
+        raw = "\n".join(lines).strip("\n")
+        body.update(Syntax(raw, "markdown", theme="monokai" if self.current_theme.dark else "friendly",
+                           word_wrap=True,
+                           background_color=self.color("surface", "default")) if raw else "")
+
+    # ---- actions (optimistic: change locally, save in the background) ----
+
+    def action_list_cursor(self, d: int) -> None:
+        ol = self.ui(TaskList)
+        ol.action_cursor_down() if d > 0 else ol.action_cursor_up()
+
+    def action_toggle(self) -> None:
+        t = self.current()
+        if not t:
+            return
+        new = not t["done"]
+        t["done"] = new  # stays in place until the next refresh
+
+        def undo():
+            t["done"] = not new
+            self.refresh_rows()
+        self.sync.submit("Completing…" if new else "Reopening…",
+                         lambda: self.api.set_done(t["id"], new), on_err=undo, task=t)
+
+    def action_add(self) -> None:
+        def done(title):
+            if title is None or not title.strip():
+                return
+            orders = [x["order"] for x in self.todos] or [0]
+            t = {"id": None, "title": title, "done": False, "order": min(orders) - 1, "category": None}
+            self.todos.insert(0, t)
+            self.rebuild(select=0)
+
+            def go():
+                row = self.api.add(title)
+                t["id"] = row["id"]  # set here so queued edits of this task can use it
+
+            def undo():
+                if t in self.todos:
+                    self.todos.remove(t)
+                    self.rebuild()
+            self.sync.submit("Adding…", go, on_err=undo, task=t)
+            self.reload_wanted = True  # pick up the server's ordering once idle
+        self.push_screen(EditScreen("New task"), done)
+
+    def action_edit(self) -> None:
+        t = self.current()
+        if not t:
+            return
+        old = t["title"]
+
+        def done(title):
+            if title is None or title == old or not title.strip():
+                return
+            t["title"] = title
+            self.refresh_rows()
+
+            def undo():
+                if t["title"] == title:
+                    t["title"] = old
+                    self.refresh_rows()
+            self.sync.submit("Saving…", lambda: self.api.set_title(t["id"], title), on_err=undo, task=t)
+        self.push_screen(EditScreen("Edit task", old), done)
+
+    def action_move(self, top: bool) -> None:
+        """Send the task to the top/bottom of the list. The cursor stays on the
+        same row, so it ends up on the task that was right below it."""
+        t = self.current()
+        if not t or self.query_text is not None:
+            return
+        i = self.todos.index(t)
+        if i == (0 if top else len(self.todos) - 1):
+            return
+        orders = [x["order"] for x in self.todos]
+        old_order, new = t["order"], (min(orders) - 1 if top else max(orders) + 1)
+        t["order"] = new
+        self.todos.remove(t)
+        self.todos.insert(0 if top else len(self.todos), t)
+        follow = self.todos[min(i + 1, len(self.todos) - 1)] if top else self.todos[i]
+        self.rebuild(select=self.todos.index(follow))
+
+        def undo():
+            t["order"] = old_order
+            if t in self.todos:
+                self.todos.remove(t)
+                self.todos.insert(min(i, len(self.todos)), t)
+                self.rebuild()
+        self.sync.submit("Moving…", lambda: self.api.set_order(t["id"], new), on_err=undo, task=t)
+
+    def action_archive(self) -> None:
+        t = self.current()
+        if not t:
+            return
+
+        def done(yes):
+            if not yes or t not in self.todos:
+                return
+            i = self.todos.index(t)
+            self.todos.remove(t)
+            self.rebuild(select=min(i, len(self.todos) - 1) if self.todos else None)
+
+            def undo():
+                self.todos.insert(min(i, len(self.todos)), t)
+                self.rebuild()
+            self.sync.submit("Archiving…", lambda: self.api.archive(t["id"]), on_err=undo)
+        self.push_screen(ConfirmScreen(f"Archive “{one_line(t['title'])[:60]}”?"), done)
+
+    def action_categorize(self) -> None:
+        t = self.current()
+        if not t:
+            return
+        if not self.cats:
+            self.notify("No categories yet. Create one in the app.", severity="warning")
+            return
+        names = ["(none)"] + [c["name"] for c in self.cats]
+        current = next((i + 1 for i, c in enumerate(self.cats) if c["id"] == t.get("category")), 0)
+
+        def done(idx):
+            if idx is None:
+                return
+            new = self.cats[idx - 1]["id"] if idx else None
+            old = t.get("category")
+            if new == old:
+                return
+            t["category"] = new
+            self.refresh_rows()
+
+            def undo():
+                t["category"] = old
+                self.refresh_rows()
+            self.sync.submit("Saving category…", lambda: self.api.set_category(t["id"], new), on_err=undo, task=t)
+        self.push_screen(PickScreen(f"Category for: {one_line(t['title'])[:60]}", names, current), done)
+
+    # ---- search ----
+
+    def action_search(self) -> None:
+        self.search_origin = self.current()
+        self.query_text = ""
+        s = self.ui("#search", SearchInput)
+        s.value = ""
+        s.add_class("on")
+        s.focus()
+        self.rebuild()
+
+    @on(Input.Changed, "#search")
+    def search_changed(self, event: Input.Changed) -> None:
+        if self.query_text is None:
+            return
+        self.query_text = event.value
+        self.rebuild()
+        if self.shown:
+            self.ui(TaskList).highlighted = 0
+
+    @on(Input.Submitted, "#search")
+    def search_submitted(self) -> None:
+        target = self.current() if (self.query_text or "").strip() else self.search_origin
+        if (self.query_text or "").strip() and not self.shown:
+            self.notify(f"No task matches “{self.query_text.strip()}”", severity="warning")
+            target = self.search_origin
+        self._end_search(target, center=True)
+
+    def action_cancel_search(self) -> None:
+        self._end_search(self.search_origin)
+
+    def _end_search(self, target, center=False) -> None:
+        self.query_text = None
+        s = self.ui("#search", SearchInput)
+        s.remove_class("on")
+        ol = self.ui(TaskList)
+        ol.focus()
+        self.rebuild(select=self.todos.index(target) if target in self.todos else None)
+        if center:
+            self.call_after_refresh(ol.action_center)
 
 
 def main():
     if not sys.stdout.isatty():
         sys.exit("tasks.py needs an interactive terminal.")
-    sys.stdout.reconfigure(encoding="utf-8")
-    os.system("")  # turns on ANSI escape handling in the Windows console
-    api = Api(load_session())
-    out(ESC + "[?1049h")  # alternate screen: leaves the shell untouched on exit
-    try:
-        while True:
-            if not api.session.get("refresh_token") and not login_screen(api):
-                return
-            try:
-                if App(api).run() == "quit":
-                    return
-            except AuthError as e:
-                api.logout()
-                api.session = {"email": api.session.get("email", "")}
-                if not login_screen(api, f"Session expired: {e}"):
-                    return
-            else:
-                api.session = {"email": api.session.get("email", "")}
-    finally:
-        out(f"{ESC}[?25h{ESC}[?1049l")
+    TasksApp().run()
 
 
 if __name__ == "__main__":

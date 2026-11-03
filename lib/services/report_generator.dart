@@ -124,8 +124,8 @@ class ReportGenerator {
       for (final e in catsSorted) catColorByName[e.key] ?? _grey
     ];
 
-    final top20 = ([...txns]..sort((a, b) => b.valor.compareTo(a.valor)))
-        .take(20)
+    final top30 = ([...txns]..sort((a, b) => b.valor.compareTo(a.valor)))
+        .take(30)
         .toList();
 
     // ── Table fragments ─────────────────────────────────────────────
@@ -155,8 +155,8 @@ class ReportGenerator {
     }
 
     final topRows = StringBuffer();
-    for (var rank = 0; rank < top20.length; rank++) {
-      final t = top20[rank];
+    for (var rank = 0; rank < top30.length; rank++) {
+      final t = top30[rank];
       final color = catColorByName[catName(t)] ?? _grey;
       topRows.write('<tr>'
           '<td class="r muted">${rank + 1}</td>'
@@ -380,7 +380,7 @@ ${_css()}
 
 <!-- PÁGINA 7 — MAIORES GASTOS -->
 <div class="page page-content">
-  ${_pageHeader('Top 20 Maiores Gastos', '7')}
+  ${_pageHeader('Top 30 Maiores Gastos', '7')}
   <div class="body">
     <table class="dt top-table">
       <thead><tr>

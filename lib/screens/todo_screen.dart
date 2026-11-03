@@ -1477,7 +1477,7 @@ class _TodoCardBody extends StatelessWidget {
       selectable: false,
       softLineBreak: true,
       styleSheet: _todoMarkdownStyleSheet(context, style),
-      onTapLink: (text, href, _) => Links.open(context, href ?? text),
+      onTapLink: (text, href, _) => Links.showActions(context, href ?? text),
     );
   }
 

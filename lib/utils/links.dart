@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Links inside a todo's text: tapping one opens it in the default
@@ -62,6 +63,56 @@ class Links {
     if (!opened) {
       messenger?.showSnackBar(
           SnackBar(content: Text('Não foi possível abrir ${url ?? 'o link'}')));
+    }
+  }
+
+  /// Tapping a link in the mobile app: a small sheet to copy it, open it
+  /// or share it through the system share sheet.
+  static Future<void> showActions(BuildContext context, String? url) async {
+    if (url == null || url.trim().isEmpty) return;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              dense: true,
+              title: Text(url, maxLines: 2, overflow: TextOverflow.ellipsis),
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Copiar'),
+              onTap: () => Navigator.pop(context, 'copy'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.open_in_new),
+              title: const Text('Abrir'),
+              onTap: () => Navigator.pop(context, 'open'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('Compartilhar'),
+              onTap: () => Navigator.pop(context, 'share'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !context.mounted) return;
+    switch (action) {
+      case 'copy':
+        await Clipboard.setData(ClipboardData(text: url));
+        HapticFeedback.mediumImpact();
+        if (context.mounted) {
+          ScaffoldMessenger.maybeOf(context)
+              ?.showSnackBar(const SnackBar(content: Text('Link copiado')));
+        }
+      case 'open':
+        await open(context, url);
+      case 'share':
+        await SharePlus.instance.share(ShareParams(text: url));
     }
   }
 

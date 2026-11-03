@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -8,6 +10,7 @@ import '../app_theme.dart';
 import '../models/purchase.dart';
 import '../models/purchase_category.dart';
 import '../services/report_generator.dart';
+import '../services/report_pdf.dart';
 import '../services/supabase_service.dart';
 
 /// Monthly expense report: the HTML built by ReportGenerator rendered in
@@ -44,6 +47,8 @@ class _ReportScreenState extends State<ReportScreen> {
   bool _isEmpty = false;
   String? _error;
   String? _html;
+  Uint8List? _pdf;
+  bool _isBusy = false;
   WebViewController? _controller;
 
   static bool get _webViewSupported =>
@@ -85,6 +90,7 @@ class _ReportScreenState extends State<ReportScreen> {
       _isLoading = true;
       _isEmpty = false;
       _error = null;
+      _pdf = null;
     });
     try {
       _chartJs ??= await rootBundle.loadString('assets/chart.min.js');
@@ -141,8 +147,74 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
+  /// Builds the PDF once per loaded report. printing's HTML converter runs
+  /// with JavaScript off on mobile, so there the live WebView (where Chart.js
+  /// has already drawn) is snapshotted first: canvases become <img>s and
+  /// scripts are dropped. Windows' headless Edge runs the scripts itself.
+  Future<Uint8List> _buildPdf() async {
+    var html = _html!;
+    final controller = _controller;
+    if (controller != null && !Platform.isWindows) {
+      const js = r'''
+(function () {
+  var src = document.querySelectorAll('canvas');
+  var root = document.documentElement.cloneNode(true);
+  var dst = root.querySelectorAll('canvas');
+  for (var i = 0; i < dst.length; i++) {
+    var img = document.createElement('img');
+    img.src = src[i].toDataURL('image/png');
+    img.setAttribute('style', dst[i].getAttribute('style') || '');
+    img.style.width = src[i].clientWidth + 'px';
+    img.style.height = src[i].clientHeight + 'px';
+    dst[i].parentNode.replaceChild(img, dst[i]);
+  }
+  root.querySelectorAll('script').forEach(function (s) { s.remove(); });
+  return '<!DOCTYPE html>' + root.outerHTML;
+})()
+''';
+      var result =
+          (await controller.runJavaScriptReturningResult(js)).toString();
+      // Android returns the string JSON-encoded; iOS/macOS return it raw.
+      while (result.startsWith('"')) {
+        result = jsonDecode(result) as String;
+      }
+      html = result;
+    }
+    return ReportPdf.fromHtml(html);
+  }
+
+  Future<void> _withPdf(Future<void> Function(Uint8List pdf) action) async {
+    if (_html == null) return;
+    setState(() => _isBusy = true);
+    try {
+      _pdf ??= await _buildPdf();
+      await action(_pdf!);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Falha ao gerar o PDF: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  String get _fileName => 'relatorio_gastos_'
+      '${_dateString(_month).substring(0, 7)}';
+
+  void _print() => _withPdf((pdf) => ReportPdf.printPdf(pdf, _fileName));
+
+  void _save() => _withPdf((pdf) async {
+        final path = await ReportPdf.savePdf(pdf, _fileName);
+        if (path != null && mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('PDF salvo em $path')));
+        }
+      });
+
   @override
   Widget build(BuildContext context) {
+    final hasReport = !_isLoading && _error == null && !_isEmpty && _html != null;
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       appBar: AppBar(
@@ -151,6 +223,30 @@ class _ReportScreenState extends State<ReportScreen> {
         elevation: 0,
         title: const Text('Relatório de gastos',
             style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          if (_isBusy)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppTheme.primaryOrange),
+              ),
+            )
+          else if (hasReport) ...[
+            IconButton(
+              onPressed: _print,
+              icon: const Icon(Icons.print_outlined),
+              tooltip: 'Imprimir',
+            ),
+            IconButton(
+              onPressed: _save,
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              tooltip: 'Salvar / compartilhar PDF',
+            ),
+          ],
+        ],
       ),
       body: Column(
         children: [

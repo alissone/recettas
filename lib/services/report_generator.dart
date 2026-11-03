@@ -402,6 +402,10 @@ $tableHtml
 <script>
 $chartJs
 
+// No animation: charts are fully drawn synchronously, so they can be
+// snapshotted / printed to PDF right after load.
+Chart.defaults.animation = false;
+
 const brl = v => 'R\$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 const brlAxis = v => 'R\$ ' + v.toLocaleString('pt-BR');
 

@@ -10,6 +10,7 @@ import '../services/supabase_service.dart';
 import '../utils/dates.dart';
 import 'chat_room_screen.dart';
 import 'files_screen.dart';
+import 'quiz_list_screen.dart';
 
 /// "Chat" tab: the inbox. Rows are styled like the utility tiles on the
 /// "Mais" tab - a white card with a leading badge, title, subtitle and
@@ -43,12 +44,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
     super.initState();
     // The IndexedStack builds this tab at app start, so signing in
     // later has to swap the placeholder for the inbox from here.
-    _authSubscription = SupabaseService.authDataChanges.listen(
-      (_) {
-        if (mounted) setState(() {});
-      },
-      onError: (_) {},
-    );
+    _authSubscription = SupabaseService.authDataChanges.listen((_) {
+      if (mounted) setState(() {});
+    }, onError: (_) {});
   }
 
   @override
@@ -91,6 +89,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
+  void _openQuizzes() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const QuizListScreen()),
+    );
+  }
+
   void _openFiles() {
     Navigator.push(
       context,
@@ -100,10 +105,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: AppTheme.darkBrown,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppTheme.darkBrown),
+    );
   }
 
   // --- Build ---
@@ -113,18 +117,33 @@ class _ChatListScreenState extends State<ChatListScreen> {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       floatingActionButton: _isAuthenticated
-          ? FloatingActionButton(
-              heroTag: 'chat_fab',
-              onPressed: _opening ? null : _newChat,
-              tooltip: 'Nova conversa',
-              child: _opening
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.add_comment_outlined),
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'chat_quiz_fab',
+                  tooltip: 'Quizzes',
+                  onPressed: _openQuizzes,
+                  child: const Icon(Icons.quiz_outlined),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton(
+                  heroTag: 'chat_fab',
+                  onPressed: _opening ? null : _newChat,
+                  tooltip: 'Nova conversa',
+                  child: _opening
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.add_comment_outlined),
+                ),
+              ],
             )
           : null,
       body: SafeArea(
@@ -136,14 +155,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
               child: Row(
                 children: [
                   const Expanded(
-                    child:
-                        Text('Conversas', style: AppTheme.headingLarge),
+                    child: Text('Conversas', style: AppTheme.headingLarge),
                   ),
                   if (_isAuthenticated)
                     IconButton(
                       tooltip: 'Arquivos',
-                      icon: const Icon(Icons.folder_outlined,
-                          color: AppTheme.darkBrown),
+                      icon: const Icon(
+                        Icons.folder_outlined,
+                        color: AppTheme.darkBrown,
+                      ),
                       onPressed: _openFiles,
                     ),
                   ...widget.headerActions,
@@ -154,8 +174,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: Text(
                 'Mensagens em tempo real',
-                style:
-                    AppTheme.bodyText.copyWith(color: AppTheme.mediumBrown),
+                style: AppTheme.bodyText.copyWith(color: AppTheme.mediumBrown),
               ),
             ),
             Expanded(child: _buildContent()),
@@ -187,7 +206,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
           return _buildPlaceholder(
             icon: Icons.forum_outlined,
             title: 'Nenhuma conversa ainda',
-            body: 'Toque em + e informe o e-mail de quem você quer '
+            body:
+                'Toque em + e informe o e-mail de quem você quer '
                 'conversar. Depois disso a conversa fica aqui para '
                 'sempre.',
           );
@@ -241,11 +261,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         preview == null || preview.isEmpty
                             ? 'Nenhuma mensagem ainda'
                             : sentByMe
-                                ? 'Você: $preview'
-                                : preview,
+                            ? 'Você: $preview'
+                            : preview,
                         style: AppTheme.caption.copyWith(
-                          fontWeight:
-                              unread ? FontWeight.w700 : FontWeight.w400,
+                          fontWeight: unread
+                              ? FontWeight.w700
+                              : FontWeight.w400,
                           color: unread
                               ? AppTheme.darkBrown
                               : AppTheme.mediumBrown,
@@ -279,8 +300,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               shape: BoxShape.circle,
                             ),
                           )
-                        : const Icon(Icons.chevron_right,
-                            size: 18, color: AppTheme.mediumBrown),
+                        : const Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: AppTheme.mediumBrown,
+                          ),
                   ],
                 ),
               ],
@@ -302,9 +326,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 64,
-                color: AppTheme.primaryOrange.withValues(alpha: 0.4)),
+            Icon(
+              icon,
+              size: 64,
+              color: AppTheme.primaryOrange.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 16),
             Text(title, style: AppTheme.sectionTitle),
             const SizedBox(height: 8),
@@ -330,8 +356,7 @@ class ChatAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial =
-        label.trim().isEmpty ? '?' : label.trim()[0].toUpperCase();
+    final initial = label.trim().isEmpty ? '?' : label.trim()[0].toUpperCase();
     return Container(
       width: size,
       height: size,
@@ -409,8 +434,7 @@ class _NewChatDialogState extends State<_NewChatDialog> {
             controller: _controller,
             autofocus: true,
             keyboardType: TextInputType.emailAddress,
-            decoration:
-                const InputDecoration(hintText: 'email@exemplo.com'),
+            decoration: const InputDecoration(hintText: 'email@exemplo.com'),
             onSubmitted: (_) => _submit(),
           ),
           const SizedBox(height: 12),
@@ -425,8 +449,10 @@ class _NewChatDialogState extends State<_NewChatDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancelar',
-              style: TextStyle(color: AppTheme.mediumBrown)),
+          child: Text(
+            'Cancelar',
+            style: TextStyle(color: AppTheme.mediumBrown),
+          ),
         ),
         ElevatedButton(
           onPressed: _submit,

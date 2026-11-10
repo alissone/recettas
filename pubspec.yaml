@@ -97,6 +97,7 @@ flutter:
     - assets/NVI.xml
     - assets/exercises/
     - assets/exercise_posters/
+    - assets/quizzes/
 
   fonts:
     - family: Niconne

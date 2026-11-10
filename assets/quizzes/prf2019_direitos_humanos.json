@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000009",
+  "title": "Direitos Humanos — PRF 2019",
+  "topic": "Direitos Humanos",
+  "description": "Teoria geral, afirmação histórica, responsabilidade do Estado e tratados internacionais na Constituição.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#F15BB5",
+  "questions": [
+    {
+      "prompt": "Uma pessoa que viola direitos humanos de outras:",
+      "options": [
+        {
+          "text": "continua titular de direitos humanos e protegida pelas normas que os preveem",
+          "explanation": "Certa: pela universalidade, todo ser humano é titular de direitos humanos, inclusive quem os viola."
+        },
+        {
+          "text": "perde automaticamente a proteção dos direitos humanos",
+          "explanation": "Errada: a titularidade decorre da condição humana, não da conduta."
+        },
+        {
+          "text": "só mantém os direitos de primeira dimensão",
+          "explanation": "Errada: a proteção é integral, não fracionada por dimensões."
+        },
+        {
+          "text": "perde a proteção enquanto cumprir pena",
+          "explanation": "Errada: o preso conserva todos os direitos não atingidos pela sentença."
+        },
+        {
+          "text": "tem seus direitos suspensos até o trânsito em julgado",
+          "explanation": "Errada: não há suspensão de direitos humanos por acusação."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Perante a Convenção Americana de Direitos Humanos, o Estado pode ser responsabilizado internacionalmente:",
+      "options": [
+        {
+          "text": "apenas por atos de seus agentes",
+          "explanation": "Errada: a omissão estatal diante de violações por particulares também gera responsabilidade."
+        },
+        {
+          "text": "apenas por atos do Poder Executivo",
+          "explanation": "Errada: atos do Legislativo e do Judiciário também podem gerar responsabilidade."
+        },
+        {
+          "text": "somente se o agente for condenado criminalmente no país",
+          "explanation": "Errada: a responsabilidade internacional é do Estado e independe da condenação do agente."
+        },
+        {
+          "text": "por atos ou omissões de seus agentes e também por atos de particulares, quando falha no dever de prevenir, investigar e punir",
+          "explanation": "Certa: é o dever de devida diligência, consolidado pela Corte Interamericana desde o caso Velásquez Rodríguez."
+        },
+        {
+          "text": "apenas se o Estado consentir em cada caso",
+          "explanation": "Errada: aceita a competência da Corte, o Estado se submete a ela de forma geral."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A característica dos direitos humanos segundo a qual eles foram reconhecidos aos poucos, ao longo da história, é a:",
+      "options": [
+        {
+          "text": "imprescritibilidade",
+          "explanation": "Errada: significa que os direitos não se perdem pelo decurso do tempo."
+        },
+        {
+          "text": "historicidade",
+          "explanation": "Certa: os direitos humanos foram afirmados progressivamente — daí a ideia de gerações ou dimensões."
+        },
+        {
+          "text": "inalienabilidade",
+          "explanation": "Errada: significa que não podem ser vendidos ou transferidos."
+        },
+        {
+          "text": "indivisibilidade",
+          "explanation": "Errada: significa que formam um conjunto que não pode ser fragmentado."
+        },
+        {
+          "text": "irrenunciabilidade",
+          "explanation": "Errada: significa que o titular não pode abrir mão deles."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O direito ao meio ambiente ecologicamente equilibrado é classicamente associado à:",
+      "options": [
+        {
+          "text": "primeira dimensão (liberdade)",
+          "explanation": "Errada: abrange direitos civis e políticos, como liberdade de expressão e voto."
+        },
+        {
+          "text": "segunda dimensão (igualdade)",
+          "explanation": "Errada: abrange direitos sociais, econômicos e culturais, como saúde e educação."
+        },
+        {
+          "text": "dimensão zero, anterior ao Estado",
+          "explanation": "Errada: não é uma classificação usada pela doutrina."
+        },
+        {
+          "text": "terceira dimensão (fraternidade ou solidariedade)",
+          "explanation": "Certa: inclui direitos difusos, como paz, desenvolvimento e meio ambiente."
+        },
+        {
+          "text": "quarta dimensão, exclusivamente",
+          "explanation": "Errada: para parte da doutrina, a quarta dimensão abrange democracia, informação e pluralismo; o meio ambiente é tradicionalmente de terceira."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Para que um tratado internacional de direitos humanos seja equivalente a emenda constitucional, ele deve ser aprovado:",
+      "options": [
+        {
+          "text": "por três quintos dos membros de cada Casa, em turno único",
+          "explanation": "Errada: o rito exige dois turnos em cada Casa."
+        },
+        {
+          "text": "por maioria simples, em sessão conjunta",
+          "explanation": "Errada: é necessário quórum qualificado em cada Casa, separadamente."
+        },
+        {
+          "text": "por maioria absoluta, em dois turnos",
+          "explanation": "Errada: o quórum é de três quintos."
+        },
+        {
+          "text": "apenas pelo Senado, por dois terços",
+          "explanation": "Errada: ambas as Casas participam do rito."
+        },
+        {
+          "text": "em cada Casa do Congresso Nacional, em dois turnos, por três quintos dos votos dos respectivos membros",
+          "explanation": "Certa: art. 5º, § 3º, da CF (EC nº 45/2004)."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Segundo o STF, tratados de direitos humanos ratificados pelo Brasil SEM o rito do art. 5º, § 3º, têm status:",
+      "options": [
+        {
+          "text": "constitucional, em qualquer caso",
+          "explanation": "Errada: só os aprovados pelo rito do § 3º equivalem a emendas."
+        },
+        {
+          "text": "de lei ordinária, como qualquer tratado",
+          "explanation": "Errada: para tratados de direitos humanos, o STF adotou a supralegalidade."
+        },
+        {
+          "text": "supralegal — abaixo da Constituição, mas acima das leis ordinárias",
+          "explanation": "Certa: tese firmada no RE 466.343 (2008), a respeito do Pacto de San José da Costa Rica."
+        },
+        {
+          "text": "supraconstitucional",
+          "explanation": "Errada: o STF não admite tratados acima da Constituição."
+        },
+        {
+          "text": "de decreto regulamentar",
+          "explanation": "Errada: não há essa equiparação."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual destes tratados foi aprovado com equivalência de emenda constitucional?",
+      "options": [
+        {
+          "text": "Convenção Americana de Direitos Humanos (Pacto de San José)",
+          "explanation": "Errada: foi incorporada em 1992, antes da EC nº 45/2004; tem status supralegal."
+        },
+        {
+          "text": "Pacto Internacional sobre Direitos Civis e Políticos",
+          "explanation": "Errada: incorporado em 1992, sem o rito do § 3º; status supralegal."
+        },
+        {
+          "text": "Convenção Internacional sobre os Direitos das Pessoas com Deficiência (Nova York)",
+          "explanation": "Certa: foi o primeiro tratado aprovado pelo rito do art. 5º, § 3º (Decreto Legislativo nº 186/2008)."
+        },
+        {
+          "text": "Declaração Universal dos Direitos Humanos",
+          "explanation": "Errada: é uma resolução da Assembleia Geral da ONU, não um tratado ratificado."
+        },
+        {
+          "text": "Convenção contra a Tortura da ONU",
+          "explanation": "Errada: foi incorporada em 1991, sem o rito do § 3º."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "À luz do Pacto de San José e da jurisprudência do STF, a prisão civil do depositário infiel:",
+      "options": [
+        {
+          "text": "é permitida, pois está prevista na CF",
+          "explanation": "Errada: a norma constitucional ficou sem aplicação diante do status supralegal do Pacto."
+        },
+        {
+          "text": "é ilícita, qualquer que seja a modalidade do depósito (Súmula Vinculante 25)",
+          "explanation": "Certa: a única prisão civil admitida é a do devedor voluntário e inescusável de alimentos."
+        },
+        {
+          "text": "é permitida apenas no depósito judicial",
+          "explanation": "Errada: a súmula vale para qualquer modalidade."
+        },
+        {
+          "text": "é permitida por até 1 ano",
+          "explanation": "Errada: não há hipótese admitida."
+        },
+        {
+          "text": "é permitida, se o débito superar 40 salários mínimos",
+          "explanation": "Errada: não existe esse critério."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Sobre a Declaração Universal dos Direitos Humanos, é correto afirmar que:",
+      "options": [
+        {
+          "text": "foi assinada em 1945, junto com a Carta da ONU",
+          "explanation": "Errada: a Carta é de 1945; a Declaração veio em 1948."
+        },
+        {
+          "text": "é um tratado ratificado pelo Brasil com status de emenda constitucional",
+          "explanation": "Errada: não é tratado e não passou pelo rito do § 3º."
+        },
+        {
+          "text": "foi elaborada pela OEA",
+          "explanation": "Errada: é documento da ONU; a OEA adotou a Declaração Americana, também em 1948."
+        },
+        {
+          "text": "trata apenas de direitos sociais",
+          "explanation": "Errada: abrange direitos civis, políticos, econômicos, sociais e culturais."
+        },
+        {
+          "text": "foi proclamada em 1948 pela Assembleia Geral da ONU por meio de resolução",
+          "explanation": "Certa: a Resolução 217 A (III), de 10/12/1948, não é tratado, embora muitos dos seus preceitos sejam considerados costume internacional."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "No sistema interamericano, uma vítima de violação de direitos humanos pelo Brasil:",
+      "options": [
+        {
+          "text": "apresenta petição à Comissão Interamericana, que pode submeter o caso à Corte",
+          "explanation": "Certa: indivíduos não acionam a Corte diretamente; só a Comissão e os Estados-partes podem submeter casos a ela."
+        },
+        {
+          "text": "aciona diretamente a Corte Interamericana",
+          "explanation": "Errada: o acesso individual direto à Corte não é admitido."
+        },
+        {
+          "text": "deve recorrer ao Tribunal Penal Internacional",
+          "explanation": "Errada: o TPI julga indivíduos por crimes internacionais, não Estados por violações de direitos humanos."
+        },
+        {
+          "text": "não tem nenhum mecanismo, pois o Brasil não aceita a Corte",
+          "explanation": "Errada: o Brasil reconheceu a competência contenciosa da Corte em 1998."
+        },
+        {
+          "text": "precisa de autorização do STF para peticionar",
+          "explanation": "Errada: não existe essa exigência; há apenas o requisito de, em regra, esgotar os recursos internos."
+        }
+      ],
+      "correct": "A"
+    }
+  ]
+}

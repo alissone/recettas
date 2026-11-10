@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000005",
+  "title": "Legislação de Trânsito — PRF 2019",
+  "topic": "Legislação de Trânsito",
+  "description": "Crimes de trânsito, infrações, medidas administrativas, velocidades e o Sistema Nacional de Trânsito no CTB.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#FF8C42",
+  "questions": [
+    {
+      "prompt": "Godofredo e Antônio disputaram um \"racha\" em via pública, sem autorização, com manobras arriscadas, mas ninguém se feriu. Pelo CTB:",
+      "options": [
+        {
+          "text": "ambos já cometeram o crime do art. 308, pois a disputa gerou situação de risco à incolumidade pública ou privada",
+          "explanation": "Certa: o art. 308 pune a participação em corrida não autorizada que gere situação de risco, mesmo sem vítimas (detenção de 6 meses a 3 anos, multa e suspensão)."
+        },
+        {
+          "text": "há apenas infração administrativa, pois ninguém se feriu",
+          "explanation": "Errada: além da infração (art. 173), a conduta já é crime pelo art. 308; lesão não é requisito."
+        },
+        {
+          "text": "só haveria crime se houvesse lesão corporal ou morte",
+          "explanation": "Errada: lesão grave e morte são formas qualificadas (§§ 1º e 2º); o caput já pune o risco."
+        },
+        {
+          "text": "a pena é de reclusão de 5 a 10 anos",
+          "explanation": "Errada: essa é a pena se resultar morte (§ 2º); no caput a pena é de detenção."
+        },
+        {
+          "text": "é crime somente se praticado em rodovia federal",
+          "explanation": "Errada: o tipo fala em \"via pública\", de qualquer circunscrição."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Luciano atropelou um pedestre, causando ferimentos leves, e fugiu sem prestar socorro; um terceiro socorreu a vítima. Segundo o CTB, Luciano:",
+      "options": [
+        {
+          "text": "não comete crime, pois a vítima foi socorrida",
+          "explanation": "Errada: o CTB afasta expressamente essa tese no parágrafo único do art. 304."
+        },
+        {
+          "text": "responde pela omissão de socorro, ainda que ela tenha sido suprida por terceiros",
+          "explanation": "Certa: o parágrafo único do art. 304 diz que o crime ocorre ainda que a omissão seja suprida por terceiros, ou que a vítima tenha morte instantânea ou ferimentos leves."
+        },
+        {
+          "text": "não comete crime, pois os ferimentos foram leves",
+          "explanation": "Errada: ferimentos leves também estão expressamente abrangidos."
+        },
+        {
+          "text": "responde apenas por infração administrativa",
+          "explanation": "Errada: a omissão de socorro do condutor envolvido é crime de trânsito."
+        },
+        {
+          "text": "responde por homicídio tentado",
+          "explanation": "Errada: não há dolo de matar; a figura é a omissão de socorro (ou lesão culposa com aumento de pena, se ele tiver agido com culpa)."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Sandro emprestou seu carro a Wellington sabendo que ele não tinha habilitação. Wellington dirigiu normalmente, sem gerar perigo. Pelo CTB e pela jurisprudência do STJ:",
+      "options": [
+        {
+          "text": "ambos cometem crime, independentemente de perigo",
+          "explanation": "Errada: o art. 309 exige que a direção sem habilitação gere perigo de dano."
+        },
+        {
+          "text": "Sandro comete o crime do art. 310 mesmo sem perigo concreto; Wellington só cometeria o do art. 309 se gerasse perigo de dano",
+          "explanation": "Certa: a Súmula 575 do STJ diz que o crime do art. 310 é de perigo abstrato; já o art. 309 exige expressamente \"perigo de dano\"."
+        },
+        {
+          "text": "nenhum dos dois comete crime, pois não houve perigo",
+          "explanation": "Errada: o art. 310 (entregar a direção) dispensa perigo concreto (Súmula 575 do STJ)."
+        },
+        {
+          "text": "só Wellington comete crime, pois era ele quem dirigia",
+          "explanation": "Errada: é o contrário — sem perigo, só quem entregou o veículo responde criminalmente."
+        },
+        {
+          "text": "Sandro só responde se Wellington causar acidente",
+          "explanation": "Errada: o crime do art. 310 se consuma com a entrega do veículo a pessoa não habilitada."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Em rodovia de pista DUPLA, sem sinalização em contrário, a velocidade máxima para automóveis, camionetas e motocicletas é de:",
+      "options": [
+        {
+          "text": "110 km/h",
+          "explanation": "Certa: art. 61, § 1º, II, \"a\", 1, do CTB. Para os demais veículos, 90 km/h."
+        },
+        {
+          "text": "100 km/h",
+          "explanation": "Errada: 100 km/h é o limite para esses veículos em rodovia de pista SIMPLES."
+        },
+        {
+          "text": "90 km/h",
+          "explanation": "Errada: 90 km/h é o limite dos demais veículos (ônibus, caminhões) nas rodovias."
+        },
+        {
+          "text": "120 km/h",
+          "explanation": "Errada: o CTB não prevê 120 km/h como limite padrão."
+        },
+        {
+          "text": "80 km/h",
+          "explanation": "Errada: 80 km/h é o limite das vias de trânsito rápido urbanas."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Segundo o art. 89 do CTB, a ordem de prevalência da sinalização é:",
+      "options": [
+        {
+          "text": "semáforo > ordens do agente > demais sinais > normas",
+          "explanation": "Errada: as ordens do agente prevalecem inclusive sobre o semáforo."
+        },
+        {
+          "text": "normas de circulação > sinais > semáforo > agente",
+          "explanation": "Errada: é a ordem inversa da prevista no CTB."
+        },
+        {
+          "text": "placas > semáforo > agente > normas",
+          "explanation": "Errada: placas (sinais verticais) ficam abaixo do semáforo e do agente."
+        },
+        {
+          "text": "ordens do agente > indicações do semáforo > demais sinais > normas de circulação",
+          "explanation": "Certa: as ordens do agente prevalecem sobre tudo; o semáforo, sobre os demais sinais; e os sinais, sobre as normas de trânsito."
+        },
+        {
+          "text": "todos os sinais têm o mesmo peso; prevalece o mais recente",
+          "explanation": "Errada: o CTB estabelece hierarquia expressa."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "De acordo com o art. 7º do CTB, o coordenador do Sistema Nacional de Trânsito e órgão máximo normativo e consultivo é o:",
+      "options": [
+        {
+          "text": "DENATRAN (atual SENATRAN)",
+          "explanation": "Errada: é o órgão máximo EXECUTIVO de trânsito da União, não o normativo."
+        },
+        {
+          "text": "DNIT",
+          "explanation": "Errada: é o órgão executivo rodoviário da União."
+        },
+        {
+          "text": "PRF",
+          "explanation": "Errada: integra o SNT como órgão de policiamento e fiscalização das rodovias federais."
+        },
+        {
+          "text": "CONTRAN",
+          "explanation": "Certa: o Conselho Nacional de Trânsito é o coordenador do SNT e órgão máximo normativo e consultivo."
+        },
+        {
+          "text": "CETRAN",
+          "explanation": "Errada: os Conselhos Estaduais de Trânsito atuam no âmbito dos estados."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Condutor flagrado sem cinto de segurança, sem outra irregularidade. Segundo o CTB, a infração e a medida administrativa são:",
+      "options": [
+        {
+          "text": "infração gravíssima e remoção do veículo",
+          "explanation": "Errada: a infração é grave e a medida é retenção, não remoção."
+        },
+        {
+          "text": "infração leve, sem medida administrativa",
+          "explanation": "Errada: a infração é grave e há retenção do veículo."
+        },
+        {
+          "text": "infração grave, multa e retenção do veículo até a colocação do cinto",
+          "explanation": "Certa: art. 167 do CTB."
+        },
+        {
+          "text": "infração média e recolhimento da CNH",
+          "explanation": "Errada: não há recolhimento do documento nessa infração."
+        },
+        {
+          "text": "infração grave e suspensão imediata do direito de dirigir",
+          "explanation": "Errada: a infração não prevê suspensão direta."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Caio dirigia com a CNH vencida havia mais de 30 dias. Segundo o CTB:",
+      "options": [
+        {
+          "text": "multa, recolhimento da CNH e remoção do veículo ao depósito",
+          "explanation": "Errada: a medida é retenção até aparecer condutor habilitado, não remoção."
+        },
+        {
+          "text": "não há infração enquanto a CNH não estiver vencida há mais de 1 ano",
+          "explanation": "Errada: o prazo de tolerância é de 30 dias."
+        },
+        {
+          "text": "infração gravíssima, multa, recolhimento da CNH e retenção do veículo até a apresentação de condutor habilitado",
+          "explanation": "Certa: art. 162, V, do CTB. O veículo é retido, não removido."
+        },
+        {
+          "text": "crime de trânsito do art. 309",
+          "explanation": "Errada: com CNH vencida o condutor continua habilitado; é infração administrativa."
+        },
+        {
+          "text": "apenas notificação para renovação, sem penalidade",
+          "explanation": "Errada: a lei prevê infração gravíssima com multa."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Pelo art. 261 do CTB, a suspensão do direito de dirigir por pontuação ocorre, em 12 meses, ao atingir:",
+      "options": [
+        {
+          "text": "20 pontos, em qualquer caso",
+          "explanation": "Errada: o limite fixo de 20 pontos foi substituído pelo escalonamento 20/30/40."
+        },
+        {
+          "text": "40 pontos, em qualquer caso",
+          "explanation": "Errada: 40 é o limite só sem gravíssimas (ou para quem exerce atividade remunerada)."
+        },
+        {
+          "text": "30 pontos se houver gravíssima; 20 se não houver",
+          "explanation": "Errada: a lógica é inversa — mais gravíssimas, menos pontos para a suspensão."
+        },
+        {
+          "text": "10 pontos por infração gravíssima",
+          "explanation": "Errada: gravíssima vale 7 pontos, e a suspensão depende do total acumulado."
+        },
+        {
+          "text": "20 pontos se houver 2 ou mais infrações gravíssimas; 30 se houver 1; 40 se não houver nenhuma",
+          "explanation": "Certa: é o escalonamento atual do art. 261, I a III (motoristas profissionais têm 40 pontos como limite em qualquer caso)."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Condutor de veículo licenciado no exterior, em trânsito no Brasil, é autuado por infração. Segundo o CTB, a multa:",
+      "options": [
+        {
+          "text": "deve ser paga no país de licenciamento do veículo",
+          "explanation": "Errada: o pagamento deve ocorrer antes da saída do Brasil."
+        },
+        {
+          "text": "não pode ser aplicada a estrangeiros",
+          "explanation": "Errada: o CTB vale para todos que circulam em território nacional."
+        },
+        {
+          "text": "é cobrada por via diplomática após o retorno do condutor",
+          "explanation": "Errada: a lei exige o pagamento antes da saída."
+        },
+        {
+          "text": "é convertida em advertência por escrito",
+          "explanation": "Errada: não há conversão automática por se tratar de veículo estrangeiro."
+        },
+        {
+          "text": "deve ser paga antes da saída do veículo do país, respeitado o princípio da reciprocidade",
+          "explanation": "Certa: é a regra do art. 260, § 4º, do CTB."
+        }
+      ],
+      "correct": "E"
+    }
+  ]
+}

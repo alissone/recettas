@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000004",
+  "title": "Geopolítica e História da PRF — PRF 2019",
+  "topic": "Geopolítica e PRF",
+  "description": "Modal rodoviário, logística e território brasileiro, globalização e a história da PRF.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#F2A900",
+  "questions": [
+    {
+      "prompt": "A Polícia Rodoviária Federal tem origem em 1928, quando o presidente Washington Luís criou a chamada:",
+      "options": [
+        {
+          "text": "Polícia de Estradas",
+          "explanation": "Certa: em 24 de julho de 1928 foi criada a \"Polícia de Estradas\" — por isso 24 de julho é o Dia do Policial Rodoviário Federal."
+        },
+        {
+          "text": "Guarda Nacional",
+          "explanation": "Errada: a Guarda Nacional é do período imperial (1831) e não tem relação com a PRF."
+        },
+        {
+          "text": "Polícia Federal de Fronteiras",
+          "explanation": "Errada: não é a denominação histórica da PRF."
+        },
+        {
+          "text": "Departamento Nacional de Trânsito",
+          "explanation": "Errada: o DENATRAN é órgão executivo de trânsito, criado bem depois e com outra função."
+        },
+        {
+          "text": "Inspetoria de Ferrovias",
+          "explanation": "Errada: ferrovias não eram o foco; a origem é o patrulhamento das estradas."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A forte opção do Brasil pelo modal rodoviário ganhou impulso decisivo principalmente:",
+      "options": [
+        {
+          "text": "no Império, com a construção das primeiras rodovias pavimentadas",
+          "explanation": "Errada: no século XIX o transporte de longa distância era sobretudo ferroviário e fluvial/marítimo."
+        },
+        {
+          "text": "na década de 2010, com as concessões de rodovias",
+          "explanation": "Errada: as concessões são recentes; a matriz rodoviária já predominava havia décadas."
+        },
+        {
+          "text": "a partir dos anos 1950, com a política desenvolvimentista e a implantação da indústria automobilística",
+          "explanation": "Certa: o governo Juscelino Kubitschek priorizou rodovias e atraiu montadoras, consolidando o rodoviarismo."
+        },
+        {
+          "text": "por causa do relevo, que impede ferrovias no país",
+          "explanation": "Errada: o relevo não impede ferrovias; a escolha foi sobretudo política e econômica."
+        },
+        {
+          "text": "por imposição de acordos do Mercosul",
+          "explanation": "Errada: o Mercosul (1991) é muito posterior à consolidação do rodoviarismo."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Na nomenclatura das rodovias federais, uma rodovia \"BR-1XX\" (como a BR-101 ou a BR-116) é do tipo:",
+      "options": [
+        {
+          "text": "radial, partindo de Brasília",
+          "explanation": "Errada: radiais começam com 0 (BR-0XX), como a BR-040."
+        },
+        {
+          "text": "transversal, com traçado leste-oeste",
+          "explanation": "Errada: transversais começam com 2 (BR-2XX), como a BR-230 (Transamazônica)."
+        },
+        {
+          "text": "diagonal",
+          "explanation": "Errada: diagonais começam com 3 (BR-3XX), como a BR-364."
+        },
+        {
+          "text": "longitudinal, com traçado predominante norte-sul",
+          "explanation": "Certa: o primeiro algarismo 1 indica rodovia longitudinal."
+        },
+        {
+          "text": "de ligação entre rodovias",
+          "explanation": "Errada: rodovias de ligação começam com 4 (BR-4XX)."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A BR-163 (Cuiabá–Santarém) ganhou importância estratégica nas últimas décadas por:",
+      "options": [
+        {
+          "text": "ligar o Brasil diretamente ao Oceano Pacífico",
+          "explanation": "Errada: a BR-163 vai do Centro-Oeste ao Pará; não cruza a fronteira rumo ao Pacífico."
+        },
+        {
+          "text": "permitir o escoamento de grãos do Centro-Oeste pelos portos do Arco Norte",
+          "explanation": "Certa: a soja e o milho de Mato Grosso seguem até terminais como Miritituba e Santarém, reduzindo a dependência dos portos de Santos e Paranaguá."
+        },
+        {
+          "text": "ser a principal rota de turismo do litoral nordestino",
+          "explanation": "Errada: a rodovia litorânea do Nordeste é a BR-101."
+        },
+        {
+          "text": "conectar as capitais do Sul ao Sudeste",
+          "explanation": "Errada: esse papel cabe a rodovias como a BR-116 e a BR-101."
+        },
+        {
+          "text": "ser totalmente ferroviária desde a sua criação",
+          "explanation": "Errada: é uma rodovia; a ferrovia planejada para o corredor (Ferrogrão) ainda não existe."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Uma desvantagem da predominância do modal rodoviário no transporte de cargas brasileiro é:",
+      "options": [
+        {
+          "text": "a impossibilidade de entrega porta a porta",
+          "explanation": "Errada: a entrega porta a porta é justamente uma VANTAGEM do caminhão."
+        },
+        {
+          "text": "a baixa flexibilidade de rotas",
+          "explanation": "Errada: a flexibilidade de rotas também é vantagem do rodoviário."
+        },
+        {
+          "text": "o alto custo de implantação, maior que o de ferrovias",
+          "explanation": "Errada: implantar rodovias costuma ser mais barato que implantar ferrovias."
+        },
+        {
+          "text": "o custo mais alto por tonelada transportada em longas distâncias, em comparação com ferrovias e hidrovias",
+          "explanation": "Certa: para grandes volumes e longas distâncias, trens e barcaças gastam menos combustível por tonelada, o que encarece o frete rodoviário e afeta a competitividade."
+        },
+        {
+          "text": "a ausência de rodovias no Centro-Sul do país",
+          "explanation": "Errada: o Centro-Sul concentra a maior malha pavimentada do país."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Para Milton Santos, o espaço geográfico atual é marcado pelo meio:",
+      "options": [
+        {
+          "text": "natural, anterior às técnicas",
+          "explanation": "Errada: o meio natural é a primeira fase da periodização, superada pela técnica."
+        },
+        {
+          "text": "exclusivamente agrário",
+          "explanation": "Errada: o conceito destaca justamente técnica e informação, não a agricultura."
+        },
+        {
+          "text": "técnico pré-industrial",
+          "explanation": "Errada: o meio técnico é fase anterior; o atual incorpora ciência e informação."
+        },
+        {
+          "text": "isolado, sem redes de comunicação",
+          "explanation": "Errada: o autor enfatiza o território em rede, com pontos distantes conectados."
+        },
+        {
+          "text": "técnico-científico-informacional",
+          "explanation": "Certa: é o conceito de Milton Santos para o espaço em que ciência, técnica e informação se fundem, estruturando o território em redes."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Na economia brasileira atual, o setor com MAIOR participação no PIB é o de:",
+      "options": [
+        {
+          "text": "serviços",
+          "explanation": "Certa: comércio, transporte, finanças, administração pública e outros serviços respondem por cerca de dois terços do PIB."
+        },
+        {
+          "text": "agropecuária",
+          "explanation": "Errada: o agronegócio é estratégico e lidera exportações, mas a agropecuária em si responde por parcela pequena do PIB."
+        },
+        {
+          "text": "indústria extrativa mineral",
+          "explanation": "Errada: é relevante na pauta exportadora, mas pequena no PIB total."
+        },
+        {
+          "text": "indústria de transformação",
+          "explanation": "Errada: vem perdendo participação há décadas (\"desindustrialização\")."
+        },
+        {
+          "text": "construção civil",
+          "explanation": "Errada: tem peso bem menor que o setor de serviços."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A Polícia Rodoviária Federal é órgão subordinado ao:",
+      "options": [
+        {
+          "text": "Ministério dos Transportes",
+          "explanation": "Errada: o Ministério dos Transportes cuida da infraestrutura (por meio do DNIT, por exemplo), não da polícia rodoviária."
+        },
+        {
+          "text": "Ministério da Defesa",
+          "explanation": "Errada: a Defesa abrange as Forças Armadas; a PRF é polícia civil da União."
+        },
+        {
+          "text": "Departamento Nacional de Infraestrutura de Transportes (DNIT)",
+          "explanation": "Errada: o DNIT é autarquia executiva rodoviária, não órgão ao qual a PRF se subordine."
+        },
+        {
+          "text": "Gabinete de Segurança Institucional",
+          "explanation": "Errada: o GSI cuida da segurança da Presidência e de inteligência, não da PRF."
+        },
+        {
+          "text": "Ministério da Justiça e Segurança Pública",
+          "explanation": "Certa: a PRF integra a estrutura do MJSP."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "A maior parte da carga transportada pelas ferrovias brasileiras é composta de:",
+      "options": [
+        {
+          "text": "passageiros em longas distâncias",
+          "explanation": "Errada: o transporte ferroviário de passageiros de longa distância é quase inexistente no Brasil."
+        },
+        {
+          "text": "produtos eletrônicos",
+          "explanation": "Errada: cargas de alto valor e baixo volume costumam ir por rodovia ou avião."
+        },
+        {
+          "text": "minério de ferro",
+          "explanation": "Certa: ferrovias como a Estrada de Ferro Carajás e a Vitória–Minas levam grandes volumes de minério até os portos de exportação."
+        },
+        {
+          "text": "hortifrutigranjeiros perecíveis",
+          "explanation": "Errada: perecíveis viajam principalmente por caminhões refrigerados."
+        },
+        {
+          "text": "veículos novos",
+          "explanation": "Errada: carros novos são levados principalmente por caminhões-cegonha."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Sobre a distribuição da malha rodoviária pavimentada no território brasileiro, é correto afirmar que:",
+      "options": [
+        {
+          "text": "ela conecta por rodovia pavimentada todos os municípios do país",
+          "explanation": "Errada: muitos municípios, sobretudo na Amazônia, não têm acesso rodoviário pavimentado."
+        },
+        {
+          "text": "ela é mais densa no Sul e no Sudeste, e a Região Norte depende bastante do transporte fluvial",
+          "explanation": "Certa: a malha acompanha a concentração econômica e populacional; na Amazônia, rios funcionam como estradas."
+        },
+        {
+          "text": "é igualmente densa em todas as regiões",
+          "explanation": "Errada: há grande desigualdade regional na densidade da malha."
+        },
+        {
+          "text": "é mais densa na Região Norte, por sua extensão territorial",
+          "explanation": "Errada: o Norte tem a menor densidade rodoviária do país."
+        },
+        {
+          "text": "foi substituída por ferrovias no Centro-Oeste",
+          "explanation": "Errada: o Centro-Oeste ainda depende fortemente de rodovias para escoar a produção."
+        }
+      ],
+      "correct": "B"
+    }
+  ]
+}

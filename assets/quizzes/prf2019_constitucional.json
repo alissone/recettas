@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000007",
+  "title": "Direito Constitucional — PRF 2019",
+  "topic": "Direito Constitucional",
+  "description": "Direitos e garantias fundamentais, remédios constitucionais, segurança pública e defesa do Estado.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#E5484D",
+  "questions": [
+    {
+      "prompt": "Em caso de iminente perigo público, a autoridade competente pode usar a propriedade particular (requisição administrativa). Quanto à indenização, a CF assegura:",
+      "options": [
+        {
+          "text": "indenização prévia, justa e em dinheiro",
+          "explanation": "Errada: essa é a regra da desapropriação (art. 5º, XXIV), não da requisição."
+        },
+        {
+          "text": "indenização sempre devida, com dano presumido",
+          "explanation": "Errada: a indenização depende de dano efetivo; não há presunção."
+        },
+        {
+          "text": "nenhuma indenização, em razão do interesse público",
+          "explanation": "Errada: a CF garante indenização se houver dano."
+        },
+        {
+          "text": "indenização em títulos da dívida pública",
+          "explanation": "Errada: essa forma aparece em desapropriações sancionatórias, não na requisição."
+        },
+        {
+          "text": "indenização ulterior, se houver dano",
+          "explanation": "Certa: art. 5º, XXV. A indenização vem depois e só se houver dano comprovado."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Conforme o art. 144, § 2º, da CF, a Polícia Rodoviária Federal destina-se, na forma da lei, ao:",
+      "options": [
+        {
+          "text": "patrulhamento ostensivo das rodovias e ferrovias federais",
+          "explanation": "Errada: ferrovias federais cabem à Polícia Ferroviária Federal (§ 3º)."
+        },
+        {
+          "text": "exercício exclusivo da polícia judiciária da União",
+          "explanation": "Errada: essa é atribuição da Polícia Federal (§ 1º, IV)."
+        },
+        {
+          "text": "policiamento ostensivo de todas as rodovias, inclusive estaduais",
+          "explanation": "Errada: rodovias estaduais são policiadas pelas polícias militares (polícias rodoviárias estaduais)."
+        },
+        {
+          "text": "apuração de infrações penais contra a ordem política e social",
+          "explanation": "Errada: também é atribuição da Polícia Federal."
+        },
+        {
+          "text": "patrulhamento ostensivo das rodovias federais",
+          "explanation": "Certa: a PRF é órgão permanente, organizado e mantido pela União e estruturado em carreira."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Militar alistável com MAIS de 10 anos de serviço que se candidata a cargo eletivo:",
+      "options": [
+        {
+          "text": "deverá afastar-se definitivamente da atividade ao se candidatar",
+          "explanation": "Errada: essa é a regra para quem tem MENOS de 10 anos de serviço (inciso I)."
+        },
+        {
+          "text": "é inelegível",
+          "explanation": "Errada: o militar alistável é elegível, nas condições do § 8º."
+        },
+        {
+          "text": "será agregado pela autoridade superior e, se eleito, passará automaticamente para a inatividade no ato da diplomação",
+          "explanation": "Certa: art. 14, § 8º, II, da CF."
+        },
+        {
+          "text": "deve se filiar a partido 1 ano antes, como qualquer cidadão",
+          "explanation": "Errada: o militar da ativa não pode ter filiação partidária; o registro da candidatura supre a exigência."
+        },
+        {
+          "text": "permanece na ativa mesmo se eleito",
+          "explanation": "Errada: se eleito, passa para a inatividade na diplomação."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "São direitos expressamente assegurados ao preso pela CF:",
+      "options": [
+        {
+          "text": "ser solto em 24 horas em qualquer caso",
+          "explanation": "Errada: não existe essa regra; há a comunicação imediata da prisão ao juiz."
+        },
+        {
+          "text": "ser assistido gratuitamente por advogado particular de sua escolha",
+          "explanation": "Errada: a CF assegura assistência de advogado e a Defensoria aos necessitados, não advogado particular pago pelo Estado."
+        },
+        {
+          "text": "a identificação dos responsáveis por sua prisão ou interrogatório policial e o direito de permanecer calado",
+          "explanation": "Certa: art. 5º, LXIII e LXIV."
+        },
+        {
+          "text": "não ser algemado em nenhuma hipótese",
+          "explanation": "Errada: a Súmula Vinculante 11 admite algemas em casos justificados por escrito."
+        },
+        {
+          "text": "cumprir pena em sua própria residência",
+          "explanation": "Errada: não há esse direito constitucional."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Segundo o art. 144, § 10, da CF (incluído pela EC nº 82/2014), a segurança viária compreende:",
+      "options": [
+        {
+          "text": "apenas a fiscalização e a punição de infratores",
+          "explanation": "Errada: inclui também educação e engenharia de trânsito."
+        },
+        {
+          "text": "a educação, a engenharia e a fiscalização de trânsito, além de outras atividades previstas em lei",
+          "explanation": "Certa: são atividades que asseguram ao cidadão o direito à mobilidade urbana eficiente."
+        },
+        {
+          "text": "somente a construção e conservação de rodovias",
+          "explanation": "Errada: isso seria apenas uma parte da engenharia."
+        },
+        {
+          "text": "a atuação exclusiva da PRF em todas as vias",
+          "explanation": "Errada: a segurança viária é exercida pelos órgãos de trânsito de todos os entes."
+        },
+        {
+          "text": "o controle da emissão de CNH pela União",
+          "explanation": "Errada: não é o conteúdo do § 10."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Sem consentimento do morador, a CF permite entrar na casa:",
+      "options": [
+        {
+          "text": "a qualquer hora, por determinação judicial",
+          "explanation": "Errada: a ordem judicial só pode ser cumprida durante o dia."
+        },
+        {
+          "text": "em flagrante delito ou desastre, para prestar socorro, ou, durante o dia, por determinação judicial",
+          "explanation": "Certa: art. 5º, XI. Flagrante, desastre e socorro valem a qualquer hora; ordem judicial, só de dia."
+        },
+        {
+          "text": "por ordem escrita do delegado de polícia, durante o dia",
+          "explanation": "Errada: é necessária ordem judicial (cláusula de reserva de jurisdição)."
+        },
+        {
+          "text": "apenas com mandado judicial, mesmo em flagrante",
+          "explanation": "Errada: o flagrante delito dispensa mandado."
+        },
+        {
+          "text": "à noite, por determinação judicial, em casos urgentes",
+          "explanation": "Errada: à noite, só flagrante, desastre ou socorro."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O remédio constitucional para assegurar o conhecimento de informações relativas à pessoa do impetrante em registros de entidades governamentais é o:",
+      "options": [
+        {
+          "text": "habeas corpus",
+          "explanation": "Errada: protege a liberdade de locomoção."
+        },
+        {
+          "text": "mandado de segurança",
+          "explanation": "Errada: é residual — protege direito líquido e certo não amparado por HC ou HD."
+        },
+        {
+          "text": "mandado de injunção",
+          "explanation": "Errada: é para falta de norma regulamentadora que inviabilize o exercício de direitos."
+        },
+        {
+          "text": "habeas data",
+          "explanation": "Certa: art. 5º, LXXII — também serve para retificar dados."
+        },
+        {
+          "text": "ação popular",
+          "explanation": "Errada: visa anular ato lesivo ao patrimônio público, à moralidade e ao meio ambiente."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual medida excepcional exige AUTORIZAÇÃO PRÉVIA do Congresso Nacional para ser decretada?",
+      "options": [
+        {
+          "text": "Estado de defesa",
+          "explanation": "Errada: é decretado primeiro pelo Presidente e submetido ao Congresso em 24 horas (controle posterior)."
+        },
+        {
+          "text": "Intervenção federal por solicitação do Poder Executivo estadual",
+          "explanation": "Errada: a intervenção é decretada pelo Presidente e apreciada pelo Congresso em 24 horas."
+        },
+        {
+          "text": "Garantia da Lei e da Ordem (GLO)",
+          "explanation": "Errada: a GLO é determinada pelo Presidente e não exige autorização prévia do Congresso."
+        },
+        {
+          "text": "Estado de sítio",
+          "explanation": "Certa: o Presidente solicita autorização ao Congresso antes de decretá-lo (art. 137)."
+        },
+        {
+          "text": "Requisição administrativa",
+          "explanation": "Errada: é ato da autoridade administrativa em caso de perigo público."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Quanto ao direito de reunião (art. 5º, XVI), é correto afirmar que:",
+      "options": [
+        {
+          "text": "independe de autorização, exigindo apenas prévio aviso à autoridade competente",
+          "explanation": "Certa: a reunião deve ser pacífica, sem armas, em local aberto ao público, e não pode frustrar outra anteriormente convocada para o mesmo local."
+        },
+        {
+          "text": "depende de autorização prévia da autoridade policial",
+          "explanation": "Errada: a CF dispensa expressamente autorização."
+        },
+        {
+          "text": "pode ocorrer com armas, desde que de uso permitido",
+          "explanation": "Errada: a reunião deve ser sem armas."
+        },
+        {
+          "text": "dispensa qualquer comunicação às autoridades",
+          "explanation": "Errada: exige-se prévio aviso."
+        },
+        {
+          "text": "só pode ocorrer em locais fechados",
+          "explanation": "Errada: a CF trata justamente de locais abertos ao público."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Sobre a extradição de brasileiros, a CF estabelece que:",
+      "options": [
+        {
+          "text": "o brasileiro nato nunca será extraditado; o naturalizado, por crime comum anterior à naturalização ou por comprovado envolvimento em tráfico de drogas",
+          "explanation": "Certa: art. 5º, LI."
+        },
+        {
+          "text": "nenhum brasileiro, nato ou naturalizado, pode ser extraditado",
+          "explanation": "Errada: o naturalizado pode ser, nas hipóteses do inciso LI."
+        },
+        {
+          "text": "o nato pode ser extraditado por tráfico de drogas",
+          "explanation": "Errada: o brasileiro nato nunca é extraditado."
+        },
+        {
+          "text": "o naturalizado pode ser extraditado por qualquer crime, a qualquer tempo",
+          "explanation": "Errada: só por crime comum anterior à naturalização ou tráfico de drogas."
+        },
+        {
+          "text": "o estrangeiro pode ser extraditado por crime político ou de opinião",
+          "explanation": "Errada: o inciso LII proíbe a extradição por crime político ou de opinião."
+        }
+      ],
+      "correct": "A"
+    }
+  ]
+}

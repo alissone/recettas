@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000010",
+  "title": "Legislação Penal Especial — PRF 2019",
+  "topic": "Legislação Especial",
+  "description": "Estatuto do Desarmamento, ECA, Lei de Drogas, tráfico de pessoas, crimes ambientais, tortura, abuso de autoridade e crimes hediondos.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#6C4AB6",
+  "questions": [
+    {
+      "prompt": "Em operação da PRF, Sandro transportava munição de uso PERMITIDO e Eurípedes, munição de uso RESTRITO, ambos sem autorização. Pelo Estatuto do Desarmamento:",
+      "options": [
+        {
+          "text": "ambos cometem crime: Sandro, o do art. 14; Eurípedes, o do art. 16",
+          "explanation": "Certa: transportar munição sem autorização é crime nos dois casos; muda o tipo penal e a pena."
+        },
+        {
+          "text": "Sandro comete só infração administrativa; Eurípedes, crime",
+          "explanation": "Errada: o art. 14 tipifica o porte/transporte de munição de uso permitido."
+        },
+        {
+          "text": "nenhum comete crime, pois não portavam armas",
+          "explanation": "Errada: munição e acessórios estão expressamente nos tipos penais."
+        },
+        {
+          "text": "ambos cometem o mesmo crime, com a mesma pena",
+          "explanation": "Errada: uso permitido (art. 14) e uso restrito (art. 16) têm tipos e penas diferentes."
+        },
+        {
+          "text": "só cometem crime se a munição for de calibre de fuzil",
+          "explanation": "Errada: qualquer munição sem autorização configura crime."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "João foi flagrado submetendo uma adolescente a exploração sexual em rodovia federal. Sobre o consentimento da vítima:",
+      "options": [
+        {
+          "text": "afasta o crime se for comprovado",
+          "explanation": "Errada: o consentimento de adolescente não tem validade nesse contexto."
+        },
+        {
+          "text": "afasta o crime se a vítima tiver mais de 16 anos",
+          "explanation": "Errada: a proteção vai até os 18 anos."
+        },
+        {
+          "text": "reduz a pena à metade",
+          "explanation": "Errada: não existe essa causa de diminuição."
+        },
+        {
+          "text": "transforma o crime em contravenção penal",
+          "explanation": "Errada: não há essa desclassificação."
+        },
+        {
+          "text": "é irrelevante, e João responde pelo crime",
+          "explanation": "Certa: a lei protege crianças e adolescentes de forma integral; o consentimento não afasta o crime (ECA, art. 244-A; CP, art. 218-B)."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Um jovem ofereceu, sem objetivo de lucro, pequena quantidade de droga a um amigo para juntos consumirem; o amigo experimentou pela primeira vez. Pela Lei de Drogas:",
+      "options": [
+        {
+          "text": "ambos respondem por tráfico de drogas (art. 33, caput)",
+          "explanation": "Errada: a oferta eventual, sem lucro, a pessoa do relacionamento para consumo conjunto tem tipo específico (§ 3º)."
+        },
+        {
+          "text": "nenhum comete ilícito, pois a quantidade era pequena",
+          "explanation": "Errada: a lei prevê consequências para ambos."
+        },
+        {
+          "text": "o usuário fica sujeito a pena de detenção",
+          "explanation": "Errada: o art. 28 não prevê pena privativa de liberdade."
+        },
+        {
+          "text": "quem ofereceu responde pelo art. 33, § 3º (detenção de 6 meses a 1 ano e multa); quem usou sujeita-se às medidas do art. 28, sem prisão",
+          "explanation": "Certa: o uso compartilhado eventual tem pena própria e mais branda que o tráfico; ao usuário cabem advertência, prestação de serviços ou medida educativa."
+        },
+        {
+          "text": "quem ofereceu responde por associação para o tráfico",
+          "explanation": "Errada: a associação (art. 35) exige vínculo estável entre duas ou mais pessoas para traficar."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Motorista transporta duas adolescentes, mediante grave ameaça, para outro país, onde seriam exploradas sexualmente; é abordado antes de cruzar a fronteira. Pelo art. 149-A do CP:",
+      "options": [
+        {
+          "text": "há apenas tentativa, pois a exploração não ocorreu",
+          "explanation": "Errada: a efetiva exploração é mero exaurimento; o crime já está consumado."
+        },
+        {
+          "text": "não há crime se as vítimas consentiram",
+          "explanation": "Errada: além de não ter havido consentimento, ele é irrelevante para adolescentes."
+        },
+        {
+          "text": "há tráfico de pessoas consumado, com aumento de pena por as vítimas serem adolescentes",
+          "explanation": "Certa: o crime é formal e se consuma com o transporte para fins de exploração; o § 1º, II, prevê aumento de 1/3 até a metade se a vítima for criança ou adolescente."
+        },
+        {
+          "text": "o crime só existe se a vítima for retirada do território nacional",
+          "explanation": "Errada: o tráfico pode ser interno; a retirada do país é causa de aumento."
+        },
+        {
+          "text": "o fato configura apenas o crime de sequestro",
+          "explanation": "Errada: o tipo específico é o tráfico de pessoas."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Pela Lei nº 9.605/1998, NÃO é crime o abate de animal silvestre quando realizado:",
+      "options": [
+        {
+          "text": "em estado de necessidade, para saciar a fome do agente ou de sua família",
+          "explanation": "Certa: art. 37, I. Também não é crime o abate para proteger lavouras e rebanhos (com autorização) ou de animal nocivo assim caracterizado pelo órgão competente."
+        },
+        {
+          "text": "para venda em feira, desde que em pequena quantidade",
+          "explanation": "Errada: a comercialização não está entre as exceções."
+        },
+        {
+          "text": "como prática esportiva em propriedade particular",
+          "explanation": "Errada: a caça esportiva sem autorização é crime."
+        },
+        {
+          "text": "por quem desconhece a lei",
+          "explanation": "Errada: o desconhecimento da lei é inescusável (art. 21 do CP)."
+        },
+        {
+          "text": "durante a noite, em área rural",
+          "explanation": "Errada: horário e local não excluem o crime."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Quanto à responsabilidade penal da pessoa jurídica por crimes ambientais, prevalece no STF e no STJ que ela:",
+      "options": [
+        {
+          "text": "é inconstitucional",
+          "explanation": "Errada: a própria CF a prevê no art. 225, § 3º."
+        },
+        {
+          "text": "é possível, independentemente da responsabilização simultânea de uma pessoa física",
+          "explanation": "Certa: os tribunais superiores afastaram a exigência de \"dupla imputação\" (CF, art. 225, § 3º; Lei nº 9.605/1998, art. 3º)."
+        },
+        {
+          "text": "só é possível se o diretor também for denunciado",
+          "explanation": "Errada: a dupla imputação obrigatória foi superada."
+        },
+        {
+          "text": "permite pena de prisão contra a empresa",
+          "explanation": "Errada: as penas para pessoa jurídica são multa, restritivas de direitos e prestação de serviços à comunidade."
+        },
+        {
+          "text": "só se aplica a empresas públicas",
+          "explanation": "Errada: alcança qualquer pessoa jurídica."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Pela Lei de Abuso de Autoridade (Lei nº 13.869/2019), a conduta só é crime se praticada:",
+      "options": [
+        {
+          "text": "de forma culposa, por negligência",
+          "explanation": "Errada: não há modalidade culposa; exige-se dolo com finalidade específica."
+        },
+        {
+          "text": "por qualquer interpretação de lei divergente da dos tribunais",
+          "explanation": "Errada: o § 2º diz expressamente que a divergência interpretativa não configura crime."
+        },
+        {
+          "text": "apenas por servidores do Poder Executivo",
+          "explanation": "Errada: alcança agentes de todos os Poderes, inclusive membros do Judiciário e do Ministério Público."
+        },
+        {
+          "text": "com qualquer dolo, sem finalidade específica",
+          "explanation": "Errada: a lei exige o elemento subjetivo especial do § 1º."
+        },
+        {
+          "text": "com a finalidade específica de prejudicar outrem, de beneficiar a si ou a terceiro, ou por mero capricho ou satisfação pessoal",
+          "explanation": "Certa: art. 1º, § 1º. E a divergência na interpretação da lei ou na avaliação de fatos e provas não configura abuso (§ 2º)."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Segundo a Lei nº 9.455/1997 (Lei de Tortura), a condenação de agente público acarreta:",
+      "options": [
+        {
+          "text": "apenas multa, sem efeitos sobre o cargo",
+          "explanation": "Errada: a perda do cargo é efeito da condenação."
+        },
+        {
+          "text": "a perda do cargo, função ou emprego público e a interdição para seu exercício pelo dobro do prazo da pena aplicada",
+          "explanation": "Certa: art. 1º, § 5º — efeito automático da condenação."
+        },
+        {
+          "text": "a perda do cargo só se a pena superar 4 anos",
+          "explanation": "Errada: na tortura, a perda é automática, sem esse limite (diferente da regra geral do art. 92 do CP)."
+        },
+        {
+          "text": "a suspensão do cargo por 90 dias",
+          "explanation": "Errada: a lei prevê perda do cargo e interdição."
+        },
+        {
+          "text": "interdição para o cargo pelo mesmo prazo da pena",
+          "explanation": "Errada: a interdição é pelo DOBRO do prazo da pena."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Pelo Estatuto do Desarmamento, portar arma de fogo de uso PERMITIDO com numeração raspada:",
+      "options": [
+        {
+          "text": "configura o crime do art. 14, como qualquer arma de uso permitido",
+          "explanation": "Errada: a numeração raspada desloca a conduta para o art. 16, § 1º."
+        },
+        {
+          "text": "é apenas infração administrativa",
+          "explanation": "Errada: é crime."
+        },
+        {
+          "text": "só é crime se a arma estiver municiada",
+          "explanation": "Errada: o tipo não exige munição."
+        },
+        {
+          "text": "configura o crime do art. 16, § 1º, IV, com as mesmas penas do porte de arma de uso restrito",
+          "explanation": "Certa: a supressão da numeração equipara a conduta ao art. 16, ainda que a arma seja de uso permitido."
+        },
+        {
+          "text": "é crime de menor potencial ofensivo",
+          "explanation": "Errada: a pena (reclusão de 3 a 6 anos) é incompatível com essa classificação."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Os crimes hediondos (Lei nº 8.072/1990), segundo a CF e a lei, são:",
+      "options": [
+        {
+          "text": "sujeitos a regime integralmente fechado",
+          "explanation": "Errada: o STF declarou inconstitucional o regime integralmente fechado (HC 82.959); hoje há progressão com frações maiores."
+        },
+        {
+          "text": "insuscetíveis de liberdade provisória em qualquer caso",
+          "explanation": "Errada: a vedação foi retirada pela Lei nº 11.464/2007; a liberdade provisória sem fiança é possível."
+        },
+        {
+          "text": "insuscetíveis de anistia, graça, indulto e fiança",
+          "explanation": "Certa: art. 2º da Lei nº 8.072/1990 e art. 5º, XLIII, da CF."
+        },
+        {
+          "text": "imprescritíveis",
+          "explanation": "Errada: imprescritíveis são o racismo e a ação de grupos armados contra a ordem constitucional (art. 5º, XLII e XLIV)."
+        },
+        {
+          "text": "afiançáveis, se o réu for primário",
+          "explanation": "Errada: são inafiançáveis."
+        }
+      ],
+      "correct": "C"
+    }
+  ]
+}

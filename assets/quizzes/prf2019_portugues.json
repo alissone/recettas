@@ -1,0 +1,291 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000001",
+  "title": "Língua Portuguesa — PRF 2019",
+  "topic": "Língua Portuguesa",
+  "description": "Interpretação, conectivos, crase, colocação pronominal, regência e pontuação a partir dos textos da prova.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#9B5DE5",
+  "questions": [
+    {
+      "prompt": "No trecho, a forma verbal \"viceja\" tem sentido equivalente a:",
+      "context": {
+        "text": "A vida humana só viceja sob algum tipo de luz, de preferência a do sol, tão óbvia quanto essencial.\n\n— Reinaldo Moraes. \"Luz! Mais luz\". Nexo Jornal (com adaptações)."
+      },
+      "options": [
+        {
+          "text": "definha, enfraquece",
+          "explanation": "Errada: é o sentido oposto. Definhar é perder as forças; vicejar é ganhar vigor."
+        },
+        {
+          "text": "se esconde, se recolhe",
+          "explanation": "Errada: nada no verbo indica ocultação; o texto fala de a vida florescer com a luz."
+        },
+        {
+          "text": "adormece, repousa",
+          "explanation": "Errada: o texto até menciona o sono adiante, mas \"vicejar\" não tem relação com dormir."
+        },
+        {
+          "text": "se extingue, acaba",
+          "explanation": "Errada: extinguir-se é deixar de existir, o contrário de vicejar."
+        },
+        {
+          "text": "prospera, desenvolve-se com vigor",
+          "explanation": "Certa: \"vicejar\" é crescer com viço, florescer, prosperar — a vida só se desenvolve plenamente sob a luz."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "A locução \"por mais que\" introduz, no período, uma ideia de:",
+      "context": {
+        "text": "Somos animais diurnos, por mais que boêmios da pé virada e vampiros em geral discordem dessa afirmativa.\n\n— Reinaldo Moraes. \"Luz! Mais luz\". Nexo Jornal (com adaptações)."
+      },
+      "options": [
+        {
+          "text": "causa",
+          "explanation": "Errada: a discordância dos boêmios não é o motivo de sermos diurnos. Conectivos causais seriam \"porque\", \"já que\"."
+        },
+        {
+          "text": "condição",
+          "explanation": "Errada: não há hipótese a cumprir para que sejamos diurnos. Conectivos condicionais seriam \"se\", \"caso\"."
+        },
+        {
+          "text": "finalidade",
+          "explanation": "Errada: não se expressa objetivo. Conectivos finais seriam \"para que\", \"a fim de que\"."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Certa: \"por mais que\" admite um fato contrário (os boêmios discordam) que não impede a afirmação principal (somos diurnos). Equivale a \"embora\"."
+        },
+        {
+          "text": "consequência",
+          "explanation": "Errada: a discordância não decorre de sermos diurnos. Conectivos consecutivos seriam \"de modo que\", \"tanto que\"."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Sem alterar o sentido do trecho, a conjunção \"porém\" poderia ser substituída por:",
+      "context": {
+        "text": "Dispor de tanta luz assim, porém, tem um custo ambiental muito alto, avisam os cientistas.\n\n— Reinaldo Moraes. \"Luz! Mais luz\". Nexo Jornal (com adaptações)."
+      },
+      "options": [
+        {
+          "text": "portanto",
+          "explanation": "Errada: \"portanto\" é conclusiva — transformaria o custo ambiental em conclusão do parágrafo anterior."
+        },
+        {
+          "text": "entretanto",
+          "explanation": "Certa: \"porém\" e \"entretanto\" são conjunções adversativas; ambas marcam oposição ao que foi dito antes (luz = civilização × luz = custo ambiental)."
+        },
+        {
+          "text": "pois",
+          "explanation": "Errada: posposto ao verbo, \"pois\" é conclusivo; anteposto, explicativo. Em nenhum caso expressa oposição."
+        },
+        {
+          "text": "logo",
+          "explanation": "Errada: \"logo\" é conclusiva, não adversativa."
+        },
+        {
+          "text": "conforme",
+          "explanation": "Errada: \"conforme\" é conformativa (\"de acordo com\"); não expressa contraste."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Assinale a frase em que o acento indicativo de crase está empregado corretamente.",
+      "options": [
+        {
+          "text": "Ele começou à trabalhar muito cedo.",
+          "explanation": "Errada: não há crase antes de verbo — verbos não admitem artigo feminino."
+        },
+        {
+          "text": "Refiro-me à pessoas que chegaram atrasadas.",
+          "explanation": "Errada: \"a\" singular antes de palavra no plural é só preposição. Ou \"às pessoas\", ou \"a pessoas\"."
+        },
+        {
+          "text": "Entreguei o relatório à ela ontem.",
+          "explanation": "Errada: pronomes pessoais como \"ela\" não admitem artigo, logo não há crase."
+        },
+        {
+          "text": "Ficaram frente à frente com o problema.",
+          "explanation": "Errada: em locuções de palavras repetidas (frente a frente, cara a cara) o \"a\" é só preposição."
+        },
+        {
+          "text": "Nas férias, fomos à Bahia visitar parentes.",
+          "explanation": "Certa: \"ir\" exige a preposição \"a\" e \"Bahia\" admite artigo (\"venho da Bahia\"). Preposição + artigo = à."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Assinale a opção em que a colocação do pronome oblíquo átono segue a norma-padrão.",
+      "options": [
+        {
+          "text": "Ninguém me avisou sobre a mudança de escala.",
+          "explanation": "Certa: pronomes indefinidos (ninguém, alguém, tudo) atraem o pronome átono — próclise obrigatória."
+        },
+        {
+          "text": "Me empresta a viatura reserva?",
+          "explanation": "Errada: a norma-padrão não admite iniciar oração com pronome átono. O correto é \"Empresta-me\"."
+        },
+        {
+          "text": "Não esqueça-se de registrar a ocorrência.",
+          "explanation": "Errada: palavras negativas atraem o pronome: \"Não se esqueça\"."
+        },
+        {
+          "text": "Quem disse-te que a rodovia estava interditada?",
+          "explanation": "Errada: pronomes interrogativos atraem o pronome: \"Quem te disse\"."
+        },
+        {
+          "text": "Se tratava de um engano do sistema.",
+          "explanation": "Errada: início de oração pede ênclise: \"Tratava-se\"."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "No trecho, o sujeito da forma verbal \"cercam\" é:",
+      "context": {
+        "text": "Os processos de produção dos objetos que nos cercam movimentam relações diversas entre os indivíduos.\n\n— Thiago de Mello. Trabalho. educacao.globo.com (com adaptações)."
+      },
+      "options": [
+        {
+          "text": "\"Os processos de produção dos objetos\"",
+          "explanation": "Errada: esse é o sujeito de \"movimentam\", o verbo da oração principal — não de \"cercam\"."
+        },
+        {
+          "text": "o pronome relativo \"que\", retomando \"os objetos\"",
+          "explanation": "Certa: quem nos cerca são os objetos. O \"que\" retoma \"objetos\" e funciona como sujeito de \"cercam\", que concorda com esse plural."
+        },
+        {
+          "text": "o pronome \"nos\"",
+          "explanation": "Errada: \"nos\" é objeto direto de \"cercam\" (os objetos cercam a nós)."
+        },
+        {
+          "text": "\"relações diversas\"",
+          "explanation": "Errada: é objeto direto de \"movimentam\"."
+        },
+        {
+          "text": "sujeito indeterminado",
+          "explanation": "Errada: o sujeito é determinado e está expresso pelo relativo \"que\"."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "A locução \"em razão de\" expressa, no trecho, uma ideia de:",
+      "context": {
+        "text": "Se prestarmos atenção à nossa volta, perceberemos que quase tudo que vemos existe em razão de atividades do trabalho humano.\n\n— Thiago de Mello. Trabalho. educacao.globo.com (com adaptações)."
+      },
+      "options": [
+        {
+          "text": "finalidade",
+          "explanation": "Errada: o texto não diz que as coisas existem para o trabalho, mas por causa dele."
+        },
+        {
+          "text": "tempo",
+          "explanation": "Errada: não há marcação temporal (quando, enquanto)."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Errada: concessão admitiria um obstáculo (\"apesar de\"), o que não ocorre."
+        },
+        {
+          "text": "causa",
+          "explanation": "Certa: as coisas existem por causa do trabalho humano. \"Em razão de\" equivale a \"por causa de\", \"devido a\"."
+        },
+        {
+          "text": "modo",
+          "explanation": "Errada: a locução não indica a maneira como as coisas existem, mas o motivo."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Se a oração \"que se infiltra no ambiente no qual dormimos\" fosse isolada por vírgulas:",
+      "context": {
+        "text": "Nos humanos, o excesso de luz urbana que se infiltra no ambiente no qual dormimos pode reduzir drasticamente os níveis de melatonina.\n\n— Reinaldo Moraes. \"Luz! Mais luz\". Nexo Jornal (com adaptações)."
+      },
+      "options": [
+        {
+          "text": "a oração passaria de restritiva a explicativa, alterando o sentido",
+          "explanation": "Certa: sem vírgulas, ela restringe (só a luz que entra no quarto); com vírgulas, passaria a dizer que todo excesso de luz urbana se infiltra onde dormimos. A frase continua gramatical, mas o sentido muda."
+        },
+        {
+          "text": "o período ficaria gramaticalmente incorreto",
+          "explanation": "Errada: orações adjetivas explicativas entre vírgulas são perfeitamente gramaticais; o que muda é o sentido."
+        },
+        {
+          "text": "nada mudaria, pois essas vírgulas são facultativas",
+          "explanation": "Errada: vírgulas em oração adjetiva não são facultativas — elas definem se a oração é restritiva ou explicativa."
+        },
+        {
+          "text": "a oração passaria a ser substantiva",
+          "explanation": "Errada: continuaria adjetiva (introduzida por pronome relativo); só mudaria de restritiva para explicativa."
+        },
+        {
+          "text": "o \"que\" deixaria de ser pronome relativo",
+          "explanation": "Errada: continuaria pronome relativo retomando \"luz urbana\"."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Assinale a frase correta quanto à regência verbal na norma-padrão.",
+      "options": [
+        {
+          "text": "Assisti o jogo inteiro pela televisão.",
+          "explanation": "Errada: \"assistir\" no sentido de ver é transitivo indireto: \"assisti ao jogo\"."
+        },
+        {
+          "text": "Prefiro mais café do que chá.",
+          "explanation": "Errada: \"preferir\" rege \"a\" e dispensa intensificador: \"prefiro café a chá\"."
+        },
+        {
+          "text": "O candidato aspira a uma vaga na PRF.",
+          "explanation": "Certa: \"aspirar\" no sentido de desejar é transitivo indireto e exige a preposição \"a\"."
+        },
+        {
+          "text": "Todos devem obedecer o regulamento.",
+          "explanation": "Errada: \"obedecer\" é transitivo indireto: \"obedecer ao regulamento\"."
+        },
+        {
+          "text": "Chegamos no posto às seis horas.",
+          "explanation": "Errada: verbos de movimento regem \"a\" na norma-padrão: \"chegamos ao posto\"."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Se \"existia\" fosse substituído por \"existisse\", sem outras alterações:",
+      "context": {
+        "text": "Claro que o cargo, se existia, já foi extinto, e o homem da luz já deve ter se transferido para o mundo das trevas eternas.\n\n— Reinaldo Moraes. \"Luz! Mais luz\". Nexo Jornal (com adaptações)."
+      },
+      "options": [
+        {
+          "text": "a correção e o sentido seriam mantidos",
+          "explanation": "Errada: \"se existisse... já foi extinto\" combina hipótese irreal com fato consumado — a correlação se quebra."
+        },
+        {
+          "text": "a troca seria obrigatória pela norma-padrão",
+          "explanation": "Errada: \"se existia\" (indicativo) é correto: o autor trata a existência do cargo como possibilidade real no passado."
+        },
+        {
+          "text": "haveria quebra da correlação verbal, pois o imperfeito do subjuntivo pede futuro do pretérito na oração principal",
+          "explanation": "Certa: \"se existisse\" exigiria algo como \"já teria sido extinto\". Com \"já foi extinto\", a correlação de tempos fica incorreta."
+        },
+        {
+          "text": "o texto só ficaria mais formal, com o mesmo sentido",
+          "explanation": "Errada: o subjuntivo transformaria a dúvida em hipótese contrária aos fatos, mudando o sentido."
+        },
+        {
+          "text": "a oração passaria de condicional a causal",
+          "explanation": "Errada: o \"se\" continuaria condicional; o problema é de correlação de tempos e modos."
+        }
+      ],
+      "correct": "C"
+    }
+  ]
+}

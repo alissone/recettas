@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000008",
+  "title": "Direito Penal e Processual Penal — PRF 2019",
+  "topic": "Direito Penal",
+  "description": "Legalidade penal, descaminho, crimes funcionais, prisão em flagrante, excludentes de ilicitude e inquérito policial.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#2D6A8E",
+  "questions": [
+    {
+      "prompt": "Considerando o princípio da legalidade (art. 1º do CP), o uso de analogia no direito penal é:",
+      "options": [
+        {
+          "text": "proibido em caráter absoluto",
+          "explanation": "Errada: a analogia in bonam partem é admitida pela doutrina e pela jurisprudência."
+        },
+        {
+          "text": "vedado para prejudicar o réu (in malam partem), mas admitido para beneficiá-lo (in bonam partem)",
+          "explanation": "Certa: a analogia não pode criar crime nem agravar pena, mas pode favorecer o acusado."
+        },
+        {
+          "text": "livre, desde que o juiz fundamente a decisão",
+          "explanation": "Errada: a analogia que prejudica o réu é sempre vedada."
+        },
+        {
+          "text": "permitido para criar tipos penais em casos de lacuna",
+          "explanation": "Errada: só a lei em sentido estrito pode criar crimes."
+        },
+        {
+          "text": "permitido apenas para agravar a pena de reincidentes",
+          "explanation": "Errada: agravar pena por analogia viola a legalidade."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O Presidente da República, em caso de relevância e urgência, editou medida provisória agravando a pena de um crime. Essa MP é:",
+      "options": [
+        {
+          "text": "válida, se aprovada depois pelo Congresso",
+          "explanation": "Errada: o vício é de origem; a matéria penal está fora do alcance das MPs."
+        },
+        {
+          "text": "válida, desde que a pena só se aplique após a conversão em lei",
+          "explanation": "Errada: a vedação é absoluta para matéria penal."
+        },
+        {
+          "text": "inconstitucional, pois é vedada a edição de medida provisória sobre direito penal",
+          "explanation": "Certa: art. 62, § 1º, I, \"b\", da CF."
+        },
+        {
+          "text": "válida por 60 dias, prorrogáveis por mais 60",
+          "explanation": "Errada: o prazo de vigência é irrelevante se a matéria é vedada."
+        },
+        {
+          "text": "constitucional, por se tratar de urgência",
+          "explanation": "Errada: urgência não supera vedações materiais do § 1º."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Motorista é flagrado em rodovia transportando grande quantidade de mercadoria estrangeira LÍCITA, sem pagar os tributos de importação. Ele comete:",
+      "options": [
+        {
+          "text": "contrabando (art. 334-A)",
+          "explanation": "Errada: contrabando é a importação/exportação de mercadoria PROIBIDA."
+        },
+        {
+          "text": "descaminho, mas só após a constituição definitiva do crédito tributário",
+          "explanation": "Errada: diferentemente dos crimes materiais contra a ordem tributária, o descaminho não exige isso."
+        },
+        {
+          "text": "apenas infração administrativa aduaneira",
+          "explanation": "Errada: além da esfera administrativa, há crime."
+        },
+        {
+          "text": "receptação",
+          "explanation": "Errada: receptação envolve produto de crime anterior adquirido ou ocultado por terceiro."
+        },
+        {
+          "text": "descaminho (art. 334 do CP), crime formal que dispensa a constituição definitiva do crédito tributário",
+          "explanation": "Certa: o STJ entende que o descaminho se consuma com a ilusão dos tributos, sem depender de lançamento definitivo."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Servidor alfandegário que, com infração de dever funcional, facilita a prática de descaminho responde por:",
+      "options": [
+        {
+          "text": "descaminho na forma qualificada",
+          "explanation": "Errada: não existe descaminho qualificado pela condição de servidor; há tipo próprio (art. 318)."
+        },
+        {
+          "text": "prevaricação",
+          "explanation": "Errada: há tipo específico para a facilitação de contrabando ou descaminho."
+        },
+        {
+          "text": "facilitação de contrabando ou descaminho (art. 318 do CP)",
+          "explanation": "Certa: é um crime funcional autônomo, com pena de reclusão de 3 a 8 anos e multa."
+        },
+        {
+          "text": "corrupção passiva, obrigatoriamente",
+          "explanation": "Errada: só haveria corrupção se ele solicitasse ou recebesse vantagem indevida."
+        },
+        {
+          "text": "condescendência criminosa",
+          "explanation": "Errada: esse crime é deixar de responsabilizar subordinado que cometeu infração."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Autor de homicídio é abordado pela PRF a 200 km do local do crime, pouco depois do fato, com a arma usada no delito. Essa situação configura flagrante:",
+      "options": [
+        {
+          "text": "presumido ou ficto (art. 302, IV, do CPP)",
+          "explanation": "Certa: ele foi encontrado logo depois com instrumentos ou armas que façam presumir ser o autor."
+        },
+        {
+          "text": "próprio",
+          "explanation": "Errada: o flagrante próprio é estar cometendo ou ter acabado de cometer a infração."
+        },
+        {
+          "text": "impróprio ou quase-flagrante",
+          "explanation": "Errada: exige perseguição logo após o crime (inciso III), não encontro posterior com objetos do crime."
+        },
+        {
+          "text": "preparado",
+          "explanation": "Errada: é quando o agente é induzido a cometer o crime; é ilegal (Súmula 145 do STF)."
+        },
+        {
+          "text": "diferido",
+          "explanation": "Errada: é a ação controlada, em que se retarda a prisão para obter mais provas."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Quando o policial efetua prisão em flagrante (flagrante obrigatório), o uso moderado da força está amparado pela excludente de ilicitude denominada:",
+      "options": [
+        {
+          "text": "estrito cumprimento do dever legal",
+          "explanation": "Certa: a autoridade policial e seus agentes têm o DEVER de prender quem esteja em flagrante (art. 301 do CPP)."
+        },
+        {
+          "text": "exercício regular de direito",
+          "explanation": "Errada: aplica-se ao flagrante facultativo, efetuado por qualquer do povo."
+        },
+        {
+          "text": "legítima defesa",
+          "explanation": "Errada: pressupõe agressão injusta, atual ou iminente; não é o fundamento da prisão em si."
+        },
+        {
+          "text": "estado de necessidade",
+          "explanation": "Errada: pressupõe perigo atual não provocado; não é o caso."
+        },
+        {
+          "text": "inexigibilidade de conduta diversa",
+          "explanation": "Errada: é causa de exclusão da culpabilidade, não da ilicitude."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Na lavratura do auto de prisão em flagrante, a ordem de oitiva prevista no art. 304 do CPP é:",
+      "options": [
+        {
+          "text": "testemunhas, preso e, por último, condutor",
+          "explanation": "Errada: o condutor é ouvido primeiro."
+        },
+        {
+          "text": "preso, condutor e testemunhas",
+          "explanation": "Errada: o interrogatório do preso é o último ato."
+        },
+        {
+          "text": "vítima, preso e testemunhas, sem ouvir o condutor",
+          "explanation": "Errada: a oitiva do condutor é obrigatória."
+        },
+        {
+          "text": "condutor, testemunhas e, por fim, interrogatório do preso",
+          "explanation": "Certa: primeiro ouve-se o condutor (que pode ser o policial que efetuou a prisão), depois as testemunhas e, por último, o conduzido."
+        },
+        {
+          "text": "a ordem fica a critério da autoridade policial",
+          "explanation": "Errada: a ordem está prevista em lei."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Sobre a entrada forçada em domicílio sem mandado judicial, o STF fixou (Tema 280) que é lícita:",
+      "options": [
+        {
+          "text": "somente durante o dia, mesmo em flagrante",
+          "explanation": "Errada: em flagrante, a entrada é permitida também à noite."
+        },
+        {
+          "text": "apenas com autorização do delegado",
+          "explanation": "Errada: a autorização do delegado não substitui a ordem judicial nem as fundadas razões."
+        },
+        {
+          "text": "com base em denúncia anônima, sem nenhuma outra diligência",
+          "explanation": "Errada: denúncia anônima isolada não basta como fundada razão."
+        },
+        {
+          "text": "nunca, pois só o mandado judicial autoriza a entrada",
+          "explanation": "Errada: a CF admite a entrada em flagrante delito, desastre ou para prestar socorro."
+        },
+        {
+          "text": "a qualquer hora, quando amparada em fundadas razões, justificadas a posteriori, de que ocorre flagrante delito dentro da casa",
+          "explanation": "Certa: a CF autoriza a entrada em flagrante, e o STF exige fundadas razões, sob pena de responsabilidade do agente e nulidade dos atos."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual destas NÃO é causa de exclusão da ilicitude prevista no art. 23 do CP?",
+      "options": [
+        {
+          "text": "Estado de necessidade",
+          "explanation": "Errada: está no art. 23, I."
+        },
+        {
+          "text": "Legítima defesa",
+          "explanation": "Errada: está no art. 23, II."
+        },
+        {
+          "text": "Estrito cumprimento de dever legal",
+          "explanation": "Errada: está no art. 23, III."
+        },
+        {
+          "text": "Coação moral irresistível",
+          "explanation": "Certa: a coação moral irresistível exclui a CULPABILIDADE (art. 22 do CP), não a ilicitude."
+        },
+        {
+          "text": "Exercício regular de direito",
+          "explanation": "Errada: está no art. 23, III."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Segundo a regra geral do art. 10 do CPP, o inquérito policial deve terminar em:",
+      "options": [
+        {
+          "text": "30 dias, se preso; 90 dias, se solto",
+          "explanation": "Errada: não é o prazo do CPP; lembra o da Lei de Drogas (30/90)."
+        },
+        {
+          "text": "10 dias, se o indiciado estiver preso; 30 dias, se estiver solto",
+          "explanation": "Certa: é a regra geral do CPP; leis especiais (como a de drogas ou a da Justiça Federal) trazem prazos próprios."
+        },
+        {
+          "text": "15 dias, em qualquer caso",
+          "explanation": "Errada: o CPP diferencia indiciado preso e solto."
+        },
+        {
+          "text": "5 dias, se preso; 10, se solto",
+          "explanation": "Errada: os prazos do CPP são de 10 e 30 dias."
+        },
+        {
+          "text": "não há prazo, pois o inquérito é dispensável",
+          "explanation": "Errada: o inquérito é dispensável, mas, se instaurado, tem prazo legal."
+        }
+      ],
+      "correct": "B"
+    }
+  ]
+}

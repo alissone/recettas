@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000006",
+  "title": "Direito Administrativo — PRF 2019",
+  "topic": "Direito Administrativo",
+  "description": "Responsabilidade do servidor, atos administrativos, poderes, responsabilidade civil do Estado e Lei nº 8.112/1990.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#00A6A6",
+  "questions": [
+    {
+      "prompt": "Pela Lei nº 8.112/1990, as responsabilidades civil, penal e administrativa do servidor são independentes. A responsabilidade administrativa será afastada no caso de:",
+      "options": [
+        {
+          "text": "absolvição criminal por insuficiência de provas",
+          "explanation": "Errada: falta de provas no processo penal não impede a punição administrativa."
+        },
+        {
+          "text": "absolvição criminal que negue a existência do fato ou a sua autoria",
+          "explanation": "Certa: art. 126 da Lei nº 8.112/1990."
+        },
+        {
+          "text": "arquivamento do inquérito policial",
+          "explanation": "Errada: o arquivamento do inquérito não vincula a esfera administrativa."
+        },
+        {
+          "text": "extinção da punibilidade pela prescrição penal",
+          "explanation": "Errada: a prescrição penal não afasta a responsabilidade administrativa."
+        },
+        {
+          "text": "qualquer absolvição na esfera criminal",
+          "explanation": "Errada: só a absolvição que nega o fato ou a autoria repercute na esfera administrativa."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Sobre o vício de MOTIVO do ato administrativo, é correto afirmar que ocorre quando a matéria de fato ou de direito em que se fundamenta o ato é:",
+      "options": [
+        {
+          "text": "praticada por agente sem competência",
+          "explanation": "Errada: isso é vício de competência (sujeito)."
+        },
+        {
+          "text": "materialmente inexistente ou juridicamente inadequada ao resultado obtido",
+          "explanation": "Certa: é a definição do art. 2º, parágrafo único, \"d\", da Lei nº 4.717/1965 (Lei da Ação Popular)."
+        },
+        {
+          "text": "destinada a fim diverso do previsto na lei",
+          "explanation": "Errada: isso é desvio de finalidade."
+        },
+        {
+          "text": "emitida sem a forma prescrita em lei",
+          "explanation": "Errada: isso é vício de forma."
+        },
+        {
+          "text": "ato cujo resultado importa violação de lei",
+          "explanation": "Errada: isso é ilegalidade do objeto."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O poder que permite à Administração apurar infrações e aplicar penalidades a servidores e a particulares sujeitos à sua disciplina interna é o poder:",
+      "options": [
+        {
+          "text": "disciplinar",
+          "explanation": "Certa: o poder disciplinar alcança quem tem vínculo especial com a Administração (servidores, contratados)."
+        },
+        {
+          "text": "de polícia",
+          "explanation": "Errada: o poder de polícia limita direitos da coletividade em geral, sem vínculo especial."
+        },
+        {
+          "text": "regulamentar",
+          "explanation": "Errada: é o poder de editar normas para a fiel execução das leis."
+        },
+        {
+          "text": "hierárquico",
+          "explanation": "Errada: organiza, ordena e revê a atuação dos subordinados; a punição é disciplinar."
+        },
+        {
+          "text": "vinculado",
+          "explanation": "Errada: \"vinculado\" descreve o grau de liberdade do ato, não um poder sancionador."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Sobre o abuso de poder, é correto afirmar que:",
+      "options": [
+        {
+          "text": "nunca decorre de conduta omissiva",
+          "explanation": "Errada: a doutrina reconhece o abuso por omissão."
+        },
+        {
+          "text": "limita-se ao excesso de poder",
+          "explanation": "Errada: inclui também o desvio de finalidade (desvio de poder)."
+        },
+        {
+          "text": "abrange o excesso de poder e o desvio de finalidade e pode decorrer tanto de ação quanto de omissão do agente",
+          "explanation": "Certa: a omissão ilegal (como deixar de praticar ato devido) também configura abuso de poder."
+        },
+        {
+          "text": "só existe quando há crime",
+          "explanation": "Errada: é ilegalidade administrativa, que pode ou não configurar crime."
+        },
+        {
+          "text": "torna o ato válido até decisão judicial definitiva",
+          "explanation": "Errada: o ato com abuso é ilegal e pode ser anulado pela própria Administração."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Um particular foi atingido por uma viatura oficial conduzida por agente público em serviço. Pela regra do art. 37, § 6º, da CF:",
+      "options": [
+        {
+          "text": "o Estado responde objetivamente, bastando à vítima provar o dano e o nexo causal",
+          "explanation": "Certa: a CF adota a responsabilidade objetiva (teoria do risco administrativo); dolo ou culpa só importam na ação de regresso contra o agente."
+        },
+        {
+          "text": "a vítima precisa provar dolo ou culpa do agente",
+          "explanation": "Errada: isso seria responsabilidade subjetiva, que não é a regra para atos comissivos."
+        },
+        {
+          "text": "só o agente responde, pessoalmente",
+          "explanation": "Errada: a vítima aciona o Estado, que tem direito de regresso contra o agente."
+        },
+        {
+          "text": "o Estado responde pela teoria do risco integral, sem excludentes",
+          "explanation": "Errada: no risco administrativo admitem-se excludentes, como a culpa exclusiva da vítima."
+        },
+        {
+          "text": "o Estado só responde se houver condenação criminal do agente",
+          "explanation": "Errada: a responsabilidade civil independe da esfera penal."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "O atributo que permite à Administração executar suas decisões diretamente, sem precisar de prévia ordem judicial, é a:",
+      "options": [
+        {
+          "text": "presunção de legitimidade",
+          "explanation": "Errada: é a presunção de que o ato foi praticado conforme a lei, até prova em contrário."
+        },
+        {
+          "text": "imperatividade",
+          "explanation": "Errada: é a imposição do ato a terceiros independentemente de concordância — não se confunde com executar sem juiz."
+        },
+        {
+          "text": "tipicidade",
+          "explanation": "Errada: é a correspondência do ato a figuras definidas em lei."
+        },
+        {
+          "text": "autoexecutoriedade",
+          "explanation": "Certa: é o caso, por exemplo, da remoção de um veículo irregular pela própria autoridade."
+        },
+        {
+          "text": "motivação",
+          "explanation": "Errada: motivação é a exposição dos motivos, não um atributo de execução."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Segundo a Súmula 473 do STF, a Administração pode:",
+      "options": [
+        {
+          "text": "revogar atos ilegais e anular os inconvenientes",
+          "explanation": "Errada: inverte os conceitos: atos ilegais são anulados; inconvenientes, revogados."
+        },
+        {
+          "text": "anular seus atos apenas com autorização judicial",
+          "explanation": "Errada: a autotutela dispensa autorização judicial."
+        },
+        {
+          "text": "revogar atos vinculados a qualquer tempo",
+          "explanation": "Errada: atos vinculados não admitem revogação por conveniência."
+        },
+        {
+          "text": "rever seus atos sem respeitar direitos adquiridos",
+          "explanation": "Errada: a súmula ressalva expressamente os direitos adquiridos na revogação."
+        },
+        {
+          "text": "anular seus atos ilegais e revogar os inconvenientes ou inoportunos, respeitados os direitos adquiridos",
+          "explanation": "Certa: é a autotutela — anulação por ilegalidade e revogação por conveniência e oportunidade."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual destes NÃO está expresso no caput do art. 37 da Constituição Federal?",
+      "options": [
+        {
+          "text": "Legalidade",
+          "explanation": "Errada: é o \"L\" do LIMPE, expresso no caput."
+        },
+        {
+          "text": "Impessoalidade",
+          "explanation": "Errada: é o \"I\" do LIMPE."
+        },
+        {
+          "text": "Publicidade",
+          "explanation": "Errada: é o \"P\" do LIMPE."
+        },
+        {
+          "text": "Eficiência",
+          "explanation": "Errada: o \"E\" do LIMPE, incluído pela EC nº 19/1998."
+        },
+        {
+          "text": "Razoabilidade",
+          "explanation": "Certa: razoabilidade e proporcionalidade são princípios implícitos (ou expressos em leis, como a Lei nº 9.784/1999), não estão no caput do art. 37."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Pela Lei nº 8.112/1990, a penalidade de suspensão:",
+      "options": [
+        {
+          "text": "não pode exceder 30 dias",
+          "explanation": "Errada: o limite é de 90 dias."
+        },
+        {
+          "text": "pode chegar a 180 dias",
+          "explanation": "Errada: o máximo legal é de 90 dias."
+        },
+        {
+          "text": "não pode exceder 90 dias",
+          "explanation": "Certa: art. 130. Por conveniência do serviço, pode ser convertida em multa de 50% por dia, com o servidor obrigado a permanecer em serviço."
+        },
+        {
+          "text": "é aplicada apenas pelo Presidente da República",
+          "explanation": "Errada: a competência varia; suspensões de até 30 dias podem ser aplicadas pelo chefe da repartição."
+        },
+        {
+          "text": "não pode ser convertida em multa",
+          "explanation": "Errada: o art. 130, § 2º, permite a conversão em multa."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Segundo a Constituição Federal, o servidor nomeado para cargo efetivo em virtude de concurso público adquire estabilidade após:",
+      "options": [
+        {
+          "text": "2 anos de efetivo exercício, automaticamente",
+          "explanation": "Errada: a EC nº 19/1998 ampliou o prazo para 3 anos e exigiu avaliação especial."
+        },
+        {
+          "text": "5 anos de efetivo exercício",
+          "explanation": "Errada: o prazo constitucional é de 3 anos."
+        },
+        {
+          "text": "a posse, desde que aprovado em concurso",
+          "explanation": "Errada: a estabilidade não é imediata; exige o período de efetivo exercício."
+        },
+        {
+          "text": "3 anos de efetivo exercício, com avaliação especial de desempenho por comissão",
+          "explanation": "Certa: art. 41, caput e § 4º, da CF, com a redação da EC nº 19/1998."
+        },
+        {
+          "text": "3 anos, sem necessidade de avaliação",
+          "explanation": "Errada: a avaliação especial de desempenho é condição obrigatória."
+        }
+      ],
+      "correct": "D"
+    }
+  ]
+}

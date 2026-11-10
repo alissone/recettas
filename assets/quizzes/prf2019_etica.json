@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000003",
+  "title": "Ética no Serviço Público — PRF 2019",
+  "topic": "Ética no Serviço Público",
+  "description": "Regras deontológicas, deveres, vedações e Comissão de Ética do Decreto nº 1.171/1994.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#2EB67D",
+  "questions": [
+    {
+      "prompt": "Qual é a pena que a Comissão de Ética pode aplicar ao servidor público, segundo o Decreto nº 1.171/1994?",
+      "options": [
+        {
+          "text": "Censura",
+          "explanation": "Certa: o inciso XXII diz que a pena aplicável pela Comissão de Ética é a de censura, com fundamentação em parecer assinado por todos os integrantes e ciência do faltoso."
+        },
+        {
+          "text": "Advertência",
+          "explanation": "Errada: advertência é penalidade disciplinar da Lei nº 8.112/1990, aplicada em processo disciplinar, não pela Comissão de Ética."
+        },
+        {
+          "text": "Suspensão de até 30 dias",
+          "explanation": "Errada: suspensão é penalidade da Lei nº 8.112/1990, não do Código de Ética."
+        },
+        {
+          "text": "Demissão",
+          "explanation": "Errada: demissão só pode ser aplicada após processo administrativo disciplinar, nos termos da Lei nº 8.112/1990."
+        },
+        {
+          "text": "Multa",
+          "explanation": "Errada: o Código de Ética não prevê multa."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Segundo o Código de Ética, a moralidade da Administração Pública:",
+      "options": [
+        {
+          "text": "restringe-se à distinção entre o bem e o mal",
+          "explanation": "Errada: o Código diz justamente que ela NÃO se limita a isso."
+        },
+        {
+          "text": "confunde-se com a legalidade: basta cumprir a lei",
+          "explanation": "Errada: o Código pede que o servidor decida também entre o honesto e o desonesto, não só entre o legal e o ilegal."
+        },
+        {
+          "text": "só se aplica aos ocupantes de cargos de chefia",
+          "explanation": "Errada: aplica-se a todo servidor público."
+        },
+        {
+          "text": "depende das convicções religiosas de cada servidor",
+          "explanation": "Errada: a moralidade administrativa é objetiva e voltada ao bem comum, não à crença pessoal."
+        },
+        {
+          "text": "não se limita à distinção entre o bem e o mal, devendo-se acrescentar a ideia de que o fim é sempre o bem comum",
+          "explanation": "Certa: é o texto da regra deontológica III — a moralidade vai além do bem e do mal e se orienta pelo bem comum."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Em relação à vida particular do servidor, o Código de Ética estabelece que:",
+      "options": [
+        {
+          "text": "a conduta fora do serviço é irrelevante para a ética funcional",
+          "explanation": "Errada: o Código diz exatamente o contrário."
+        },
+        {
+          "text": "só interessa a conduta privada que configure crime",
+          "explanation": "Errada: qualquer ato da vida privada pode afetar o conceito funcional, não só crimes."
+        },
+        {
+          "text": "os princípios éticos valem apenas durante o expediente",
+          "explanation": "Errada: a função pública se integra à vida particular; a ética não se limita ao expediente."
+        },
+        {
+          "text": "os fatos e atos da vida privada podem acrescer ou diminuir o seu bom conceito na vida funcional",
+          "explanation": "Certa: a regra VI diz que a função pública se integra na vida particular do servidor."
+        },
+        {
+          "text": "a vida privada só é avaliada no estágio probatório",
+          "explanation": "Errada: não existe essa limitação temporal no Código."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Um servidor que se apresenta habitualmente embriagado FORA do serviço:",
+      "options": [
+        {
+          "text": "não comete falta, pois a vedação vale só no serviço",
+          "explanation": "Errada: o Código fala expressamente em \"no serviço ou fora dele habitualmente\"."
+        },
+        {
+          "text": "só comete falta se causar acidente de trânsito",
+          "explanation": "Errada: a vedação independe de qualquer resultado."
+        },
+        {
+          "text": "responde apenas na esfera penal",
+          "explanation": "Errada: embriaguez não é, por si, crime; a vedação é ética/funcional."
+        },
+        {
+          "text": "só pode ser punido se estiver uniformizado",
+          "explanation": "Errada: o Código não faz essa distinção."
+        },
+        {
+          "text": "também pratica conduta vedada pelo Código de Ética",
+          "explanation": "Certa: é vedado apresentar-se embriagado no serviço ou fora dele habitualmente (inciso XV, \"n\")."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Servidor que, por espírito de solidariedade, é conivente com erro ou infração cometida por colega:",
+      "options": [
+        {
+          "text": "age corretamente, pois a lealdade aos colegas é um dever",
+          "explanation": "Errada: o dever de lealdade é com a instituição e o interesse público, não com o erro do colega."
+        },
+        {
+          "text": "pratica conduta vedada pelo Código de Ética",
+          "explanation": "Certa: o inciso XV, \"c\", veda ser conivente com erro ou infração ao Código ou ao Código de Ética de sua profissão por espírito de solidariedade."
+        },
+        {
+          "text": "só comete falta se receber vantagem",
+          "explanation": "Errada: a vedação independe de vantagem."
+        },
+        {
+          "text": "só é punido se o colega também for",
+          "explanation": "Errada: a responsabilidade ética é individual."
+        },
+        {
+          "text": "pratica crime de prevaricação em qualquer caso",
+          "explanation": "Errada: prevaricação exige satisfazer interesse ou sentimento pessoal ao retardar/deixar de praticar ato de ofício; a conivência é, antes de tudo, falta ética."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Para fins do Código de Ética, considera-se servidor público:",
+      "options": [
+        {
+          "text": "apenas o ocupante de cargo efetivo aprovado em concurso",
+          "explanation": "Errada: o conceito alcança temporários, comissionados e até quem atua sem remuneração."
+        },
+        {
+          "text": "todo aquele que, por força de lei, contrato ou qualquer ato jurídico, presta serviços de natureza permanente, temporária ou excepcional, ainda que sem retribuição financeira",
+          "explanation": "Certa: é o conceito amplo do inciso XXIV."
+        },
+        {
+          "text": "apenas quem recebe remuneração dos cofres públicos",
+          "explanation": "Errada: o Código inclui expressamente quem atua sem retribuição financeira."
+        },
+        {
+          "text": "apenas o servidor estável",
+          "explanation": "Errada: estabilidade não é requisito."
+        },
+        {
+          "text": "apenas quem trabalha na administração direta",
+          "explanation": "Errada: alcança quem está ligado direta ou indiretamente a órgão do poder estatal, inclusive autarquias, fundações, empresas públicas e sociedades de economia mista."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Deixar qualquer pessoa à espera de solução, permitindo a formação de longas filas, é tratado pelo Código como:",
+      "options": [
+        {
+          "text": "grave dano moral aos usuários dos serviços públicos, além de atitude antiética",
+          "explanation": "Certa: a regra X diz que isso não é só atitude contra a ética ou ato de desumanidade, mas principalmente grave dano moral aos usuários."
+        },
+        {
+          "text": "mero problema de gestão, sem relevância ética",
+          "explanation": "Errada: o Código o qualifica expressamente como questão ética."
+        },
+        {
+          "text": "conduta aceitável quando falta pessoal",
+          "explanation": "Errada: o Código não traz essa ressalva."
+        },
+        {
+          "text": "crime de responsabilidade",
+          "explanation": "Errada: crimes de responsabilidade são de agentes políticos e têm lei própria."
+        },
+        {
+          "text": "falta grave punível com demissão pela Comissão de Ética",
+          "explanation": "Errada: a Comissão de Ética só aplica censura."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Sobre a publicidade dos atos administrativos, o Código de Ética afirma que ela:",
+      "options": [
+        {
+          "text": "é dispensável quando o ato beneficia o cidadão",
+          "explanation": "Errada: o Código não faz essa ressalva."
+        },
+        {
+          "text": "depende da conveniência do chefe imediato",
+          "explanation": "Errada: as exceções são as previstas em lei, em processo declarado sigiloso."
+        },
+        {
+          "text": "só é exigida para atos de nomeação",
+          "explanation": "Errada: vale para qualquer ato administrativo."
+        },
+        {
+          "text": "é requisito de eficácia e moralidade, salvo casos de segurança nacional, investigações policiais ou interesse superior do Estado preservados em processo declarado sigiloso",
+          "explanation": "Certa: é o teor da regra VII; a omissão compromete eticamente."
+        },
+        {
+          "text": "é sempre absoluta, sem nenhuma exceção",
+          "explanation": "Errada: há exceções (segurança nacional, investigações policiais, interesse superior do Estado)."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Segundo o Código de Ética, além de escolher entre o legal e o ilegal, o justo e o injusto, o servidor deve decidir PRINCIPALMENTE entre:",
+      "options": [
+        {
+          "text": "o rápido e o demorado",
+          "explanation": "Errada: eficiência importa, mas não é o critério destacado pelo Código."
+        },
+        {
+          "text": "o que agrada e o que desagrada à chefia",
+          "explanation": "Errada: o Código manda resistir a pressões de superiores contrárias ao interesse público."
+        },
+        {
+          "text": "o honesto e o desonesto",
+          "explanation": "Certa: a regra II diz que o servidor não poderá jamais desprezar o elemento ético e deve decidir principalmente entre o honesto e o desonesto."
+        },
+        {
+          "text": "o público e o privado",
+          "explanation": "Errada: não é a dicotomia citada na regra II."
+        },
+        {
+          "text": "o lucrativo e o não lucrativo",
+          "explanation": "Errada: o serviço público não se orienta pelo lucro."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "É dever fundamental do servidor público, segundo o Código de Ética:",
+      "options": [
+        {
+          "text": "cumprir ordens superiores ainda que manifestamente ilegais",
+          "explanation": "Errada: o Código manda resistir a pressões e representar contra comprometimento indevido da estrutura."
+        },
+        {
+          "text": "guardar sigilo sobre irregularidades por lealdade à equipe",
+          "explanation": "Errada: o dever é comunicar, não encobrir."
+        },
+        {
+          "text": "comunicar imediatamente a seus superiores todo e qualquer ato ou fato contrário ao interesse público",
+          "explanation": "Certa: está entre os deveres do inciso XIV."
+        },
+        {
+          "text": "aceitar gratificação de particular para agilizar o atendimento",
+          "explanation": "Errada: é vedado pleitear ou receber qualquer vantagem para cumprir sua missão."
+        },
+        {
+          "text": "usar o cargo para obter favorecimento para parentes",
+          "explanation": "Errada: é uma das vedações expressas do inciso XV."
+        }
+      ],
+      "correct": "C"
+    }
+  ]
+}

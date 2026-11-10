@@ -1,0 +1,270 @@
+{
+  "id": "c0ffee00-2019-4f00-8a00-000000000002",
+  "title": "Informática — PRF 2019",
+  "topic": "Informática",
+  "description": "Computação em nuvem, protocolos da Internet, malware, segurança, redes e backup.",
+  "source": "Inspirado na prova CESPE/CEBRASPE – PRF 2019 (adaptado para A–E)",
+  "color": "#4C8BF5",
+  "questions": [
+    {
+      "prompt": "Uma equipe passou a usar webmail e um editor de textos on-line, acessados pelo navegador de qualquer lugar, sem instalar nada nem administrar servidores. Esse modelo de serviço em nuvem é o:",
+      "options": [
+        {
+          "text": "IaaS (Infrastructure as a Service)",
+          "explanation": "Errada: IaaS entrega infraestrutura (máquinas virtuais, armazenamento, rede) que o cliente configura e administra."
+        },
+        {
+          "text": "PaaS (Platform as a Service)",
+          "explanation": "Errada: PaaS entrega uma plataforma para desenvolvedores criarem e hospedarem suas próprias aplicações."
+        },
+        {
+          "text": "SaaS (Software as a Service)",
+          "explanation": "Certa: no SaaS o usuário consome o aplicativo pronto pela Internet; o provedor cuida de software, servidores e infraestrutura."
+        },
+        {
+          "text": "Nuvem privada",
+          "explanation": "Errada: nuvem privada é um modelo de implantação (quem usa a infraestrutura), não um modelo de serviço."
+        },
+        {
+          "text": "Computação de borda (edge)",
+          "explanation": "Errada: edge computing é processar dados perto de onde são gerados; não descreve o consumo de aplicativos prontos."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual protocolo é usado para ENVIAR mensagens de e-mail do cliente ao servidor e entre servidores?",
+      "options": [
+        {
+          "text": "SMTP",
+          "explanation": "Certa: o Simple Mail Transfer Protocol é o protocolo de envio e transferência de e-mails."
+        },
+        {
+          "text": "POP3",
+          "explanation": "Errada: o POP3 serve para receber/baixar mensagens do servidor para o computador."
+        },
+        {
+          "text": "IMAP",
+          "explanation": "Errada: o IMAP serve para acessar e sincronizar a caixa de entrada mantida no servidor — recebimento, não envio."
+        },
+        {
+          "text": "FTP",
+          "explanation": "Errada: o FTP é para transferência de arquivos."
+        },
+        {
+          "text": "NNTP",
+          "explanation": "Errada: o NNTP é o protocolo de grupos de notícias (Usenet)."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Sobre vírus de script, assinale a afirmativa correta.",
+      "options": [
+        {
+          "text": "Só infecta arquivos executáveis com extensão .exe.",
+          "explanation": "Errada: vírus de script vivem em páginas, e-mails e arquivos de script; não dependem de .exe."
+        },
+        {
+          "text": "Pode ser executado automaticamente ao se acessar uma página web ou abrir um e-mail em HTML, conforme as configurações do navegador ou do leitor de e-mail.",
+          "explanation": "Certa: o código malicioso (JavaScript, VBScript etc.) roda quando a página/mensagem é interpretada, se o programa permitir scripts."
+        },
+        {
+          "text": "Só age se o usuário o instalar manualmente com privilégios de administrador.",
+          "explanation": "Errada: a execução pode ser automática, só pelo acesso à página ou mensagem."
+        },
+        {
+          "text": "É exclusivo de sistemas Linux.",
+          "explanation": "Errada: scripts maliciosos atingem qualquer sistema cujo navegador ou leitor os execute."
+        },
+        {
+          "text": "Não pode ser detectado por antivírus.",
+          "explanation": "Errada: antivírus e navegadores detectam e bloqueiam scripts maliciosos conhecidos."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Programa que, além de executar as funções para as quais foi aparentemente projetado, executa outras, normalmente maliciosas, sem o conhecimento do usuário:",
+      "options": [
+        {
+          "text": "Worm",
+          "explanation": "Errada: o worm se propaga sozinho pela rede, explorando vulnerabilidades, sem precisar se disfarçar de outro programa."
+        },
+        {
+          "text": "Ransomware",
+          "explanation": "Errada: o ransomware criptografa os dados e exige resgate; não se define pelo disfarce."
+        },
+        {
+          "text": "Spyware",
+          "explanation": "Errada: spyware monitora atividades e envia informações a terceiros; o conceito descrito é o do trojan."
+        },
+        {
+          "text": "Rootkit",
+          "explanation": "Errada: rootkit é um conjunto de técnicas para esconder a presença de um invasor ou malware no sistema."
+        },
+        {
+          "text": "Cavalo de Troia (trojan)",
+          "explanation": "Certa: o trojan se disfarça de programa útil (jogo, utilitário) e executa ações ocultas, como abrir portas ou instalar outros malwares."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual conjunto reúne parâmetros usuais de qualidade de serviço (QoS) em redes de computadores?",
+      "options": [
+        {
+          "text": "Propagação, recuperação, interferência e perda de dados",
+          "explanation": "Errada: \"recuperação\" e \"interferência\" não são métricas de QoS; só a perda de pacotes está entre os parâmetros usuais."
+        },
+        {
+          "text": "Endereço IP, máscara, gateway e DNS",
+          "explanation": "Errada: são parâmetros de configuração de rede, não de qualidade de serviço."
+        },
+        {
+          "text": "Criptografia, autenticação, integridade e não repúdio",
+          "explanation": "Errada: são propriedades de segurança da informação."
+        },
+        {
+          "text": "Topologia, cabeamento, conectores e switches",
+          "explanation": "Errada: descrevem a estrutura física da rede, não a qualidade do fluxo de pacotes."
+        },
+        {
+          "text": "Largura de banda, atraso (latência), variação do atraso (jitter) e perda de pacotes",
+          "explanation": "Certa: são as métricas que o QoS controla para priorizar tráfegos sensíveis, como voz e vídeo."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual é a função de um firewall?",
+      "options": [
+        {
+          "text": "Filtrar o tráfego que entra e sai de uma rede ou computador, permitindo ou bloqueando conexões conforme regras definidas",
+          "explanation": "Certa: o firewall controla o tráfego de acordo com uma política (portas, endereços, protocolos, aplicações)."
+        },
+        {
+          "text": "Remover vírus de arquivos já infectados",
+          "explanation": "Errada: limpeza de arquivos é papel do antivírus."
+        },
+        {
+          "text": "Criptografar todos os arquivos do disco",
+          "explanation": "Errada: isso é criptografia de disco (ex.: BitLocker), não firewall."
+        },
+        {
+          "text": "Fazer backup automático dos dados",
+          "explanation": "Errada: backup é outra ferramenta; o firewall não copia dados."
+        },
+        {
+          "text": "Substituir o antivírus, tornando-o desnecessário",
+          "explanation": "Errada: firewall e antivírus são complementares; um não substitui o outro."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Mensagem que se passa por banco ou órgão público para induzir a vítima a informar senhas ou dados pessoais em uma página falsa caracteriza:",
+      "options": [
+        {
+          "text": "Spam",
+          "explanation": "Errada: spam é mensagem não solicitada enviada em massa; pode carregar phishing, mas o golpe descrito é o phishing."
+        },
+        {
+          "text": "Phishing",
+          "explanation": "Certa: phishing é a fraude que se faz passar por entidade confiável para \"pescar\" dados da vítima."
+        },
+        {
+          "text": "Ataque de negação de serviço (DDoS)",
+          "explanation": "Errada: DDoS sobrecarrega um serviço para tirá-lo do ar; não busca dados da vítima."
+        },
+        {
+          "text": "Keylogger",
+          "explanation": "Errada: keylogger é um programa que registra o que é digitado; aqui a vítima entrega os dados voluntariamente."
+        },
+        {
+          "text": "Sniffing",
+          "explanation": "Errada: sniffing é interceptar o tráfego da rede, não enganar o usuário."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O tipo de backup que copia os arquivos alterados desde o último backup COMPLETO, acumulando as mudanças até o próximo completo, é o:",
+      "options": [
+        {
+          "text": "Completo (full)",
+          "explanation": "Errada: o completo copia todos os arquivos selecionados, alterados ou não."
+        },
+        {
+          "text": "Incremental",
+          "explanation": "Errada: o incremental copia só o que mudou desde o último backup de QUALQUER tipo; para restaurar é preciso o completo e todos os incrementais."
+        },
+        {
+          "text": "Espelhamento",
+          "explanation": "Errada: o espelho mantém uma cópia idêntica em tempo real — inclusive replicando exclusões —, sem histórico."
+        },
+        {
+          "text": "Diferencial",
+          "explanation": "Certa: o diferencial cresce a cada dia até o próximo completo; para restaurar bastam o último completo e o último diferencial."
+        },
+        {
+          "text": "Cópia de segurança em RAID 0",
+          "explanation": "Errada: RAID 0 divide dados entre discos para desempenho e não oferece redundância; não é tipo de backup."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "O uso de HTTPS (cadeado na barra de endereços) garante que:",
+      "options": [
+        {
+          "text": "o site é legítimo e não é um golpe",
+          "explanation": "Errada: sites de phishing também usam HTTPS; o cadeado não atesta a honestidade de quem está do outro lado."
+        },
+        {
+          "text": "o site está livre de vírus",
+          "explanation": "Errada: HTTPS não verifica nem impede conteúdo malicioso."
+        },
+        {
+          "text": "os dados ficam criptografados também no banco de dados do servidor",
+          "explanation": "Errada: o HTTPS protege o transporte; o armazenamento depende do servidor."
+        },
+        {
+          "text": "a comunicação entre o navegador e o servidor é criptografada (TLS)",
+          "explanation": "Certa: o HTTPS protege os dados em trânsito contra interceptação e adulteração."
+        },
+        {
+          "text": "a navegação é anônima",
+          "explanation": "Errada: o provedor e o site continuam sabendo quem acessa; HTTPS não esconde a identidade."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Ao navegar em janela anônima/privada, o navegador:",
+      "options": [
+        {
+          "text": "esconde o endereço IP do provedor de Internet",
+          "explanation": "Errada: o provedor continua vendo as conexões; para isso seria preciso VPN ou Tor."
+        },
+        {
+          "text": "impede que a rede da empresa registre os sites visitados",
+          "explanation": "Errada: administradores de rede continuam vendo o tráfego."
+        },
+        {
+          "text": "não grava histórico, cookies e dados de formulários no computador depois que a janela é fechada",
+          "explanation": "Certa: o modo privado só evita rastros locais no próprio dispositivo."
+        },
+        {
+          "text": "protege contra vírus e malware",
+          "explanation": "Errada: o modo privado não tem função de segurança contra malware."
+        },
+        {
+          "text": "apaga os arquivos baixados durante a sessão",
+          "explanation": "Errada: downloads continuam salvos no computador; apenas deixam de aparecer na lista do navegador."
+        }
+      ],
+      "correct": "C"
+    }
+  ]
+}

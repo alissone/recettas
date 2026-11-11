@@ -186,7 +186,7 @@
   .today-box .item { border-bottom: 0; }
   .category { margin-bottom: 4mm; }
 
-  .news-section { margin-top: 5mm; }
+  .news-section, .spill-section { margin-top: 5mm; }
   .news {
     position: relative;
     padding: 1.6mm 0;
@@ -319,6 +319,10 @@
     font-weight: 800;
   }
   .person .item { font-size: 9.5pt; }
+  /* A lone person's box spans the sheet, so its todos flow in two
+     columns like "Hoje". */
+  .person.wide ul.items { columns: 2; column-gap: 8mm; }
+  .person.wide .item { border-bottom: 0; }
 
   .write-in { height: 6.5mm; border-bottom: .5pt solid #bbb; }
   .empty { font-size: 9pt; color: var(--faint); font-style: italic; padding: 1mm 0; }
@@ -813,9 +817,18 @@ function splitTasks() {
   return { byCat, rest };
 }
 
+/** When there are no headlines, the "Tarefas" that don't fit the left
+ *  column continue in the right one, below the events. */
+const spills = () => visible(state.news).length === 0;
+
+function spillTasks(rest) {
+  return spills() ? rest.slice(take('tasks', rest).items.length) : [];
+}
+
 function count(key) {
   if (key === 'today') return take('today', state.today).items.length;
   if (key === 'tasks') return take('tasks', splitTasks().rest).items.length;
+  if (key === 'spill') return take('spill', spillTasks(splitTasks().rest)).items.length;
   if (key === 'events') return take('events', state.events).items.length;
   if (key === 'overdue') return take('overdue', state.overdue).items.length;
   if (key === 'news') return take('news', state.news).items.length;
@@ -832,6 +845,7 @@ function renderSheet() {
   const today = take('today', state.today);
   const split = splitTasks();
   const tasks = take('tasks', split.rest);
+  const spill = take('spill', spillTasks(split.rest));
   const categories = state.categories
     .map(c => ({ c, ...take(c.key, split.byCat.get(c.key)) }))
     .filter(x => x.items.length || x.left);
@@ -893,8 +907,8 @@ function renderSheet() {
           <h2 class="section-title">Tarefas</h2>
           ${tasks.items.length
             ? `<ul class="items">${tasks.items.map(i => itemHtml(i)).join('')}</ul>`
-            : '<div class="empty">Nada pendente.</div>'}
-          ${moreHtml(tasks.left)}
+            : split.rest.length ? '' : '<div class="empty">Nada pendente.</div>'}
+          ${moreHtml(spills() ? 0 : tasks.left)}
         </div>
         <div class="col" id="colRight">
           ${overdue.items.length || overdue.left ? `<section class="category">
@@ -911,13 +925,19 @@ function renderSheet() {
             <h2 class="section-title">Notícias</h2>
             ${news.items.map(newsHtml).join('')}
           </section>` : ''}
+          ${spill.items.length || spill.left ? `<section class="spill-section">
+            <h2 class="section-title">Tarefas <span class="count">continuação</span></h2>
+            <ul class="items">${spill.items.map(i => itemHtml(i)).join('')}</ul>
+            ${moreHtml(spill.left)}
+          </section>` : ''}
         </div>
       </div>
 
-      ${people.length ? `<div class="people" id="people">
+      ${people.length ? `<div class="people" id="people"
+          style="grid-template-columns: repeat(${Math.min(people.length, 3)}, 1fr)">
         ${people.map(({ p, items, left }) => {
           const drop = new Set([p.nickname.toLowerCase()]);
-          return `<div class="person">
+          return `<div class="person${people.length === 1 ? ' wide' : ''}">
             <h3>${esc(p.nickname)}</h3>
             <ul class="items">${items.map(i => itemHtml(i, drop)).join('')}</ul>
             ${moreHtml(left)}
@@ -971,7 +991,9 @@ function nextToTrim() {
     if (victim) return victim.key;
   }
   if (overflows(document.getElementById('colRight'))) {
-    // News only fills leftover space, so it goes before any event does.
+    // Spilled-over todos and news only fill leftover space, so they go
+    // before any event does.
+    if (count('spill') > 0) return 'spill';
     if (count('news') > 0) return 'news';
     if (count('overdue') > 0) return 'overdue';
     if (count('events') > 0) return 'events';

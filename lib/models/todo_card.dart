@@ -149,6 +149,35 @@ class TodoCard {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
+  /// Title shown for an event: its own title, or the first line of the
+  /// notes when it has none.
+  String get eventDisplayTitle {
+    if (eventTitle.isNotEmpty) return eventTitle;
+    for (final line in body.split('\n')) {
+      if (line.trim().isNotEmpty) return line.trim();
+    }
+    return 'Evento sem título';
+  }
+
+  /// 0 (normal) to 4 (very urgent): the number of "!" at the very end of
+  /// the text (the body of a task, the title of an event). Stored nowhere,
+  /// it's just part of the text.
+  int get urgency {
+    final String text;
+    switch (kind) {
+      case TodoKind.todo:
+        text = body;
+      case TodoKind.event:
+        text = eventTitle.isNotEmpty ? eventTitle : body.trimRight();
+      case TodoKind.move:
+        return 0;
+    }
+    final m = RegExp(r'(!+)\s*$').firstMatch(text);
+    if (m == null) return 0;
+    final n = m.group(1)!.length;
+    return n > 4 ? 4 : n;
+  }
+
   /// One-line label for places where the whole card doesn't fit (the
   /// categorize overlay, for instance).
   String get summary {

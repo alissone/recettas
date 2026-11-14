@@ -10,6 +10,7 @@ import 'date_calculator_screen.dart';
 import 'gps_tracker_screen.dart';
 import 'harpa_screen.dart';
 import 'home_shell.dart' show showNoInternetBanner;
+import 'job_reply_screen.dart';
 import 'product_scanner_screen.dart';
 import 'nutrition_report_screen.dart';
 import 'people_screen.dart';
@@ -93,6 +94,12 @@ class _MoreScreenState extends State<MoreScreen> {
               title: 'Pessoas',
               subtitle: 'Apelidos para marcar com @ nas tarefas',
               screen: const PeopleScreen(),
+            ),
+            _buildUtilityTile(
+              icon: Icons.work_outline,
+              title: 'Responder recrutador',
+              subtitle: 'Claude escreve a resposta para e-mails e LinkedIn',
+              screen: const JobReplyScreen(),
             ),
             _buildUtilityTile(
               icon: Icons.restaurant_menu_outlined,

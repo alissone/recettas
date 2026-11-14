@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../app_theme.dart';
@@ -266,6 +267,18 @@ class _WebTodoScreenState extends State<WebTodoScreen> {
                       ),
                     ),
                   ),
+                ),
+                IconButton(
+                  tooltip: 'Copiar',
+                  icon: Icon(Icons.copy_outlined,
+                      color: AppTheme.mediumBrown.withValues(alpha: 0.6)),
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    await Clipboard.setData(ClipboardData(text: todo.title));
+                    messenger.showSnackBar(const SnackBar(
+                        content: Text('Copiado'),
+                        duration: Duration(seconds: 2)));
+                  },
                 ),
                 IconButton(
                   tooltip: 'Arquivar',

@@ -33,13 +33,22 @@ phone ──upload .m4a──▶ Supabase Storage (voice-notes)  ◀──downlo
      into `purchases` with `voice_note_id`, and echoes them in `expenses`.
      A rerun deletes that note's purchases first, so it never duplicates.
 
+4. "Responder recrutador" (Mais tab) inserts a row into `job_replies`
+   with `status = 'requested'`: the pasted recruiter message (e-mail or
+   LinkedIn), an optional job description and optional instructions. The
+   worker sends it to Claude with `job_reply_prompt.md` plus
+   `job_reply_profile.md` (your career background, re-read on every
+   request, so keep it current) and writes back `subject`, `reply` and
+   `notes` (fit and gaps, for you only).
+
 Notes recorded while the PC is off just wait in the queue. Anything
 interrupted mid-job is requeued when the worker starts.
 
 ## Setup
 
 1. Run `migrations/035_create_voice_notes.sql` and
-   `036_voice_notes_expenses_shopping.sql` in the Supabase SQL editor.
+   `036_voice_notes_expenses_shopping.sql` (and `045_job_replies.sql` for
+   recruiter replies) in the Supabase SQL editor.
 2. `setup.bat` creates `.venv`, installs the dependencies, and creates `.env`.
 3. Fill in `.env`:
    - `SUPABASE_SERVICE_ROLE_KEY`: Dashboard → Project Settings → API.

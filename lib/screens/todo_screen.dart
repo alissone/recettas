@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:math' show Random;
+import 'dart:math' show Random, pi;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -100,7 +100,11 @@ class _TodoScreenState extends State<TodoScreen> {
   static const String _uncategorizedKey = '__uncategorized__';
   static const String _prefGroupByCategory = 'todo_group_by_category';
   static const String _prefGroupOrder = 'todo_group_order';
+  static const String _prefEventsMode = 'todo_events_mode';
   bool _groupByCategory = false;
+  // Events (and daily events) tend to pile up at the top: show them as
+  // cards, as one compact card of bullets, or not at all.
+  _EventsMode _eventsMode = _EventsMode.full;
   List<String> _groupOrder = [];
   final Set<String> _collapsedGroups = {};
   bool _searchVisible = false;
@@ -244,7 +248,35 @@ class _TodoScreenState extends State<TodoScreen> {
       _groupByCategory =
           prefs.getBool(_prefGroupByCategory) ?? false;
       _groupOrder = prefs.getStringList(_prefGroupOrder) ?? [];
+      final mode = prefs.getInt(_prefEventsMode) ?? 0;
+      _eventsMode =
+          _EventsMode.values[mode.clamp(0, _EventsMode.values.length - 1)];
     });
+  }
+
+  Future<void> _cycleEventsMode() async {
+    setState(() => _eventsMode = _eventsMode.next);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_prefEventsMode, _eventsMode.index);
+  }
+
+  bool _isEvent(Todo t) => TodoCard.parse(t.title).kind == TodoKind.event;
+
+  /// Todos shown as regular cards: all of them, minus the events when
+  /// those are compacted or hidden.
+  List<Todo> get _listTodos => _eventsMode == _EventsMode.full
+      ? _todos
+      : _todos.where((t) => !_isEvent(t)).toList();
+
+  /// The compact card of event bullets; null outside compact mode.
+  Widget? _buildCompactEvents() {
+    if (_eventsMode != _EventsMode.compact) return null;
+    final events = _todos.where(_isEvent).toList();
+    if (events.isEmpty) return null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _CompactEventsCard(events: events, onTap: _editTodo),
+    );
   }
 
   Future<void> _toggleGroupByCategory() async {
@@ -337,8 +369,17 @@ class _TodoScreenState extends State<TodoScreen> {
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
       if (newIndex > oldIndex) newIndex--;
-      final item = _todos.removeAt(oldIndex);
-      _todos.insert(newIndex, item);
+      final shown = _listTodos.toList();
+      final item = shown.removeAt(oldIndex);
+      shown.insert(newIndex, item);
+      // Hidden events keep their own slots; the visible ones are re-dealt
+      // around them.
+      final shownIds = shown.map((t) => t.id).toSet();
+      var next = 0;
+      _todos = [
+        for (final t in _todos)
+          if (shownIds.contains(t.id)) shown[next++] else t,
+      ];
     });
     _repo.reorderTodos(_todos.map((t) => t.id).toList());
   }
@@ -393,6 +434,19 @@ class _TodoScreenState extends State<TodoScreen> {
     setState(() {
       _todos.removeWhere((t) => t.id == todo.id);
       _todos.insert(0, todo);
+      _categorizingTodo = null;
+    });
+    _repo.reorderTodos(_todos.map((t) => t.id).toList());
+  }
+
+  /// Dropped on the strip at the bottom of the overlay: sends the todo to
+  /// the end of the list (and persists the new order).
+  void _moveCategorizingTodoToBottom() {
+    final todo = _categorizingTodo;
+    if (todo == null) return;
+    setState(() {
+      _todos.removeWhere((t) => t.id == todo.id);
+      _todos.add(todo);
       _categorizingTodo = null;
     });
     _repo.reorderTodos(_todos.map((t) => t.id).toList());
@@ -622,6 +676,7 @@ class _TodoScreenState extends State<TodoScreen> {
               onSelected: (value) {
                 if (value == 'group') _toggleGroupByCategory();
                 if (value == 'group_order') _openGroupOrderSheet();
+                if (value == 'events') _cycleEventsMode();
                 if (value == 'categories') _openEditCategories();
               },
               itemBuilder: (_) => [
@@ -656,6 +711,17 @@ class _TodoScreenState extends State<TodoScreen> {
                       ],
                     ),
                   ),
+                PopupMenuItem(
+                  value: 'events',
+                  child: Row(
+                    children: [
+                      Icon(_eventsMode.next.icon,
+                          color: AppTheme.primaryOrange, size: 20),
+                      const SizedBox(width: 12),
+                      Text(_eventsMode.next.menuLabel),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'categories',
                   child: Row(
@@ -871,6 +937,7 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Widget _buildTodoList() {
+    final listTodos = _listTodos;
     return ReorderableListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       buildDefaultDragHandles: false,
@@ -888,9 +955,10 @@ class _TodoScreenState extends State<TodoScreen> {
         );
       },
       onReorder: _onReorder,
-      itemCount: _todos.length,
+      header: _buildCompactEvents(),
+      itemCount: listTodos.length,
       itemBuilder: (context, index) {
-        final todo = _todos[index];
+        final todo = listTodos[index];
         final cat = _categoryForTodo(todo);
         return _SwipeableTodoItem(
           key: ValueKey(todo.id),
@@ -916,7 +984,7 @@ class _TodoScreenState extends State<TodoScreen> {
   Widget _buildGroupedList() {
     final byCategory = <String, List<Todo>>{};
     final uncategorized = <Todo>[];
-    for (final todo in _todos) {
+    for (final todo in _listTodos) {
       if (todo.categoryId != null &&
           _categories.any((c) => c.id == todo.categoryId)) {
         byCategory.putIfAbsent(todo.categoryId!, () => []).add(todo);
@@ -941,7 +1009,7 @@ class _TodoScreenState extends State<TodoScreen> {
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      children: children,
+      children: [?_buildCompactEvents(), ...children],
     );
   }
 
@@ -1151,6 +1219,7 @@ class _TodoScreenState extends State<TodoScreen> {
       onAssign: _assignCategory,
       onDismiss: _dismissCategorize,
       onMoveToTop: _moveCategorizingTodoToTop,
+      onMoveToBottom: _moveCategorizingTodoToBottom,
     );
   }
 }
@@ -1208,12 +1277,16 @@ class _SwipeableTodoItem extends StatelessWidget {
   Widget _buildCard(BuildContext context) {
     final cat = category;
     final card = TodoCard.parse(todo.title);
+    final urgency = todo.isCompleted ? 0 : card.urgency;
 
-    return ClipRRect(
+    final cardWidget = ClipRRect(
       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.white,
+          color: urgency == 0
+              ? AppTheme.white
+              : Color.lerp(AppTheme.white, _urgencyColors[urgency - 1][0],
+                  0.05 + 0.03 * urgency),
           borderRadius:
               BorderRadius.circular(AppTheme.radiusMedium),
           boxShadow: AppTheme.softShadow,
@@ -1337,6 +1410,271 @@ class _SwipeableTodoItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return urgency == 0
+        ? cardWidget
+        : _UrgencyFrame(level: urgency, child: cardWidget);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Events display mode + compact events card
+// ---------------------------------------------------------------------------
+
+enum _EventsMode {
+  full(Icons.view_agenda_outlined, 'Eventos normais'),
+  compact(Icons.format_list_bulleted, 'Compactar eventos'),
+  hidden(Icons.visibility_off_outlined, 'Ocultar eventos');
+
+  final IconData icon;
+  final String menuLabel;
+  const _EventsMode(this.icon, this.menuLabel);
+
+  _EventsMode get next => switch (this) {
+        full => compact,
+        compact => hidden,
+        hidden => full,
+      };
+}
+
+/// All events as one slim card of bullets, for "Compactar eventos".
+class _CompactEventsCard extends StatelessWidget {
+  final List<Todo> events;
+  final ValueChanged<Todo> onTap;
+
+  const _CompactEventsCard({required this.events, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.event_outlined,
+                  size: 16, color: AppTheme.primaryOrange),
+              const SizedBox(width: 6),
+              Text('Eventos (${events.length})',
+                  style: AppTheme.caption.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.darkBrown)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (final todo in events) _row(todo),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(Todo todo) {
+    final card = TodoCard.parse(todo.title);
+    final date = card.date;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = date == null ? null : DateTime(date.year, date.month, date.day);
+    final muted = todo.isCompleted || (day != null && day.isBefore(today));
+    final urgency = muted ? 0 : card.urgency;
+    final dotColor = urgency > 0
+        ? _urgencyColors[urgency - 1][0]
+        : (muted
+            ? AppTheme.mediumBrown.withValues(alpha: 0.5)
+            : AppTheme.primaryOrange);
+    // Today's events skip the date; a repeating event's date is just its
+    // current occurrence.
+    final when = [
+      if (date != null &&
+          day != today &&
+          (!card.isRepeating || day!.isAfter(today)))
+        _eventDateLabel(date),
+      if (card.start != null) TodoCard.formatTime(card.start!),
+    ].join(' ');
+    return InkWell(
+      onTap: () => onTap(todo),
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration:
+                  BoxDecoration(color: dotColor, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            if (when.isNotEmpty) ...[
+              Text(when,
+                  style: AppTheme.caption.copyWith(
+                      fontSize: 12,
+                      color: muted
+                          ? AppTheme.mediumBrown.withValues(alpha: 0.6)
+                          : AppTheme.mediumBrown)),
+              const SizedBox(width: 6),
+            ],
+            Expanded(
+              child: Text(
+                card.eventDisplayTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: muted ? AppTheme.mediumBrown : AppTheme.darkBrown,
+                  decoration:
+                      todo.isCompleted ? TextDecoration.lineThrough : null,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Urgency ("!" at the end of the text): the more, the louder
+// ---------------------------------------------------------------------------
+
+// One per urgency level (index = level - 1); the first color is the main
+// tone, also used to tint the card.
+const _urgencyColors = <List<Color>>[
+  [Color(0xFFFFB300), Color(0xFFFFD54F)], // 1: amber
+  [Color(0xFFFF7A00), Color(0xFFFFB74D)], // 2: orange
+  [Color(0xFFE53935), Color(0xFFFF6F00)], // 3: red
+  [Color(0xFFFF2D87), Color(0xFFFFC400)], // 4: candy
+];
+
+/// Border + glow around an urgent card: calm amber for "!", sliding orange
+/// for "!!", pulsing red for "!!!" and a spinning rainbow candy frame with
+/// a heartbeat for "!!!!".
+class _UrgencyFrame extends StatefulWidget {
+  final int level; // 1..4
+  final Widget child;
+
+  const _UrgencyFrame({required this.level, required this.child});
+
+  @override
+  State<_UrgencyFrame> createState() => _UrgencyFrameState();
+}
+
+class _UrgencyFrameState extends State<_UrgencyFrame>
+    with SingleTickerProviderStateMixin {
+  static const _candy = [
+    Color(0xFFFF2D87),
+    Color(0xFFFF7A00),
+    Color(0xFFFFD600),
+    Color(0xFF3DDC84),
+    Color(0xFF29B6F6),
+    Color(0xFFAB47BC),
+    Color(0xFFFF2D87),
+  ];
+
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: _durationFor(widget.level));
+
+  static Duration _durationFor(int level) => Duration(
+      milliseconds: switch (level) { 2 => 2400, 3 => 900, _ => 3000 });
+
+  @override
+  void initState() {
+    super.initState();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(covariant _UrgencyFrame old) {
+    super.didUpdateWidget(old);
+    if (old.level != widget.level) {
+      _controller.duration = _durationFor(widget.level);
+      _sync();
+    }
+  }
+
+  void _sync() {
+    if (widget.level >= 2) {
+      _controller.repeat(reverse: widget.level == 3);
+    } else {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final level = widget.level;
+    final colors = _urgencyColors[level - 1];
+    final radius = BorderRadius.circular(AppTheme.radiusMedium + 3);
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final t = _controller.value;
+        // 0 -> 1 -> 0 over one cycle, for the looping (non-reversed) levels.
+        final tri = t < 0.5 ? t * 2 : 2 - t * 2;
+        final Gradient gradient;
+        final double glow;
+        switch (level) {
+          case 4:
+            gradient = SweepGradient(
+              colors: _candy,
+              transform: GradientRotation(t * 2 * pi),
+            );
+            glow = 10 + 8 * tri;
+          case 3:
+            gradient = LinearGradient(colors: [
+              Color.lerp(colors[0], colors[1], t)!,
+              Color.lerp(colors[1], colors[0], t)!,
+            ]);
+            glow = 6 + 14 * t;
+          case 2:
+            gradient = LinearGradient(
+              begin: Alignment(-1 + 2 * t, -1),
+              end: Alignment(1 + 2 * t, 1),
+              colors: [colors[0], colors[1], colors[0]],
+            );
+            glow = 6;
+          default:
+            gradient = LinearGradient(colors: colors);
+            glow = 0;
+        }
+        final glowColor = level == 4
+            ? HSVColor.fromAHSV(1, (t * 360) % 360, 0.7, 1).toColor()
+            : colors[0];
+        final framed = Container(
+          padding: EdgeInsets.all(level == 1 ? 2 : 3),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: radius,
+            boxShadow: glow == 0
+                ? null
+                : [
+                    BoxShadow(
+                      color: glowColor.withValues(alpha: 0.45),
+                      blurRadius: glow,
+                    ),
+                  ],
+          ),
+          child: child,
+        );
+        return level == 4
+            ? Transform.scale(scale: 1 + 0.012 * tri, child: framed)
+            : framed;
+      },
     );
   }
 }
@@ -1937,18 +2275,43 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
     );
   }
 
-  /// Inserts [prefix] at the start of the line the cursor is on, e.g.
-  /// `- ` for a bullet or `- [ ] ` for a checklist item.
+  static final _listMarker =
+      RegExp(r'^(\s*)(?:[-*+] \[[ xX]\] |[-*+] |\d+[.)] )');
+
+  /// Toggles [prefix] (`- ` bullet or `- [ ] ` checklist) on the line the
+  /// cursor is on, or on every line of the selection: pressing it again
+  /// removes it, and a line that already has the other kind of list
+  /// marker is converted instead of getting a second one.
   void _insertLinePrefix(String prefix) {
     final text = _controller.text;
     final sel = _controller.selection;
-    final offset = sel.start < 0 ? text.length : sel.start;
-    final lineStart =
-        offset == 0 ? 0 : text.lastIndexOf('\n', offset - 1) + 1;
-    final newText = text.replaceRange(lineStart, lineStart, prefix);
+    final a = sel.start < 0 ? text.length : sel.start;
+    final b = sel.end < 0 ? text.length : sel.end;
+    final from = a < b ? a : b;
+    final to = a < b ? b : a;
+    final blockStart = from == 0 ? 0 : text.lastIndexOf('\n', from - 1) + 1;
+    var blockEnd = text.indexOf('\n', to < blockStart ? blockStart : to);
+    if (blockEnd < 0) blockEnd = text.length;
+
+    final lines = text.substring(blockStart, blockEnd).split('\n');
+    // Removed only when every line already has exactly this marker.
+    final allHave = lines.every((l) {
+      final m = _listMarker.firstMatch(l);
+      return m != null &&
+          m.group(0)!.substring(m.group(1)!.length) == prefix;
+    });
+    final out = <String>[];
+    for (final l in lines) {
+      final m = _listMarker.firstMatch(l);
+      final indent = m?.group(1) ?? RegExp(r'^\s*').stringMatch(l)!;
+      final rest = m == null ? l.substring(indent.length) : l.substring(m.end);
+      out.add(allHave ? '$indent$rest' : '$indent$prefix$rest');
+    }
+    final replaced = out.join('\n');
     _controller.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: offset + prefix.length),
+      text: text.replaceRange(blockStart, blockEnd, replaced),
+      selection:
+          TextSelection.collapsed(offset: blockStart + replaced.length),
     );
   }
 
@@ -2131,6 +2494,7 @@ class _EditTodoScreenState extends State<_EditTodoScreen> {
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,
               textCapitalization: TextCapitalization.sentences,
+              inputFormatters: [_ListContinuationFormatter()],
               style: _baseStyle,
               decoration: InputDecoration(
                 border: InputBorder.none,
@@ -2444,6 +2808,54 @@ class _EditorToolbarButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall)),
         ),
       ),
+    );
+  }
+}
+
+/// Return at the end of a list item starts the next one (`- `, `- [ ] `,
+/// `1. `); Return on an empty item ends the list instead.
+class _ListContinuationFormatter extends TextInputFormatter {
+  static final _marker =
+      RegExp(r'^(\s*)(?:([-*+]) \[[ xX]\] |([-*+]) |(\d+)([.)]) )');
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final sel = newValue.selection;
+    final text = newValue.text;
+    if (!sel.isCollapsed || text.length != oldValue.text.length + 1) {
+      return newValue;
+    }
+    final pos = sel.baseOffset;
+    if (pos < 1 || text[pos - 1] != '\n') return newValue;
+    // Only a lone newline typed at the cursor, not a paste.
+    if (text.substring(0, pos - 1) + text.substring(pos) != oldValue.text) {
+      return newValue;
+    }
+    final lineStart = pos - 1 == 0 ? 0 : text.lastIndexOf('\n', pos - 2) + 1;
+    final line = text.substring(lineStart, pos - 1);
+    final m = _marker.firstMatch(line);
+    if (m == null) return newValue;
+
+    if (line.substring(m.end).trim().isEmpty) {
+      // Empty item: drop the marker and the new line, ending the list.
+      return TextEditingValue(
+        text: text.substring(0, lineStart) + text.substring(pos),
+        selection: TextSelection.collapsed(offset: lineStart),
+      );
+    }
+    final indent = m.group(1)!;
+    final String next;
+    if (m.group(4) != null) {
+      next = '$indent${int.parse(m.group(4)!) + 1}${m.group(5)} ';
+    } else if (m.group(2) != null) {
+      next = '$indent${m.group(2)} [ ] ';
+    } else {
+      next = '$indent${m.group(3)} ';
+    }
+    return TextEditingValue(
+      text: text.replaceRange(pos, pos, next),
+      selection: TextSelection.collapsed(offset: pos + next.length),
     );
   }
 }

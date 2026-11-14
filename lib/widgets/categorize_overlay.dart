@@ -22,6 +22,10 @@ class CategorizeOverlay extends StatefulWidget {
   /// (releasing there just dismisses).
   final VoidCallback? onMoveToTop;
 
+  /// Same for the strip at the bottom of the screen: sends the item to the
+  /// end of the list. The strip is only shown when this is set.
+  final VoidCallback? onMoveToBottom;
+
   const CategorizeOverlay({
     super.key,
     required this.categories,
@@ -29,6 +33,7 @@ class CategorizeOverlay extends StatefulWidget {
     required this.onAssign,
     required this.onDismiss,
     this.onMoveToTop,
+    this.onMoveToBottom,
   });
 
   @override
@@ -38,8 +43,10 @@ class CategorizeOverlay extends StatefulWidget {
 class CategorizeOverlayState extends State<CategorizeOverlay> {
   late List<GlobalKey> _squircleKeys;
   final GlobalKey _titleKey = GlobalKey();
+  final GlobalKey _bottomKey = GlobalKey();
   int? _highlighted;
   bool _overTitle = false;
+  bool _overBottom = false;
 
   @override
   void initState() {
@@ -67,7 +74,9 @@ class CategorizeOverlayState extends State<CategorizeOverlay> {
     setState(() {
       _overTitle = widget.onMoveToTop != null &&
           _hitTestKey(_titleKey, globalPos);
-      _highlighted = _overTitle ? null : _hitTest(globalPos);
+      _overBottom = widget.onMoveToBottom != null &&
+          _hitTestKey(_bottomKey, globalPos);
+      _highlighted = (_overTitle || _overBottom) ? null : _hitTest(globalPos);
     });
   }
 
@@ -76,6 +85,11 @@ class CategorizeOverlayState extends State<CategorizeOverlay> {
   void endDrag(Offset globalPos) {
     if (widget.onMoveToTop != null && _hitTestKey(_titleKey, globalPos)) {
       widget.onMoveToTop!();
+      return;
+    }
+    if (widget.onMoveToBottom != null &&
+        _hitTestKey(_bottomKey, globalPos)) {
+      widget.onMoveToBottom!();
       return;
     }
     final index = _hitTest(globalPos);
@@ -118,7 +132,9 @@ class CategorizeOverlayState extends State<CategorizeOverlay> {
           duration: const Duration(milliseconds: 200),
           child: Container(
             color: AppTheme.darkBrown.withValues(alpha: 0.7),
-            child: SafeArea(
+            child: Stack(
+              children: [
+                SafeArea(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -174,7 +190,51 @@ class CategorizeOverlayState extends State<CategorizeOverlay> {
                 ],
               ),
             ),
+                if (widget.onMoveToBottom != null)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _buildBottomZone(),
+                  ),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Strip along the bottom edge: drop here to send the item to the end.
+  Widget _buildBottomZone() {
+    return AnimatedContainer(
+      key: _bottomKey,
+      duration: const Duration(milliseconds: 120),
+      height: 96,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: _overBottom ? 0.22 : 0.08),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: _overBottom ? 1 : 0.35),
+            width: _overBottom ? 3 : 1,
+          ),
+        ),
+      ),
+      child: AnimatedScale(
+        scale: _overBottom ? 1.1 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.vertical_align_bottom, color: Colors.white),
+            SizedBox(width: 8),
+            Text(
+              'Solte aqui para mandar pro fim da lista',
+              style: TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
       ),
     );

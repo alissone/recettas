@@ -89,6 +89,22 @@ PANTRY_SCHEMA = {
     "required": ["itens"],
     "additionalProperties": False,
 }
+# "Responder recrutador" (Mais tab): rows in job_replies, see
+# migrations/045_job_replies.sql. The profile is re-read on every request
+# so edits apply without restarting the worker.
+JOB_TABLE = "job_replies"
+JOB_REPLY_PROMPT = (SCRIPT_DIR / "job_reply_prompt.md").read_text(encoding="utf-8")
+JOB_REPLY_PROFILE = SCRIPT_DIR / "job_reply_profile.md"
+JOB_REPLY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "assunto": {"type": ["string", "null"]},
+        "resposta": {"type": "string"},
+        "notas": {"type": "string"},
+    },
+    "required": ["assunto", "resposta", "notas"],
+    "additionalProperties": False,
+}
 WEEKDAYS_PT = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira",
                "sexta-feira", "sábado", "domingo"]
 # Models that accept the server-side refusal fallback ("default" routing).
@@ -201,7 +217,7 @@ def ask_claude(client: anthropic.Anthropic, system: str, content: str,
         **extra,
     )
     if response.stop_reason == "refusal":
-        raise RuntimeError("Claude recusou processar esta transcrição")
+        raise RuntimeError("Claude recusou o pedido")
     if response.stop_reason == "max_tokens":
         raise RuntimeError("Resposta do Claude cortada (max_tokens)")
     return "\n".join(b.text for b in response.content if b.type == "text").strip()
@@ -348,6 +364,69 @@ TASKS = {
 }
 
 
+def api_error_message(e: Exception) -> str:
+    """Readable message for the app, for any failure of a Claude task."""
+    if isinstance(e, anthropic.AuthenticationError):
+        return "ANTHROPIC_API_KEY inválida no .env do transcriber"
+    if isinstance(e, anthropic.RateLimitError):
+        return f"Limite de uso da API: {e}"
+    if isinstance(e, anthropic.APIStatusError):
+        return f"Erro da API ({e.status_code}): {e.message}"
+    if isinstance(e, anthropic.APIConnectionError):
+        return "Sem conexão com a API da Anthropic"
+    return str(e)
+
+
+# --- Recruiter replies (job_replies) ---
+
+
+def job_reply_message(row: dict) -> str:
+    channel = "e-mail" if row.get("channel") == "email" else "mensagem do LinkedIn"
+    parts = [
+        f"<perfil>\n{JOB_REPLY_PROFILE.read_text(encoding='utf-8')}\n</perfil>",
+        f"Hoje é {date.today().isoformat()}. Canal: {channel}.",
+        f"Mensagem recebida:\n\n{row['message']}",
+    ]
+    if row.get("job_description"):
+        parts.append(f"Descrição da vaga:\n\n{row['job_description']}")
+    parts.append(f"Instruções do Alisson: {row.get('instructions') or '(nenhuma)'}")
+    return "\n\n---\n\n".join(parts)
+
+
+async def job_reply_task(sb: AsyncClient, client: anthropic.Anthropic, row: dict) -> None:
+    row_id = row["id"]
+    claimed = await (
+        sb.table(JOB_TABLE).update({"status": "processing", "updated_at": now_iso()})
+        .eq("id", row_id).eq("status", "requested").execute()
+    )
+    if not claimed.data:
+        return
+    log(f"Respondendo recrutador {row_id}...")
+    try:
+        text = await asyncio.to_thread(
+            ask_claude, client, JOB_REPLY_PROMPT, job_reply_message(row),
+            "medium", JOB_REPLY_SCHEMA)
+        out = json.loads(text)
+        # Only if still ours: "Cancelar" in the app moves it to 'error'.
+        res = await sb.table(JOB_TABLE).update({
+            "status": "done",
+            "subject": (out.get("assunto") or "").strip() or None,
+            "reply": out["resposta"].strip(),
+            "notes": (out.get("notas") or "").strip() or None,
+            "error_message": None,
+            "updated_at": now_iso(),
+        }).eq("id", row_id).eq("status", "processing").execute()
+        log(f"Pronto: resposta {row_id}" if res.data else f"Cancelado no app: resposta {row_id}")
+    except Exception as e:  # noqa: BLE001 - reported on the row
+        message = api_error_message(e)
+        log(f"Erro (resposta) {row_id}: {message}")
+        await sb.table(JOB_TABLE).update({
+            "status": "error",
+            "error_message": message[:ERROR_TAIL_CHARS],
+            "updated_at": now_iso(),
+        }).eq("id", row_id).eq("status", "processing").execute()
+
+
 async def run_task(sb: AsyncClient, client: anthropic.Anthropic, status_column: str,
                    note: dict) -> None:
     note_id = note["id"]
@@ -371,16 +450,8 @@ async def run_task(sb: AsyncClient, client: anthropic.Anthropic, status_column: 
     except TaskCancelled:
         log(f"Cancelado no app: {label.lower()} {note_id}")
         return
-    except anthropic.AuthenticationError:
-        message = "ANTHROPIC_API_KEY inválida no .env do transcriber"
-    except anthropic.RateLimitError as e:
-        message = f"Limite de uso da API: {e}"
-    except anthropic.APIStatusError as e:
-        message = f"Erro da API ({e.status_code}): {e.message}"
-    except anthropic.APIConnectionError:
-        message = "Sem conexão com a API da Anthropic"
     except Exception as e:  # noqa: BLE001 - reported on the row
-        message = str(e)
+        message = api_error_message(e)
     log(f"Erro ({label.lower()}) {note_id}: {message}")
     await sb.table(TABLE).update({
         status_column: "error",
@@ -408,6 +479,13 @@ async def process_pending(sb: AsyncClient, client: anthropic.Anthropic) -> None:
         for note in requested.data:
             await run_task(sb, client, status_column, note)
 
+    replies = await (
+        sb.table(JOB_TABLE).select("id, channel, message, job_description, instructions")
+        .eq("status", "requested").order("updated_at").execute()
+    )
+    for row in replies.data:
+        await job_reply_task(sb, client, row)
+
 
 async def reset_interrupted(sb: AsyncClient) -> None:
     """A previous run died mid-job; this is the only worker, so requeue."""
@@ -415,6 +493,8 @@ async def reset_interrupted(sb: AsyncClient) -> None:
     for status_column in TASKS:
         await sb.table(TABLE).update({status_column: "requested"}).eq(
             status_column, "processing").execute()
+    await sb.table(JOB_TABLE).update({"status": "requested"}).eq(
+        "status", "processing").execute()
 
 
 async def main() -> None:
@@ -432,6 +512,9 @@ async def main() -> None:
         channel = sb.channel("voice-notes-worker").on_postgres_changes(
             RealtimePostgresChangesListenEvent.All, on_change,
             table=TABLE, schema="public",
+        ).on_postgres_changes(
+            RealtimePostgresChangesListenEvent.All, on_change,
+            table=JOB_TABLE, schema="public",
         )
         await channel.subscribe()
         log("Realtime conectado")

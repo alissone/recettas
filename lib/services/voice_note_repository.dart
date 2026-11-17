@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -24,6 +25,7 @@ class VoiceNoteRepository {
   static const _bucket = 'voice-notes';
   static const _table = 'voice_notes';
   static const _retryDelay = Duration(seconds: 30);
+  static const _languageKey = 'voice_note_language';
 
   /// Recordings still on this device; drives the badge and the
   /// "aguardando envio" rows.
@@ -46,6 +48,19 @@ class VoiceNoteRepository {
     uploadPending();
   }
 
+  // --- Language ---
+
+  /// Last language picked on the recorder (Portuguese by default).
+  Future<VoiceLanguage> lastLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return VoiceLanguage.fromKey(prefs.getString(_languageKey));
+  }
+
+  Future<void> setLastLanguage(VoiceLanguage language) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languageKey, language.name);
+  }
+
   // --- Recording ---
 
   /// Where a new recording should be written; [id] doubles as the note id.
@@ -61,7 +76,8 @@ class VoiceNoteRepository {
   Future<void> addRecording(
       {required String id,
       required String filePath,
-      required int durationSeconds}) async {
+      required int durationSeconds,
+      VoiceLanguage language = VoiceLanguage.pt}) async {
     final uid = _userId;
     if (uid == null) return;
     final db = await LocalDb.instance;
@@ -71,6 +87,7 @@ class VoiceNoteRepository {
       'file_path': filePath,
       'duration_seconds': durationSeconds,
       'recorded_at': DateTime.now().toUtc().toIso8601String(),
+      'language': language.name,
     });
     await _refreshPendingCount();
     uploadPending();
@@ -146,14 +163,24 @@ class VoiceNoteRepository {
               const FileOptions(contentType: 'audio/mp4', upsert: true),
         );
     // upsert on the row too, keyed by the id generated at record time.
-    await _client.from(_table).upsert({
+    final row = {
       'id': upload.id,
       'user_id': userId,
       'audio_path': path,
       'duration_seconds': upload.durationSeconds,
       'status': 'queued',
       'recorded_at': upload.recordedAt.toIso8601String(),
-    });
+    };
+    try {
+      await _client
+          .from(_table)
+          .upsert({...row, 'language': upload.language.name});
+    } on PostgrestException catch (e) {
+      // Server without migration 046 (no language column): send it the
+      // old way rather than leaving the note stuck on the phone.
+      if (!e.message.contains('language')) rethrow;
+      await _client.from(_table).upsert(row);
+    }
   }
 
   Future<void> _refreshPendingCount() async {
@@ -192,6 +219,52 @@ class VoiceNoteRepository {
       task.statusColumn: null,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', id);
+  }
+
+  // --- Local assistant ---
+
+  /// Moves actions to a new status ('confirmed' = run it, 'discarded',
+  /// 'undo' = delete what it created) and asks the worker to apply them.
+  Future<void> applyAgentActions(
+      VoiceNote note, Map<String, String> newStatusById) async {
+    await _client.from(_table).update({
+      'agent_actions': [
+        for (final a in note.agentActions)
+          newStatusById.containsKey(a.id)
+              ? a.toJsonWithStatus(newStatusById[a.id]!)
+              : a.raw,
+      ],
+      // Discarding only needs no worker: nothing was created.
+      if (newStatusById.values.any((s) => s == 'confirmed' || s == 'undo'))
+        'agent_status': 'apply',
+      'agent_notified': true,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', note.id);
+  }
+
+  Future<void> markAgentNotified(String id) async {
+    await _client
+        .from(_table)
+        .update({'agent_notified': true}).eq('id', id);
+  }
+
+  /// Runs the assistant on the note again (undoing what it did before).
+  Future<void> rerunAgent(String id) async {
+    await _client.from(_table).update({
+      'agent_status': 'requested',
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
+  }
+
+  /// Notes the assistant finished that the user hasn't been told about.
+  Future<List<VoiceNote>> unnotifiedAgentNotes() async {
+    final data = await _client
+        .from(_table)
+        .select()
+        .eq('agent_status', 'done')
+        .eq('agent_notified', false)
+        .order('recorded_at');
+    return data.map<VoiceNote>(VoiceNote.fromJson).toList();
   }
 
   Future<void> retryTranscription(String id) async {

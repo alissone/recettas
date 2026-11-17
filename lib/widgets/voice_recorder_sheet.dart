@@ -6,11 +6,14 @@ import 'package:record/record.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../app_theme.dart';
+import '../models/voice_note.dart';
 import '../services/voice_note_repository.dart';
 
 /// Records a voice note: starts as soon as it opens, can be paused and
 /// resumed, and on save hands the file to [VoiceNoteRepository] (which
-/// uploads it when there's a connection). Pops true when saved.
+/// uploads it when there's a connection). Pops true when saved. The PT/EN
+/// switch tells the transcriber (and its local assistant) which language
+/// to expect; it remembers the last choice.
 ///
 /// Can't be swiped or backed out of - losing a long recording to a stray
 /// gesture would be worse than one extra tap on "Descartar".
@@ -59,11 +62,20 @@ class _VoiceRecorderSheetState extends State<VoiceRecorderSheet> {
   bool _paused = false;
   bool _saving = false;
   String? _error;
+  VoiceLanguage _language = VoiceLanguage.pt;
 
   @override
   void initState() {
     super.initState();
+    VoiceNoteRepository.instance.lastLanguage().then((l) {
+      if (mounted) setState(() => _language = l);
+    });
     _start();
+  }
+
+  void _setLanguage(VoiceLanguage language) {
+    setState(() => _language = language);
+    VoiceNoteRepository.instance.setLastLanguage(language);
   }
 
   @override
@@ -127,6 +139,7 @@ class _VoiceRecorderSheetState extends State<VoiceRecorderSheet> {
         id: _id!,
         filePath: path,
         durationSeconds: _stopwatch.elapsed.inSeconds,
+        language: _language,
       );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -205,7 +218,24 @@ class _VoiceRecorderSheetState extends State<VoiceRecorderSheet> {
                           : 'Gravando',
                   style: AppTheme.caption,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                SegmentedButton<VoiceLanguage>(
+                  segments: [
+                    for (final l in VoiceLanguage.values)
+                      ButtonSegment(value: l, label: Text(l.label)),
+                  ],
+                  selected: {_language},
+                  showSelectedIcon: false,
+                  onSelectionChanged:
+                      _saving ? null : (s) => _setLanguage(s.first),
+                  style: SegmentedButton.styleFrom(
+                    selectedBackgroundColor:
+                        AppTheme.primaryOrange.withValues(alpha: 0.15),
+                    selectedForegroundColor: AppTheme.primaryOrange,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,

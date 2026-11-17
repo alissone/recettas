@@ -65,4 +65,52 @@ void main() {
     expect(note.statusOf(VoiceTask.shopping), VoiceTaskStatus.done);
     expect(note.statusOf(VoiceTask.summary), isNull);
   });
+
+  test('rows from before migration 046 get defaults, no notice', () {
+    final note = _note(null);
+    expect(note.language, VoiceLanguage.pt);
+    expect(note.agentStatus, isNull);
+    expect(note.agentActions, isEmpty);
+    expect(note.agentNeedsNotice, isFalse);
+  });
+
+  test('assistant actions are parsed and keep their raw fields', () {
+    final note = VoiceNote.fromJson({
+      'id': 'n4',
+      'status': 'done',
+      'language': 'en',
+      'agent_status': 'done',
+      'agent_notified': false,
+      'agent_actions': [
+        {
+          'id': 'a1',
+          'tool': 'add_shopping_items',
+          'summary': 'Compras: Bread',
+          'confidence': 1.0,
+          'status': 'done',
+          'args': {'items': ['Bread']},
+          'rows': [{'table': 'shopping_items', 'id': 'r1'}],
+        },
+        {
+          'id': 'a2',
+          'tool': 'create_event',
+          'summary': 'Evento: Call mom (18/11)',
+          'confidence': 0.6,
+          'reason': 'confiança 0.60',
+          'status': 'pending',
+        },
+      ],
+      'recorded_at': '2026-11-17T12:00:00Z',
+    });
+    expect(note.language, VoiceLanguage.en);
+    expect(note.agentStatus, VoiceAgentStatus.done);
+    expect(note.agentNeedsNotice, isTrue);
+    expect(note.agentActions.map((a) => a.isDone), [true, false]);
+    expect(note.agentActions.last.isPending, isTrue);
+    final undo = note.agentActions.first.toJsonWithStatus('undo');
+    expect(undo['status'], 'undo');
+    expect(undo['rows'], [
+      {'table': 'shopping_items', 'id': 'r1'}
+    ]);
+  });
 }

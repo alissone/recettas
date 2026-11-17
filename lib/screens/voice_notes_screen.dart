@@ -11,6 +11,7 @@ import '../services/todo_repository.dart';
 import '../services/voice_note_repository.dart';
 import '../utils/brl.dart';
 import '../utils/dates.dart';
+import '../widgets/agent_confirm_dialog.dart';
 
 /// Voice notes queue: recordings still on the phone, notes waiting for
 /// the WhisperX worker, and finished transcripts that can be copied,
@@ -77,6 +78,9 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
         _notes.any((n) =>
             n.status == VoiceNoteStatus.queued ||
             n.status == VoiceNoteStatus.processing ||
+            n.agentStatus == VoiceAgentStatus.requested ||
+            n.agentStatus == VoiceAgentStatus.processing ||
+            n.agentStatus == VoiceAgentStatus.apply ||
             VoiceTask.values.any((t) =>
                 n.statusOf(t) == VoiceTaskStatus.requested ||
                 n.statusOf(t) == VoiceTaskStatus.processing));
@@ -339,7 +343,10 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
       VoiceNoteStatus.done => (
           Icons.check_circle,
           Colors.green.shade600,
-          transcript.isEmpty ? 'Nenhuma fala detectada' : 'Transcrita'
+          (transcript.isEmpty ? 'Nenhuma fala detectada' : 'Transcrita') +
+              (note.language == VoiceLanguage.pt
+                  ? ''
+                  : ' • ${note.language.short}')
         ),
       VoiceNoteStatus.error => (
           Icons.error,
@@ -401,6 +408,10 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
               _actionTile(Icons.add_task, 'Criar afazer com o texto',
                   onTap: () => _addAsTodo(transcript)),
             ]),
+            if (note.agentStatus != null) ...[
+              const SizedBox(height: 10),
+              _agentSection(note),
+            ],
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 6),
@@ -416,6 +427,151 @@ class _VoiceNotesScreenState extends State<VoiceNotesScreen> {
         ],
       ),
     );
+  }
+
+  // --- Local assistant ---
+
+  Widget _agentSection(VoiceNote note) {
+    final status = note.agentStatus!;
+    final actions = note.agentActions;
+    final pending = actions.where((a) => a.isPending).toList();
+    final done = actions.where((a) => a.isDone).toList();
+    final busy = status == VoiceAgentStatus.requested ||
+        status == VoiceAgentStatus.processing;
+
+    Widget header(String text, {Color? color, Widget? trailing}) => Row(
+          children: [
+            const Icon(Icons.auto_awesome,
+                size: 18, color: AppTheme.primaryOrange),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(text,
+                  style: AppTheme.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: color ?? AppTheme.mediumBrown)),
+            ),
+            if (trailing != null) trailing,
+          ],
+        );
+
+    if (busy) {
+      return header('Assistente local lendo a nota...',
+          trailing: const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: AppTheme.primaryOrange)));
+    }
+    if (status == VoiceAgentStatus.error) {
+      return header(
+        'Assistente: ${note.errorMessage ?? 'erro'}',
+        color: Colors.red.shade400,
+        trailing: _action(Icons.replay, 'Tentar',
+            () => _run(() => _repo.rerunAgent(note.id), 'Erro ao pedir')),
+      );
+    }
+    if (actions.isEmpty) {
+      return header('Assistente: nenhuma ação nesta nota');
+    }
+    return _resultBox([
+      header(status == VoiceAgentStatus.apply
+          ? 'Assistente: aplicando no PC...'
+          : 'Assistente'),
+      const SizedBox(height: 6),
+      for (final a in actions)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(_agentIcon(a.status),
+                  size: 16, color: _agentColor(a.status)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  a.summary +
+                      (a.isPending && a.reason != null
+                          ? '\n(${a.reason})'
+                          : '') +
+                      (a.error != null ? '\n${a.error}' : ''),
+                  style: AppTheme.bodyText.copyWith(
+                    decoration: a.status == 'undone' || a.status == 'discarded'
+                        ? TextDecoration.lineThrough
+                        : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      if (status == VoiceAgentStatus.done)
+        Wrap(
+          spacing: 4,
+          children: [
+            if (pending.isNotEmpty)
+              _action(Icons.check, 'Confirmar', () => _confirmAgent(note)),
+            if (done.isNotEmpty)
+              _action(Icons.undo, 'Desfazer', () => _undoAgent(note, done)),
+            _action(Icons.refresh, 'Refazer', () => _rerunAgent(note)),
+          ],
+        ),
+    ]);
+  }
+
+  IconData _agentIcon(String status) => switch (status) {
+        'done' => Icons.check_circle,
+        'pending' => Icons.help_outline,
+        'error' => Icons.error_outline,
+        'confirmed' || 'undo' => Icons.hourglass_top,
+        _ => Icons.remove_circle_outline,
+      };
+
+  Color _agentColor(String status) => switch (status) {
+        'done' => Colors.green.shade600,
+        'pending' => AppTheme.primaryOrange,
+        'error' => Colors.red.shade400,
+        _ => AppTheme.mediumBrown.withValues(alpha: 0.6),
+      };
+
+  Future<void> _confirmAgent(VoiceNote note) async {
+    final result = await AgentConfirmDialog.show(
+        context, note.agentActions.where((a) => a.isPending).toList());
+    if (result == null) return;
+    _run(() => _repo.applyAgentActions(note, result), 'Erro ao confirmar');
+  }
+
+  void _undoAgent(VoiceNote note, List<VoiceAgentAction> done) {
+    _run(
+        () => _repo
+            .applyAgentActions(note, {for (final a in done) a.id: 'undo'}),
+        'Erro ao desfazer');
+  }
+
+  Future<void> _rerunAgent(VoiceNote note) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.creamBackground,
+        title: const Text('Refazer?', style: AppTheme.sectionTitle),
+        content: const Text('O que o assistente lançou por esta nota será '
+            'desfeito e ele vai ler a nota de novo.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancelar',
+                style: TextStyle(color: AppTheme.mediumBrown)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Refazer',
+                style: TextStyle(color: AppTheme.primaryOrange)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      _run(() => _repo.rerunAgent(note.id), 'Erro ao pedir');
+    }
   }
 
   // --- Claude tasks ---

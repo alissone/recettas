@@ -10,6 +10,7 @@ import 'services/incoming_files_service.dart';
 import 'services/local_db.dart';
 import 'services/share_intake.dart';
 import 'services/todo_repository.dart';
+import 'services/voice_agent_notifier.dart';
 import 'services/voice_note_repository.dart';
 
 void main() async {
@@ -26,6 +27,10 @@ void main() async {
 
   // Recordings live on disk, which the web build doesn't have.
   if (!kIsWeb) unawaited(VoiceNoteRepository.instance.init());
+
+  // Snackbar/dialog for what the local assistant did with a voice note,
+  // wherever the user is in the app.
+  if (!kIsWeb) unawaited(VoiceAgentNotifier.instance.init());
 
   // Android share sheet -> Arquivos (iOS goes through IncomingFilesService).
   unawaited(ShareIntake.instance.init());

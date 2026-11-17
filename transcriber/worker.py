@@ -14,6 +14,13 @@ shopping_status (things to buy -> shopping), expenses_status (spoken
 purchases -> rows in purchases, echoed in expenses) and pantry_status
 (ingredients at home -> rows in pantry_items, echoed in pantry; read by
 the /receitas Claude command, see scripts/receitas).
+
+Each note carries the language picked on the recorder (pt/en), used for
+WhisperX. Right after transcribing, the local assistant (agent.py, a small
+LLM from C:\\dev\\locallama) may act on the note by itself: Gastos, Compras,
+Afazeres, events, Sono. agent_status: 'requested' runs it, 'apply' carries
+out what the app confirmed or asked to undo. If the local model is down the
+note just keeps its transcript (agent_status = 'error').
 """
 import asyncio
 import json
@@ -38,6 +45,15 @@ CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL") or "claude-opus-5-5"
 WHISPER_MODEL = os.environ.get("WHISPER_MODEL") or "large-v2"
 WHISPER_LANGUAGE = os.environ.get("WHISPER_LANGUAGE") or "pt"
 POLL_SECONDS = int(os.environ.get("POLL_SECONDS") or 60)
+AGENT_ENABLED = (os.environ.get("AGENT_ENABLED") or "1") not in ("0", "false", "no")
+
+try:
+    import agent
+    from locallm import LocalLLM, LocalLLMError
+except Exception as _e:  # noqa: BLE001 - the worker still transcribes without it
+    print(f"Assistente local indisponível: {_e}", flush=True)
+    agent = None
+    AGENT_ENABLED = False
 
 BUCKET = "voice-notes"
 TABLE = "voice_notes"
@@ -124,11 +140,11 @@ def now_iso() -> str:
 # --- Transcription ---
 
 
-def run_whisperx(audio: Path, out_dir: Path) -> str:
+def run_whisperx(audio: Path, out_dir: Path, language: str) -> str:
     """Run WhisperX on audio (blocking); return the transcript text."""
     proc = subprocess.run(
         ["cmd.exe", "/c", str(TRANSCRIBE_BAT), str(audio), str(out_dir),
-         WHISPER_MODEL, WHISPER_LANGUAGE],
+         WHISPER_MODEL, language],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
@@ -158,7 +174,8 @@ async def transcribe_note(sb: AsyncClient, note: dict) -> None:
     if not await claim(sb, note_id, "status", "queued"):
         return
     audio_path = note["audio_path"]
-    log(f"Transcrevendo {note_id} ({note.get('duration_seconds') or '?'}s)...")
+    language = note.get("language") or WHISPER_LANGUAGE
+    log(f"Transcrevendo {note_id} ({note.get('duration_seconds') or '?'}s, {language})...")
     try:
         audio = await sb.storage.from_(BUCKET).download(audio_path)
         if len(audio) < MIN_AUDIO_BYTES:
@@ -172,7 +189,7 @@ async def transcribe_note(sb: AsyncClient, note: dict) -> None:
             local.write_bytes(audio)
             # WhisperX blocks for minutes; keep the event loop (and the
             # realtime heartbeat) alive meanwhile.
-            transcript = await asyncio.to_thread(run_whisperx, local, tmp_dir)
+            transcript = await asyncio.to_thread(run_whisperx, local, tmp_dir, language)
         # Save the text before deleting the audio, so a failure in
         # between never loses the recording.
         await sb.table(TABLE).update({
@@ -180,6 +197,8 @@ async def transcribe_note(sb: AsyncClient, note: dict) -> None:
             "transcript": transcript,
             "error_message": None,
             "audio_path": None,
+            # The local assistant looks at every new transcript.
+            **({"agent_status": "requested"} if AGENT_ENABLED and transcript else {}),
             "updated_at": now_iso(),
         }).eq("id", note_id).execute()
         try:
@@ -377,6 +396,87 @@ def api_error_message(e: Exception) -> str:
     return str(e)
 
 
+# --- Local assistant (agent.py) ---
+
+async def run_agents(sb: AsyncClient, notes: list[dict]) -> None:
+    """Run the assistant on a batch of notes. The local model is loaded only
+    if some note needs it and unloaded right after, so it is never in VRAM
+    while WhisperX runs (both happen in this one loop, one after the other)."""
+    server = None
+    if any(n["agent_status"] == "requested" for n in notes):
+        server = agent.ModelServer()
+        log(f"Carregando modelo local ({agent.AGENT_MODEL})...")
+        try:
+            await asyncio.to_thread(server.start)
+        except LocalLLMError as e:
+            log(f"Modelo local não subiu: {e}")  # each note reports it below
+    try:
+        for note in notes:
+            await run_agent(sb, note, server.llm if server else None)
+    finally:
+        if server:
+            await asyncio.to_thread(server.stop)
+            log("Modelo local descarregado")
+
+
+async def run_agent(sb: AsyncClient, note: dict, llm) -> None:
+    """Plan and run actions for a note ('requested'), or apply what the app
+    confirmed / asked to undo ('apply')."""
+    note_id, mode = note["id"], note["agent_status"]
+    if not await claim(sb, note_id, "agent_status", mode):
+        return
+    try:
+        recorded = datetime.fromisoformat(note["recorded_at"]).astimezone()
+        owner_id = await target_list(sb, note["user_id"])
+        cats = await (
+            sb.table("purchase_categories").select("id, name")
+            .eq("user_id", owner_id).execute()
+        )
+        cat_ids = {c["name"].casefold(): c["id"] for c in cats.data}
+        actions = note.get("agent_actions") or []
+        if mode == "requested":
+            # A rerun replaces whatever the previous run did.
+            for a in actions:
+                if a.get("status") == "done":
+                    await agent.undo(sb, a)
+            log(f"Assistente lendo {note_id}...")
+            try:
+                result = await asyncio.to_thread(
+                    agent.plan, llm, note.get("transcript") or "", recorded,
+                    note.get("language") or WHISPER_LANGUAGE, [c["name"] for c in cats.data])
+            except LocalLLMError as e:
+                raise RuntimeError(
+                    f"Modelo local ({agent.AGENT_MODEL}) não respondeu: {e}") from e
+            actions = result.actions
+        for a in actions:
+            if a.get("status") == "confirmed":
+                try:
+                    a["rows"] = await agent.execute(sb, a, note, owner_id, cat_ids)
+                    a["status"] = "done"
+                except Exception as e:  # noqa: BLE001 - reported on the action
+                    a["status"], a["error"] = "error", str(e)[:300]
+            elif a.get("status") == "undo":
+                await agent.undo(sb, a)
+                a["status"] = "undone"
+        await sb.table(TABLE).update({
+            "agent_status": "done",
+            "agent_actions": actions,
+            # The app shows a snackbar/dialog for a new run; for 'apply' it
+            # was the app that asked, so it already knows.
+            "agent_notified": mode == "apply" or not actions,
+            "updated_at": now_iso(),
+        }).eq("id", note_id).eq("agent_status", "processing").execute()
+        log(f"Assistente {note_id}: " + (
+            "; ".join(f"{a['status']}: {a['summary']}" for a in actions) or "nenhuma ação"))
+    except Exception as e:  # noqa: BLE001 - reported on the row
+        log(f"Erro (assistente) {note_id}: {e}")
+        await sb.table(TABLE).update({
+            "agent_status": "error",
+            "error_message": str(e)[:ERROR_TAIL_CHARS],
+            "updated_at": now_iso(),
+        }).eq("id", note_id).eq("agent_status", "processing").execute()
+
+
 # --- Recruiter replies (job_replies) ---
 
 
@@ -465,11 +565,21 @@ async def run_task(sb: AsyncClient, client: anthropic.Anthropic, status_column: 
 
 async def process_pending(sb: AsyncClient, client: anthropic.Anthropic) -> None:
     queued = await (
-        sb.table(TABLE).select("id, audio_path, duration_seconds")
+        sb.table(TABLE).select("id, audio_path, duration_seconds"
+                               + (", language" if HAS_046 else ""))
         .eq("status", "queued").order("recorded_at").execute()
     )
     for note in queued.data:
         await transcribe_note(sb, note)
+
+    if AGENT_ENABLED:
+        pending = await (
+            sb.table(TABLE)
+            .select("id, user_id, transcript, recorded_at, language, agent_status, agent_actions")
+            .in_("agent_status", ["requested", "apply"]).order("updated_at").execute()
+        )
+        if pending.data:
+            await run_agents(sb, pending.data)
 
     for status_column in TASKS:
         requested = await (
@@ -479,12 +589,34 @@ async def process_pending(sb: AsyncClient, client: anthropic.Anthropic) -> None:
         for note in requested.data:
             await run_task(sb, client, status_column, note)
 
-    replies = await (
-        sb.table(JOB_TABLE).select("id, channel, message, job_description, instructions")
-        .eq("status", "requested").order("updated_at").execute()
-    )
+    try:
+        replies = await (
+            sb.table(JOB_TABLE).select("id, channel, message, job_description, instructions")
+            .eq("status", "requested").order("updated_at").execute()
+        )
+    except Exception as e:  # noqa: BLE001
+        if not table_missing(e):
+            raise
+        # Migration 045 not run yet: skip recruiter replies, keep the rest.
+        warn_job_table_missing()
+        return
     for row in replies.data:
         await job_reply_task(sb, client, row)
+
+
+_job_table_warned = False
+
+
+def table_missing(e: Exception) -> bool:
+    return "PGRST205" in str(e) or "Could not find the table" in str(e)
+
+
+def warn_job_table_missing() -> None:
+    global _job_table_warned
+    if not _job_table_warned:
+        _job_table_warned = True
+        log(f"Tabela {JOB_TABLE} não existe: respostas a recrutador desligadas "
+            "(rode migrations/045_job_replies.sql; não precisa reiniciar)")
 
 
 async def reset_interrupted(sb: AsyncClient) -> None:
@@ -493,14 +625,43 @@ async def reset_interrupted(sb: AsyncClient) -> None:
     for status_column in TASKS:
         await sb.table(TABLE).update({status_column: "requested"}).eq(
             status_column, "processing").execute()
-    await sb.table(JOB_TABLE).update({"status": "requested"}).eq(
-        "status", "processing").execute()
+    # Interrupted assistant: a full run had no actions yet; otherwise it was
+    # applying the app's confirmations.
+    if HAS_046:
+        await sb.table(TABLE).update({"agent_status": "requested"}).eq(
+            "agent_status", "processing").is_("agent_actions", "null").execute()
+        await sb.table(TABLE).update({"agent_status": "apply"}).eq(
+            "agent_status", "processing").not_.is_("agent_actions", "null").execute()
+    try:
+        await sb.table(JOB_TABLE).update({"status": "requested"}).eq(
+            "status", "processing").execute()
+    except Exception as e:  # noqa: BLE001
+        if not table_missing(e):
+            raise
+        warn_job_table_missing()
+
+
+# Columns from migrations/046 (language, agent_*). Until it is run the worker
+# keeps working as before: Portuguese only, no assistant.
+HAS_046 = True
+
+
+async def check_schema(sb: AsyncClient) -> None:
+    global HAS_046, AGENT_ENABLED
+    try:
+        await sb.table(TABLE).select("language, agent_status").limit(1).execute()
+    except Exception as e:  # noqa: BLE001 - missing column, or offline at boot
+        if "does not exist" in str(e) or "42703" in str(e):
+            HAS_046, AGENT_ENABLED = False, False
+            log("Migração 046 não aplicada: sem idioma por nota e sem assistente "
+                "(rode migrations/046_voice_notes_language_agent.sql)")
 
 
 async def main() -> None:
     if not SUPABASE_KEY:
         sys.exit("SUPABASE_SERVICE_ROLE_KEY não definida - copie .env.example para .env")
     sb = await acreate_client(SUPABASE_URL, SUPABASE_KEY)
+    await check_schema(sb)
     client = anthropic.Anthropic()
     wake = asyncio.Event()
     loop = asyncio.get_running_loop()
@@ -521,7 +682,8 @@ async def main() -> None:
     except Exception as e:  # noqa: BLE001 - polling still works without it
         log(f"Realtime indisponível ({e}); usando só polling a cada {POLL_SECONDS}s")
 
-    log(f"Aguardando notas de voz (whisper {WHISPER_MODEL}/{WHISPER_LANGUAGE}, {CLAUDE_MODEL})")
+    log(f"Aguardando notas de voz (whisper {WHISPER_MODEL}, {CLAUDE_MODEL}, assistente "
+        + (agent.AGENT_MODEL if AGENT_ENABLED else "desligado") + ")")
     needs_reset = True
     while True:
         wake.clear()

@@ -30,7 +30,7 @@ class LocalDb {
     final dir = await getDatabasesPath();
     _db = await openDatabase(
       p.join(dir, 'recettas_cache.db'),
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE todos (
@@ -92,6 +92,10 @@ class LocalDb {
           await db.execute('ALTER TABLE todos ADD COLUMN today_on TEXT');
           await db.execute(_createContactsSql);
         }
+        if (oldVersion < 7 && oldVersion >= 5) {
+          await db.execute(
+              "ALTER TABLE voice_uploads ADD COLUMN language TEXT NOT NULL DEFAULT 'pt'");
+        }
       },
     );
     return _db!;
@@ -130,7 +134,8 @@ class LocalDb {
       user_id TEXT NOT NULL,
       file_path TEXT NOT NULL,
       duration_seconds INTEGER NOT NULL,
-      recorded_at TEXT NOT NULL
+      recorded_at TEXT NOT NULL,
+      language TEXT NOT NULL DEFAULT 'pt'
     )
   ''';
 

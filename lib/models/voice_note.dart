@@ -16,6 +16,76 @@ enum VoiceTask {
   const VoiceTask(this.statusColumn);
 }
 
+/// Language picked on the recorder; WhisperX and the local assistant use it.
+enum VoiceLanguage {
+  pt('PT', 'Português'),
+  en('EN', 'English');
+
+  final String short;
+  final String label;
+  const VoiceLanguage(this.short, this.label);
+
+  static VoiceLanguage fromKey(Object? key) =>
+      values.firstWhere((l) => l.name == key, orElse: () => pt);
+}
+
+/// Where the local assistant (transcriber/agent.py) is on a note.
+/// requested: will run; processing: running; done: finished (see
+/// [VoiceNote.agentActions]); apply: the app confirmed/undid actions and
+/// the worker is carrying that out; error: e.g. the local model is down.
+enum VoiceAgentStatus { requested, processing, done, apply, error }
+
+/// One action the local assistant took (or proposes) for a note.
+class VoiceAgentAction {
+  final String id;
+  final String tool;
+  final String summary;
+  final double confidence;
+
+  /// Why it needs confirmation ("confiança 0.60; data no passado").
+  final String? reason;
+
+  /// done | pending | confirmed | discarded | undo | undone | error
+  final String status;
+  final String? error;
+
+  /// The rest of the stored object (args, rows), written back untouched.
+  final Map<String, dynamic> raw;
+
+  VoiceAgentAction({
+    required this.id,
+    required this.tool,
+    required this.summary,
+    required this.confidence,
+    this.reason,
+    required this.status,
+    this.error,
+    required this.raw,
+  });
+
+  factory VoiceAgentAction.fromJson(Map<String, dynamic> json) {
+    return VoiceAgentAction(
+      id: json['id']?.toString() ?? '',
+      tool: json['tool'] ?? '',
+      summary: json['summary'] ?? '',
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0,
+      reason: json['reason'],
+      status: json['status'] ?? 'pending',
+      error: json['error'],
+      raw: json,
+    );
+  }
+
+  bool get isDone => status == 'done';
+  bool get isPending => status == 'pending';
+
+  /// Waiting for the worker after the app confirmed or undid it.
+  bool get isApplying => status == 'confirmed' || status == 'undo';
+
+  Map<String, dynamic> toJsonWithStatus(String newStatus) =>
+      {...raw, 'status': newStatus};
+}
+
 /// A purchase the worker extracted from a note and inserted into Gastos.
 class VoiceExpense {
   final String item;
@@ -75,6 +145,12 @@ class VoiceNote {
   final List<PantryEntry> pantry;
   final VoiceTaskStatus? pantryStatus;
   final DateTime recordedAt;
+  final VoiceLanguage language;
+  final VoiceAgentStatus? agentStatus;
+  final List<VoiceAgentAction> agentActions;
+
+  /// The app already showed the snackbar/dialog for the agent's result.
+  final bool agentNotified;
 
   VoiceNote({
     required this.id,
@@ -92,6 +168,10 @@ class VoiceNote {
     this.pantry = const [],
     this.pantryStatus,
     required this.recordedAt,
+    this.language = VoiceLanguage.pt,
+    this.agentStatus,
+    this.agentActions = const [],
+    this.agentNotified = true,
   });
 
   factory VoiceNote.fromJson(Map<String, dynamic> json) {
@@ -120,8 +200,27 @@ class VoiceNote {
       ],
       pantryStatus: _taskStatus(json['pantry_status']),
       recordedAt: DateTime.parse(json['recorded_at']),
+      // Absent before migration 046: Portuguese, no assistant.
+      language: VoiceLanguage.fromKey(json['language']),
+      agentStatus: json['agent_status'] == null
+          ? null
+          : VoiceAgentStatus.values.firstWhere(
+              (s) => s.name == json['agent_status'],
+              orElse: () => VoiceAgentStatus.done,
+            ),
+      agentActions: [
+        for (final a in (json['agent_actions'] as List?) ?? const [])
+          VoiceAgentAction.fromJson(Map<String, dynamic>.from(a)),
+      ],
+      agentNotified: json['agent_notified'] ?? true,
     );
   }
+
+  /// The assistant finished and the app hasn't told the user yet.
+  bool get agentNeedsNotice =>
+      agentStatus == VoiceAgentStatus.done &&
+      !agentNotified &&
+      agentActions.isNotEmpty;
 
   static VoiceTaskStatus? _taskStatus(Object? value) => value == null
       ? null
@@ -164,12 +263,14 @@ class PendingVoiceUpload {
   final String filePath;
   final int durationSeconds;
   final DateTime recordedAt;
+  final VoiceLanguage language;
 
   PendingVoiceUpload({
     required this.id,
     required this.filePath,
     required this.durationSeconds,
     required this.recordedAt,
+    this.language = VoiceLanguage.pt,
   });
 
   factory PendingVoiceUpload.fromDb(Map<String, dynamic> row) {
@@ -178,6 +279,7 @@ class PendingVoiceUpload {
       filePath: row['file_path'] as String,
       durationSeconds: row['duration_seconds'] as int,
       recordedAt: DateTime.parse(row['recorded_at'] as String),
+      language: VoiceLanguage.fromKey(row['language']),
     );
   }
 }

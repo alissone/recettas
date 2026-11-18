@@ -109,5 +109,5 @@ interrupted mid-job is requeued when the worker starts.
 
 `WHISPER_LANGUAGE` is now only the fallback for notes without a language.
 
-The conda path (`D:\anaconda3\condabin\conda.bat`) and env name live
+The conda path (`D:\anaconda\condabin\conda.bat`) and env name live
 at the top of `transcribe_one.bat`.

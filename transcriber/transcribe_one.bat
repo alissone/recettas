@@ -3,7 +3,7 @@ setlocal
 
 REM Called by worker.py: transcribe_one.bat <audio> <output dir> <model> <language>
 REM Same conda env falar.bat and Summaries\transcribe.bat use.
-set "CONDA_BAT=D:\anaconda3\condabin\conda.bat"
+set "CONDA_BAT=D:\anaconda\condabin\conda.bat"
 set "ENV_NAME=whisperx"
 
 call "%CONDA_BAT%" activate "%ENV_NAME%"

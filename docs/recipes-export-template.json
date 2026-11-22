@@ -1,0 +1,61 @@
+{
+  "$comment": "Recettas recipe export template. Ingredients reference foods by name/brand/unit instead of DB uuids so they can be re-matched in a new project. Omit id/user_id/created_at on import.",
+  "version": 1,
+  "recipes": [
+    {
+      "name": "Cold Proof Artisan Bread",
+      "image": "https://example.com/image.jpg",
+      "prep_time": "30 min",
+      "total_time": "24 hours",
+      "yield_amount": 900,
+      "ingredients": [
+        {
+          "food": {
+            "name": "Farinha de trigo",
+            "brand": null,
+            "base_amount": 100,
+            "base_unit": "g"
+          },
+          "amount": 500,
+          "sort_order": 0
+        },
+        {
+          "food": {
+            "name": "Azeite de oliva",
+            "brand": null,
+            "base_amount": 100,
+            "base_unit": "ml"
+          },
+          "amount": 15,
+          "sort_order": 1
+        }
+      ],
+      "sections": [
+        {
+          "title": "Modo de preparo",
+          "items": [
+            "First step.",
+            "Second step."
+          ]
+        },
+        {
+          "title": "Antes de gelar",
+          "items": [
+            "Another free-form section."
+          ]
+        }
+      ]
+    }
+  ],
+  "field_notes": {
+    "name": "text, required",
+    "image": "text URL (not a storage path), nullable",
+    "prep_time": "free text like '30 min', nullable",
+    "total_time": "free text like '24 hours', nullable",
+    "yield_amount": "number > 0, weight in g of finished dish; null = sum of ingredients",
+    "ingredients[].amount": "number > 0, in the food's base_unit (ml counted as g)",
+    "ingredients[].sort_order": "int, display order; one entry per food per recipe",
+    "ingredients[].food": "natural key to re-match in public.foods (name + brand); base_amount/base_unit default 100 / 'g'",
+    "sections": "ordered, free-form list of {title, items[]} (stored as jsonb)"
+  }
+}

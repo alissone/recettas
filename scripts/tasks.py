@@ -13,6 +13,9 @@ Every change is applied on screen immediately and saved in the background,
 in order, by a single sync thread. The top-right corner shows what is still
 saving; a failed save is rolled back and reported.
 
+Press 1 / 2 to switch between the Tarefas tab and the Gastos tab (your own
+`purchases` for one month: add, edit, categorize, delete, ←/→ month).
+
     pip install textual
     python scripts/tasks.py          # python3 on macOS
 """
@@ -31,7 +34,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import webbrowser
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 try:
@@ -43,7 +46,7 @@ try:
     from textual.containers import Horizontal, Vertical, VerticalScroll
     from textual.message import Message
     from textual.screen import ModalScreen, Screen
-    from textual.widgets import Footer, Input, Label, OptionList, Static, TextArea
+    from textual.widgets import ContentSwitcher, Footer, Input, Label, OptionList, Static, TextArea
     from textual.widgets.option_list import Option
 except ImportError:
     sys.exit("tasks.py needs Textual:  pip install textual")
@@ -215,6 +218,80 @@ class Api:
 
     def archive(self, todo_id):  # the app archives rather than deleting
         self._patch(todo_id, {"is_archived": True})
+
+    # Gastos: only the signed-in user's own list (not lists shared with them).
+    def purchases(self, month: date):
+        y, m = divmod(month.year * 12 + month.month, 12)
+        start, end = month.isoformat(), date(y, m + 1, 1).isoformat()
+        rows = self._request("GET", "/rest/v1/purchases", params={
+            "select": "id,purchase_date,item,valor,local,category_id",
+            "user_id": f"eq.{self.session['user_id']}",
+            "and": f"(purchase_date.gte.{start},purchase_date.lt.{end})",
+            "order": "purchase_date.desc,created_at.desc",
+        })
+        return [{"id": r["id"], "date": r["purchase_date"], "item": r["item"] or "",
+                 "valor": float(r["valor"] or 0), "local": r.get("local"),
+                 "category": r.get("category_id")} for r in rows]
+
+    def purchase_categories(self):
+        rows = self._request("GET", "/rest/v1/purchase_categories", params={
+            "select": "id,name,color_value",
+            "user_id": f"eq.{self.session['user_id']}",
+            "order": "created_at.asc",
+        })
+        return [{"id": r["id"], "name": r["name"], "color": r.get("color_value")} for r in rows]
+
+    def add_purchase(self, fields):
+        rows = self._request(
+            "POST", "/rest/v1/purchases", {"user_id": self.session["user_id"], **fields},
+            headers={"Prefer": "return=representation"})
+        return rows[0]
+
+    def update_purchase(self, purchase_id, fields):
+        if purchase_id is None:
+            raise ApiError("gasto was never created")
+        self._request("PATCH", "/rest/v1/purchases", fields, params={"id": f"eq.{purchase_id}"})
+
+    def delete_purchase(self, purchase_id):
+        if purchase_id is None:
+            raise ApiError("gasto was never created")
+        self._request("DELETE", "/rest/v1/purchases", params={"id": f"eq.{purchase_id}"})
+
+
+# --- Gastos helpers -----------------------------------------------------------
+
+MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
+          "agosto", "setembro", "outubro", "novembro", "dezembro"]
+
+
+def brl(v: float) -> str:
+    s = f"{abs(v):,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+    return ("-" if v < 0 else "") + "R$ " + s
+
+
+def parse_valor(s: str) -> float | None:
+    """'12,50', '1.234,56', '12.50', 'R$ 7' → float; None when invalid."""
+    s = s.replace("R$", "").replace(" ", "").strip()
+    if "," in s:
+        s = s.replace(".", "").replace(",", ".")
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def parse_day(s: str) -> str | None:
+    """'DD/MM/AAAA', 'DD/MM' (this year) or 'AAAA-MM-DD' → 'AAAA-MM-DD'."""
+    s = s.strip()
+    for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(s, fmt).date().isoformat()
+        except ValueError:
+            pass
+    try:
+        return datetime.strptime(s, "%d/%m").date().replace(year=date.today().year).isoformat()
+    except ValueError:
+        return None
 
 
 # --- Card parsing (mirrors the app's TodoCard.parse) ------------------------
@@ -469,6 +546,23 @@ class TaskList(OptionList):
             self.scroll_to(y=max(self.highlighted - self.scrollable_content_region.height // 2, 0), animate=False)
 
 
+class ExpenseList(OptionList):
+    BINDINGS = [
+        Binding("a,n", "app.exp_add", "Add"),
+        Binding("enter,e", "app.exp_edit", "Edit"),
+        Binding("c", "app.exp_category", "Category"),
+        Binding("d,delete", "app.exp_delete", "Delete"),
+        Binding("left,h,left_square_bracket", "app.exp_month(-1)", "◀ Month"),
+        Binding("right,l,right_square_bracket", "app.exp_month(1)", "Month ▶"),
+        Binding("r", "app.exp_reload", "Reload"),
+        Binding("j", "cursor_down", show=False),
+        Binding("k", "cursor_up", show=False),
+        Binding("g", "first", show=False),
+        Binding("G", "last", show=False),
+        Binding("L", "app.logout", "Logout", show=False),
+    ]
+
+
 class SearchInput(Input):
     BINDINGS = [
         Binding("escape", "app.cancel_search", "Cancel"),
@@ -581,6 +675,61 @@ class PickScreen(ModalScreen):
         self.dismiss(None)
 
 
+class ExpenseScreen(ModalScreen):
+    """Item / Valor / Data / Local form. Enter moves to the next field and
+    saves from the last one; dismisses with the row fields, or None."""
+    DEFAULT_CSS = "ExpenseScreen { align: center middle; }" + DIALOG_CSS + """
+    ExpenseScreen .dialog { max-width: 70; }
+    ExpenseScreen Input { margin-bottom: 1; }
+    """
+    BINDINGS = [Binding("escape", "cancel", "Cancel")]
+    FIELDS = [("item", "Item"), ("valor", "Valor (R$)"),
+              ("date", "Data (DD/MM/AAAA)"), ("local", "Local (opcional)")]
+
+    def __init__(self, title: str, values: dict):
+        super().__init__()
+        self.title_text, self.values = title, values
+
+    def compose(self) -> ComposeResult:
+        with Vertical(classes="dialog"):
+            yield Label(self.title_text, classes="title")
+            yield Label("", classes="error", id="error")
+            for key, placeholder in self.FIELDS:
+                yield Input(self.values.get(key, ""), placeholder=placeholder, id=f"f-{key}")
+            yield Label("Enter next / save · Tab move · Esc cancel", classes="hint")
+
+    def on_mount(self) -> None:
+        self.query_one("#error").display = False
+        self.query_one("#f-item", Input).focus()
+
+    def _fail(self, key: str, msg: str) -> None:
+        err = self.query_one("#error", Label)
+        err.update(msg)
+        err.display = True
+        self.query_one(f"#f-{key}", Input).focus()
+
+    @on(Input.Submitted)
+    def submitted(self, event: Input.Submitted) -> None:
+        keys = [k for k, _ in self.FIELDS]
+        key = (event.input.id or "")[2:]
+        if key != keys[-1]:
+            self.query_one(f"#f-{keys[keys.index(key) + 1]}", Input).focus()
+            return
+        v = {k: self.query_one(f"#f-{k}", Input).value.strip() for k in keys}
+        valor, day = parse_valor(v["valor"]), parse_day(v["date"])
+        if not v["item"]:
+            return self._fail("item", "Item is required")
+        if valor is None:
+            return self._fail("valor", "Valor must be a number, e.g. 12,50")
+        if day is None:
+            return self._fail("date", "Data must be DD/MM/AAAA")
+        self.dismiss({"item": v["item"], "valor": valor, "purchase_date": day,
+                      "local": v["local"] or None})
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+
 class LoginScreen(Screen):
     DEFAULT_CSS = "LoginScreen { align: center middle; }" + DIALOG_CSS + """
     LoginScreen .dialog { max-width: 60; }
@@ -654,16 +803,21 @@ class TasksApp(App):
     #topbar { dock: top; height: 1; background: $boost; }
     #brand { width: auto; padding: 0 1; background: $accent; color: $text; text-style: bold; }
     #counts { width: 1fr; padding: 0 1; color: $text-muted; }
+    #tabbar { width: auto; padding: 0 1; }
     #sync { width: auto; padding: 0 1; }
+    #tabs { height: 1fr; }
     #main { height: 1fr; }
-    TaskList {
+    TaskList, ExpenseList {
         width: 3fr; height: 1fr; border: round $primary-darken-2; background: $surface;
         border-title-color: $text-muted; padding: 0;
         text-wrap: nowrap; text-overflow: ellipsis;
     }
-    TaskList:focus { border: round $accent; border-title-color: $accent; }
-    TaskList > .option-list--option-highlighted { background: $accent 25%; }
-    TaskList:focus > .option-list--option-highlighted { background: $accent 40%; }
+    ExpenseList { width: 1fr; }
+    TaskList:focus, ExpenseList:focus { border: round $accent; border-title-color: $accent; }
+    TaskList > .option-list--option-highlighted,
+    ExpenseList > .option-list--option-highlighted { background: $accent 25%; }
+    TaskList:focus > .option-list--option-highlighted,
+    ExpenseList:focus > .option-list--option-highlighted { background: $accent 40%; }
     #detail {
         width: 2fr; height: 1fr; border: round $primary-darken-2; background: $surface;
         padding: 0 1; border-title-color: $text-muted;
@@ -678,6 +832,8 @@ class TasksApp(App):
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("T", "cycle_theme", "Theme"),
+        Binding("1", "tab('tasks')", "Tarefas"),
+        Binding("2", "tab('gastos')", "Gastos"),
         Binding("ctrl+c", "quit", show=False, priority=True),
     ]
 
@@ -697,19 +853,27 @@ class TasksApp(App):
         self.sync_label = ""
         self.frame = 0
         self.quit_armed = 0.0
+        self.tab = "tasks"
+        self.month = date.today().replace(day=1)
+        self.expenses: list[dict] = []
+        self.ecats: list[dict] = []
+        self.expenses_loaded = False
 
     # ---- layout ----
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="topbar"):
             yield Static("✓ tasks", id="brand")
+            yield Static(id="tabbar")
             yield Static(id="counts")
             yield Static(id="sync")
-        with Horizontal(id="main"):
-            yield TaskList(id="list")
-            with VerticalScroll(id="detail"):
-                yield Static(id="detail-head")
-                yield Static(id="detail-body")
+        with ContentSwitcher(initial="main", id="tabs"):
+            with Horizontal(id="main"):
+                yield TaskList(id="list")
+                with VerticalScroll(id="detail"):
+                    yield Static(id="detail-head")
+                    yield Static(id="detail-body")
+            yield ExpenseList(id="gastos")
         yield SearchInput(placeholder="Search tasks and categories…", id="search")
         yield Footer()
 
@@ -718,6 +882,8 @@ class TasksApp(App):
         self.theme = theme if theme in self.available_themes else "tokyo-night"
         self.ui("#list").border_title = "Tasks"
         self.ui("#detail").border_title = "Details"
+        self.render_tabbar()
+        self.rebuild_expenses()
         self.set_interval(0.08, self._spin)
         self.set_interval(60, self.auto_reload)
         if self.api.session.get("refresh_token"):
@@ -737,6 +903,8 @@ class TasksApp(App):
             pass
         if self.screen_stack and self.screen_stack[0].query(TaskList):
             self.rebuild()
+            self.rebuild_expenses()
+            self.render_tabbar()
 
     def ui(self, selector, expect=None):
         """query_one on the main screen, even while a dialog is on top."""
@@ -760,14 +928,21 @@ class TasksApp(App):
 
     def start(self) -> None:
         self.ui("#list").loading = not self.todos
-        self.ui("#list").focus()
+        self.ui("#gastos" if self.tab == "gastos" else "#list").focus()
         self.reload()
+        if self.tab == "gastos":
+            self.reload_expenses()
+
+    def _clear_data(self) -> None:
+        self.todos, self.cats = [], []
+        self.expenses, self.ecats, self.expenses_loaded = [], [], False
+        self.rebuild()
+        self.rebuild_expenses()
 
     def auth_failed(self, e) -> None:
         dropped = self.sync.drop_queued()
         self.api.logout()
-        self.todos, self.cats = [], []
-        self.rebuild()
+        self._clear_data()
         if not isinstance(self.screen, LoginScreen):
             note = f"Session expired: {e}" + (f" ({dropped} unsaved change(s) discarded)" if dropped else "")
             self.push_screen(LoginScreen(self.api, note), self._after_login)
@@ -775,8 +950,7 @@ class TasksApp(App):
     def action_logout(self) -> None:
         self.sync.drop_queued()
         self.api.logout()
-        self.todos, self.cats = [], []
-        self.rebuild()
+        self._clear_data()
         self.push_screen(LoginScreen(self.api), self._after_login)
 
     def action_quit(self) -> None:
@@ -797,6 +971,7 @@ class TasksApp(App):
             self.reload(quiet=True)
         self._render_sync()
         self.refresh_rows()
+        self.refresh_expense_rows()
 
     def job_failed(self, label, e, on_err) -> None:
         self.last_error = str(e)
@@ -837,10 +1012,12 @@ class TasksApp(App):
         if (self.api.session.get("refresh_token") and not self.sync.pending
                 and len(self.screen_stack) == 1 and self.query_text is None):
             self.reload(quiet=True)
+            if self.tab == "gastos":
+                self.reload_expenses(quiet=True)
 
     def _loaded(self, result) -> None:
         self.ui("#list").loading = False
-        if self.query_text is None and len(self.screen_stack) == 1:
+        if self.query_text is None and len(self.screen_stack) == 1 and self.tab == "tasks":
             self.ui(TaskList).focus()
         if self.sync.pending > 1:  # more local changes queued after this fetch
             self.reload_wanted = True
@@ -919,11 +1096,16 @@ class TasksApp(App):
         self.render_detail()
 
     def render_counts(self) -> None:
-        open_n = sum(not t["done"] for t in self.todos)
-        done_n = len(self.todos) - open_n
         t = Text()
-        t.append(f"{open_n} open", style="bold")
-        t.append(f" · {done_n} done today", style="dim")
+        if self.tab == "gastos":
+            t.append(f"{len(self.expenses)} gastos", style="bold")
+            t.append(f" · {brl(sum(e['valor'] for e in self.expenses))} em "
+                     f"{MONTHS[self.month.month - 1]}", style="dim")
+        else:
+            open_n = sum(not t["done"] for t in self.todos)
+            done_n = len(self.todos) - open_n
+            t.append(f"{open_n} open", style="bold")
+            t.append(f" · {done_n} done today", style="dim")
         if self.query_text is not None:
             t.append(f" · {len(self.shown)} match", style=self.color("accent", "cyan"))
         if self.api.email:
@@ -1185,6 +1367,221 @@ class TasksApp(App):
         self.rebuild(select=self.todos.index(target) if target in self.todos else None)
         if center:
             self.call_after_refresh(ol.action_center)
+
+    # ---- tabs ----
+
+    def render_tabbar(self) -> None:
+        t = Text()
+        for key, name, label in (("1", "tasks", "Tarefas"), ("2", "gastos", "Gastos")):
+            active = self.tab == name
+            t.append(f" {key} ", style="dim")
+            t.append(label + " ", style=f"bold {self.color('accent', 'cyan')}" if active else "dim")
+        self.ui("#tabbar", Static).update(t)
+
+    def action_tab(self, name: str) -> None:
+        if len(self.screen_stack) > 1 or name == self.tab:
+            return
+        if self.query_text is not None:
+            self._end_search(self.search_origin)
+        self.tab = name
+        self.ui("#tabs", ContentSwitcher).current = "gastos" if name == "gastos" else "main"
+        self.call_after_refresh(self.ui("#gastos" if name == "gastos" else "#list").focus)
+        if name == "gastos" and not self.expenses_loaded and self.api.session.get("refresh_token"):
+            self.reload_expenses()
+        self.render_tabbar()
+        self.render_counts()
+
+    # ---- gastos ----
+
+    def reload_expenses(self, quiet=False) -> None:
+        month = self.month
+        self.ui(ExpenseList).loading = not quiet
+
+        def fetch():
+            return self.api.purchases(month), self.api.purchase_categories()
+
+        def ok(result):
+            if month != self.month:  # user already moved to another month
+                return
+            keep = self.current_expense()
+            self.expenses, self.ecats = result
+            self.expenses_loaded = True
+            self.ui(ExpenseList).loading = False
+            self.last_sync, self.last_error = datetime.now().strftime("%H:%M"), None
+            self.rebuild_expenses(keep)
+        self.sync.submit("Syncing gastos…" if quiet else "Loading gastos…", fetch, on_ok=ok,
+                         on_err=lambda: setattr(self.ui(ExpenseList), "loading", False))
+
+    def action_exp_reload(self) -> None:
+        self.reload_expenses()
+
+    def action_exp_month(self, d: int) -> None:
+        y, m = divmod(self.month.year * 12 + self.month.month - 1 + d, 12)
+        self.month = date(y, m + 1, 1)
+        self.expenses = []
+        self.rebuild_expenses()
+        self.reload_expenses()
+
+    def current_expense(self) -> dict | None:
+        ol = self.ui(ExpenseList)
+        if ol.highlighted is None or ol.highlighted >= len(self.expenses):
+            return None
+        return self.expenses[ol.highlighted]
+
+    def ecat(self, cid) -> dict | None:
+        return next((c for c in self.ecats if c["id"] == cid), None)
+
+    def ecat_color(self, c: dict) -> str:
+        if isinstance(c.get("color"), int):
+            return f"#{c['color'] & 0xFFFFFF:06x}"
+        return PILL_COLORS[self.ecats.index(c) % len(PILL_COLORS)]
+
+    def expense_row(self, e: dict) -> Text:
+        text = Text(" ", no_wrap=True, overflow="ellipsis")
+        text.append("◌ " if e.get("_busy") else "  ", style=self.color("warning", "yellow"))
+        d = e["date"]
+        text.append(f"{d[8:10]}/{d[5:7]}  ", style="dim")
+        text.append(f"{brl(e['valor']):>13}  ", style=f"bold {self.color('accent', 'cyan')}")
+        text.append(e["item"])
+        if e.get("local"):
+            text.append(f" · {e['local']}", style="dim")
+        c = self.ecat(e.get("category"))
+        if c:
+            text.append("  ")
+            text.append(f" {c['name']} ", style=f"#1a1b26 on {self.ecat_color(c)}")
+        return text
+
+    def rebuild_expenses(self, keep: dict | None = None) -> None:
+        ol = self.ui(ExpenseList)
+        prev = keep or self.current_expense()
+        old = ol.highlighted
+        ol.clear_options()
+        if self.expenses:
+            ol.add_options([Option(self.expense_row(e)) for e in self.expenses])
+            idx = next((i for i, e in enumerate(self.expenses)
+                        if e is prev or (prev and e["id"] and e["id"] == prev["id"])), None)
+            ol.highlighted = idx if idx is not None else min(old or 0, len(self.expenses) - 1)
+        else:
+            ol.add_option(Option(Text(f"  Nenhum gasto em {MONTHS[self.month.month - 1]}. "
+                                      "Press a to add one.", style="dim"), disabled=True))
+        ol.border_title = f"Gastos · {MONTHS[self.month.month - 1]} {self.month.year}"
+        ol.border_subtitle = f"Total {brl(sum(e['valor'] for e in self.expenses))}"
+        self.render_counts()
+
+    def refresh_expense_rows(self) -> None:
+        if not self.expenses:
+            return
+        ol = self.ui(ExpenseList)
+        if ol.option_count != len(self.expenses):
+            return self.rebuild_expenses()
+        for i, e in enumerate(self.expenses):
+            ol.replace_option_prompt_at_index(i, self.expense_row(e))
+
+    def _sort_expenses(self) -> None:
+        self.expenses.sort(key=lambda e: e["date"], reverse=True)  # stable: newest-added first per day
+
+    def action_exp_add(self) -> None:
+        today = date.today()
+        day = today if (today.year, today.month) == (self.month.year, self.month.month) else self.month
+
+        def done(fields):
+            if not fields:
+                return
+            e = {"id": None, "date": fields["purchase_date"], "item": fields["item"],
+                 "valor": fields["valor"], "local": fields["local"], "category": None}
+            in_month = fields["purchase_date"][:7] == self.month.isoformat()[:7]
+            if in_month:
+                self.expenses.insert(0, e)
+                self._sort_expenses()
+                self.rebuild_expenses(e)
+            else:
+                self.notify(f"Saved to {fields['purchase_date']} (another month)", timeout=3)
+
+            def go():
+                e["id"] = self.api.add_purchase(fields)["id"]
+
+            def undo():
+                if e in self.expenses:
+                    self.expenses.remove(e)
+                    self.rebuild_expenses()
+            self.sync.submit("Adding gasto…", go, on_err=undo, task=e)
+        self.push_screen(ExpenseScreen("Novo gasto", {"date": day.strftime("%d/%m/%Y")}), done)
+
+    def action_exp_edit(self) -> None:
+        e = self.current_expense()
+        if not e:
+            return
+        old = dict(e)
+        values = {"item": e["item"], "valor": f"{e['valor']:.2f}".replace(".", ","),
+                  "date": datetime.strptime(e["date"], "%Y-%m-%d").strftime("%d/%m/%Y"),
+                  "local": e.get("local") or ""}
+
+        def done(fields):
+            if not fields:
+                return
+            e.update(date=fields["purchase_date"], item=fields["item"],
+                     valor=fields["valor"], local=fields["local"])
+            if e["date"][:7] != self.month.isoformat()[:7]:
+                self.expenses.remove(e)
+                self.notify(f"Moved to {e['date']} (another month)", timeout=3)
+            self._sort_expenses()
+            self.rebuild_expenses(e)
+
+            def undo():
+                e.update({k: old[k] for k in ("date", "item", "valor", "local")})
+                if e not in self.expenses and e["date"][:7] == self.month.isoformat()[:7]:
+                    self.expenses.append(e)
+                self._sort_expenses()
+                self.rebuild_expenses()
+            self.sync.submit("Saving gasto…", lambda: self.api.update_purchase(e["id"], fields),
+                             on_err=undo, task=e)
+        self.push_screen(ExpenseScreen("Editar gasto", values), done)
+
+    def action_exp_delete(self) -> None:
+        e = self.current_expense()
+        if not e:
+            return
+
+        def done(yes):
+            if not yes or e not in self.expenses:
+                return
+            i = self.expenses.index(e)
+            self.expenses.remove(e)
+            self.rebuild_expenses()
+
+            def undo():
+                self.expenses.insert(min(i, len(self.expenses)), e)
+                self.rebuild_expenses(e)
+            self.sync.submit("Deleting gasto…", lambda: self.api.delete_purchase(e["id"]), on_err=undo)
+        self.push_screen(ConfirmScreen(f"Delete “{e['item'][:50]}” ({brl(e['valor'])})?"), done)
+
+    def action_exp_category(self) -> None:
+        e = self.current_expense()
+        if not e:
+            return
+        if not self.ecats:
+            self.notify("No categories yet. Create one in the app.", severity="warning")
+            return
+        names = ["(none)"] + [c["name"] for c in self.ecats]
+        current = next((i + 1 for i, c in enumerate(self.ecats) if c["id"] == e.get("category")), 0)
+
+        def done(idx):
+            if idx is None:
+                return
+            new = self.ecats[idx - 1]["id"] if idx else None
+            old = e.get("category")
+            if new == old:
+                return
+            e["category"] = new
+            self.refresh_expense_rows()
+
+            def undo():
+                e["category"] = old
+                self.refresh_expense_rows()
+            self.sync.submit("Saving category…",
+                             lambda: self.api.update_purchase(e["id"], {"category_id": new}),
+                             on_err=undo, task=e)
+        self.push_screen(PickScreen(f"Category for: {e['item'][:60]}", names, current), done)
 
 
 def main():

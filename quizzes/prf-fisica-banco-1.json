@@ -1,0 +1,548 @@
+{
+  "title": "Física — Banco PRF 1",
+  "topic": "Física",
+  "description": "Cinemática, dinâmica, energia e conservação do momento aplicadas ao trânsito e ao tiro.",
+  "source": "Itens baseados na prova PRF 2019 (CEBRASPE), convertidos para A–E, e questões inéditas",
+  "color": "#D9822B",
+  "questions": [
+    {
+      "prompt": "No tiro descrito, como varia o deslocamento horizontal do projétil com o tempo?",
+      "context": {
+        "text": "Em uma prova de tiro ao alvo, o alvo é um círculo de 20 cm de diâmetro, a 50 m da ponta do cano. O cano e o centro do alvo estão a 1,5 m do solo. O projétil, de 15 g, sai do cano paralelamente ao solo com velocidade horizontal de 720 km/h. Use g = 9,8 m/s² e despreze o atrito do ar."
+      },
+      "options": [
+        {
+          "text": "Segundo uma função quadrática do tempo",
+          "explanation": "Errada: a queda vertical é quadrática, não o deslocamento horizontal."
+        },
+        {
+          "text": "Exponencialmente",
+          "explanation": "Errada: não há esse comportamento."
+        },
+        {
+          "text": "Decresce até zero",
+          "explanation": "Errada: sem atrito, a velocidade horizontal se mantém."
+        },
+        {
+          "text": "É nulo",
+          "explanation": "Errada: o projétil avança a 200 m/s."
+        },
+        {
+          "text": "Linearmente, pois a velocidade horizontal é constante (MRU)",
+          "explanation": "Certa: sem atrito, não há força horizontal e x = v·t."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Quanto tempo o projétil leva para percorrer os 50 m até o alvo?",
+      "context": {
+        "text": "Em uma prova de tiro ao alvo, o alvo é um círculo de 20 cm de diâmetro, a 50 m da ponta do cano. O cano e o centro do alvo estão a 1,5 m do solo. O projétil, de 15 g, sai do cano paralelamente ao solo com velocidade horizontal de 720 km/h. Use g = 9,8 m/s² e despreze o atrito do ar."
+      },
+      "options": [
+        {
+          "text": "0,50 s",
+          "explanation": "Errada: seria o tempo para 100 m."
+        },
+        {
+          "text": "0,25 s",
+          "explanation": "Certa: 720 km/h = 200 m/s; t = 50/200 = 0,25 s."
+        },
+        {
+          "text": "0,14 s",
+          "explanation": "Errada: usaria 360 km/h."
+        },
+        {
+          "text": "2,5 s",
+          "explanation": "Errada: erro de casa decimal."
+        },
+        {
+          "text": "0,025 s",
+          "explanation": "Errada: erro de casa decimal para menos."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O projétil atinge o alvo circular?",
+      "context": {
+        "text": "Em uma prova de tiro ao alvo, o alvo é um círculo de 20 cm de diâmetro, a 50 m da ponta do cano. O cano e o centro do alvo estão a 1,5 m do solo. O projétil, de 15 g, sai do cano paralelamente ao solo com velocidade horizontal de 720 km/h. Use g = 9,8 m/s² e despreze o atrito do ar."
+      },
+      "options": [
+        {
+          "text": "Sim, pois a queda é desprezível",
+          "explanation": "Errada: a queda de ≈ 31 cm supera o raio."
+        },
+        {
+          "text": "Sim, pois a velocidade é muito alta",
+          "explanation": "Errada: a velocidade reduz o tempo, mas a queda ainda supera 10 cm."
+        },
+        {
+          "text": "Sim, pois o alvo tem 20 cm de diâmetro",
+          "explanation": "Errada: o raio é 10 cm, menor que a queda."
+        },
+        {
+          "text": "Não: em 0,25 s cai cerca de 0,31 m, mais que o raio (0,10 m)",
+          "explanation": "Certa: h = ½·9,8·0,25² ≈ 0,306 m, e o alvo só admite desvio de 10 cm para cima ou para baixo."
+        },
+        {
+          "text": "Não, pois o projétil sobe",
+          "explanation": "Errada: o projétil só cai sob a gravidade."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Se o alvo fosse retirado, o trabalho da força gravitacional para levar o projétil até o solo seria:",
+      "context": {
+        "text": "Em uma prova de tiro ao alvo, o alvo é um círculo de 20 cm de diâmetro, a 50 m da ponta do cano. O cano e o centro do alvo estão a 1,5 m do solo. O projétil, de 15 g, sai do cano paralelamente ao solo com velocidade horizontal de 720 km/h. Use g = 9,8 m/s² e despreze o atrito do ar."
+      },
+      "options": [
+        {
+          "text": "superior a 0,10 J (≈ 0,22 J)",
+          "explanation": "Certa: W = m·g·h = 0,015 × 9,8 × 1,5 ≈ 0,22 J."
+        },
+        {
+          "text": "inferior a 0,10 J",
+          "explanation": "Errada: o cálculo dá ≈ 0,22 J."
+        },
+        {
+          "text": "nulo, pois a velocidade é horizontal",
+          "explanation": "Errada: o deslocamento vertical existe, e a gravidade realiza trabalho."
+        },
+        {
+          "text": "igual a 15 J",
+          "explanation": "Errada: confunde 15 g com 15 kg."
+        },
+        {
+          "text": "igual a 1,5 J",
+          "explanation": "Errada: esquece a massa e g na conta."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Qual é a aceleração centrípeta do veículo?",
+      "context": {
+        "text": "Um veículo de 1.000 kg faz uma curva circular de 50 m de raio a 54 km/h em pista plana. O coeficiente de atrito estático entre pneus e pista é 0,60. Use g = 9,8 m/s²."
+      },
+      "options": [
+        {
+          "text": "12 m/s²",
+          "explanation": "Errada: erro de conta."
+        },
+        {
+          "text": "0,3 m/s²",
+          "explanation": "Errada: usa v/r."
+        },
+        {
+          "text": "4,5 m/s², inferior à aceleração da gravidade",
+          "explanation": "Certa: v = 15 m/s; a = v²/r = 225/50 = 4,5 m/s²."
+        },
+        {
+          "text": "Maior que 9,8 m/s²",
+          "explanation": "Errada: 4,5 < 9,8."
+        },
+        {
+          "text": "Zero, pois a velocidade é constante",
+          "explanation": "Errada: em curva a direção muda, então há aceleração."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual é a aceleração centrípeta máxima que o atrito estático permite sem derrapar?",
+      "context": {
+        "text": "Um veículo de 1.000 kg faz uma curva circular de 50 m de raio a 54 km/h em pista plana. O coeficiente de atrito estático entre pneus e pista é 0,60. Use g = 9,8 m/s²."
+      },
+      "options": [
+        {
+          "text": "9,8 m/s²",
+          "explanation": "Errada: seria o caso de μ = 1."
+        },
+        {
+          "text": "0,60 m/s²",
+          "explanation": "Errada: esquece g."
+        },
+        {
+          "text": "3,0 m/s²",
+          "explanation": "Errada: não corresponde a μ·g."
+        },
+        {
+          "text": "16,3 m/s²",
+          "explanation": "Errada: divide por μ em vez de multiplicar."
+        },
+        {
+          "text": "5,88 m/s² (μ·g)",
+          "explanation": "Certa: a_max = μ·g = 0,60 × 9,8; se a exigida ficar abaixo disso, o veículo faz a curva."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Em uma colisão entre dois veículos em sistema isolado, a quantidade de movimento total:",
+      "options": [
+        {
+          "text": "aumenta sempre",
+          "explanation": "Errada: sem forças externas, não varia."
+        },
+        {
+          "text": "permanece constante antes e depois do choque",
+          "explanation": "Certa: é a conservação do momento linear para sistema isolado."
+        },
+        {
+          "text": "diminui sempre",
+          "explanation": "Errada: não há perda líquida de momento."
+        },
+        {
+          "text": "só se conserva se a colisão for elástica",
+          "explanation": "Errada: o momento se conserva em qualquer colisão isolada; só a energia cinética depende do tipo."
+        },
+        {
+          "text": "é nula em qualquer situação",
+          "explanation": "Errada: só é nula se o total inicial for zero."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Um carro a 72 km/h freia com desaceleração constante de 5 m/s². Que distância percorre até parar?",
+      "options": [
+        {
+          "text": "20 m",
+          "explanation": "Errada: seria v²/(4a)."
+        },
+        {
+          "text": "80 m",
+          "explanation": "Errada: dobraria a distância correta."
+        },
+        {
+          "text": "100 m",
+          "explanation": "Errada: usa d = v·4 s sem MRUV."
+        },
+        {
+          "text": "40 m",
+          "explanation": "Certa: v = 20 m/s; d = v²/(2a) = 400/10 = 40 m."
+        },
+        {
+          "text": "4 m",
+          "explanation": "Errada: erro de potência de 10."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Dobrando a velocidade de um veículo, a distância de frenagem (mesma desaceleração) fica:",
+      "options": [
+        {
+          "text": "quatro vezes maior",
+          "explanation": "Certa: d = v²/(2a), proporcional ao quadrado da velocidade."
+        },
+        {
+          "text": "duas vezes maior",
+          "explanation": "Errada: considera proporção linear."
+        },
+        {
+          "text": "igual",
+          "explanation": "Errada: velocidade maior exige distância maior."
+        },
+        {
+          "text": "a metade",
+          "explanation": "Errada: a relação é inversa à realidade."
+        },
+        {
+          "text": "oito vezes maior",
+          "explanation": "Errada: a relação é quadrática, não cúbica."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Qual é a energia cinética de um veículo de 1.000 kg a 20 m/s?",
+      "options": [
+        {
+          "text": "20.000 J",
+          "explanation": "Errada: erro de potência de 10."
+        },
+        {
+          "text": "400.000 J",
+          "explanation": "Errada: esquece o fator ½."
+        },
+        {
+          "text": "200.000 J",
+          "explanation": "Certa: Ec = ½·m·v² = 0,5 × 1.000 × 400."
+        },
+        {
+          "text": "10.000 J",
+          "explanation": "Errada: não corresponde ao cálculo."
+        },
+        {
+          "text": "2.000 J",
+          "explanation": "Errada: erro de ordem de grandeza."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Despreze o atrito do ar e adote g = 9,8 m/s². Um objeto solto do repouso cai por 2 s. A altura percorrida é de:",
+      "options": [
+        {
+          "text": "9,8 m",
+          "explanation": "Errada: é a velocidade (m/s) ao final de 1 s."
+        },
+        {
+          "text": "39,2 m",
+          "explanation": "Errada: esquece o fator ½."
+        },
+        {
+          "text": "4,9 m",
+          "explanation": "Errada: é a queda no primeiro segundo."
+        },
+        {
+          "text": "98 m",
+          "explanation": "Errada: erro de conta."
+        },
+        {
+          "text": "19,6 m",
+          "explanation": "Certa: h = ½·g·t² = 0,5 × 9,8 × 4."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual é a força resultante sobre um veículo de 1.200 kg com aceleração de 2 m/s²?",
+      "options": [
+        {
+          "text": "600 N",
+          "explanation": "Errada: dividiria em vez de multiplicar."
+        },
+        {
+          "text": "2.400 N",
+          "explanation": "Certa: F = m·a = 1.200 × 2."
+        },
+        {
+          "text": "1.198 N",
+          "explanation": "Errada: subtrai em vez de multiplicar."
+        },
+        {
+          "text": "12.000 N",
+          "explanation": "Errada: erro de ordem de grandeza."
+        },
+        {
+          "text": "240 N",
+          "explanation": "Errada: erro de ordem de grandeza."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Um motor realiza 6.000 J de trabalho em 3 s. Qual é sua potência média?",
+      "options": [
+        {
+          "text": "18.000 W",
+          "explanation": "Errada: multiplica em vez de dividir."
+        },
+        {
+          "text": "200 W",
+          "explanation": "Errada: erro de ordem de grandeza."
+        },
+        {
+          "text": "6.003 W",
+          "explanation": "Errada: soma em vez de dividir."
+        },
+        {
+          "text": "2.000 W",
+          "explanation": "Certa: P = W/Δt = 6.000/3."
+        },
+        {
+          "text": "20.000 W",
+          "explanation": "Errada: erro de ordem de grandeza."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual é o peso de uma pessoa de 60 kg onde g = 9,8 m/s²?",
+      "options": [
+        {
+          "text": "588 N",
+          "explanation": "Certa: P = m·g = 60 × 9,8."
+        },
+        {
+          "text": "60 N",
+          "explanation": "Errada: confunde massa com peso."
+        },
+        {
+          "text": "6,1 N",
+          "explanation": "Errada: dividiu 60 por 9,8."
+        },
+        {
+          "text": "5.880 N",
+          "explanation": "Errada: erro de ordem de grandeza."
+        },
+        {
+          "text": "60 kg·m",
+          "explanation": "Errada: unidade incorreta; o peso é uma força em newtons."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "O cinto de segurança protege o ocupante em uma frenagem brusca principalmente por causa de qual princípio?",
+      "options": [
+        {
+          "text": "Ação e reação, pois o cinto empurra o carro",
+          "explanation": "Errada: o princípio central é a inércia."
+        },
+        {
+          "text": "Conservação da massa",
+          "explanation": "Errada: não explica o efeito."
+        },
+        {
+          "text": "Inércia (1.ª lei de Newton): o corpo tende a manter o movimento",
+          "explanation": "Certa: sem o cinto, o ocupante continua para frente."
+        },
+        {
+          "text": "Lei de Ohm",
+          "explanation": "Errada: pertence à eletricidade."
+        },
+        {
+          "text": "Princípio de Arquimedes",
+          "explanation": "Errada: pertence à hidrostática."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Segundo a 3.ª lei de Newton, quando um pneu empurra o solo para trás ao acelerar, o solo:",
+      "options": [
+        {
+          "text": "não exerce força sobre o pneu",
+          "explanation": "Errada: sempre há reação."
+        },
+        {
+          "text": "exerce força menor, por ser maior",
+          "explanation": "Errada: as forças são iguais em módulo."
+        },
+        {
+          "text": "exerce força para trás",
+          "explanation": "Errada: a reação tem sentido oposto."
+        },
+        {
+          "text": "anula a força, mantendo o carro parado",
+          "explanation": "Errada: as forças atuam em corpos distintos e não se anulam."
+        },
+        {
+          "text": "empurra o pneu para frente com força de mesma intensidade",
+          "explanation": "Certa: ação e reação têm mesmo módulo, direções iguais e sentidos opostos, em corpos diferentes."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Desprezando o atrito do ar, o ângulo de lançamento que maximiza o alcance horizontal de um projétil é:",
+      "options": [
+        {
+          "text": "30°",
+          "explanation": "Errada: dá alcance menor que 45°."
+        },
+        {
+          "text": "45°",
+          "explanation": "Certa: o alcance é proporcional a sen 2θ, máximo em θ = 45°."
+        },
+        {
+          "text": "60°",
+          "explanation": "Errada: dá o mesmo alcance de 30°, menor que o máximo."
+        },
+        {
+          "text": "90°",
+          "explanation": "Errada: lançamento vertical, alcance nulo."
+        },
+        {
+          "text": "0°",
+          "explanation": "Errada: lançamento horizontal a partir do solo, alcance nulo."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual é a força de atrito estático máxima em um veículo de 1.000 kg em pista plana, com μ = 0,5 e g = 9,8 m/s²?",
+      "options": [
+        {
+          "text": "500 N",
+          "explanation": "Errada: esquece a gravidade."
+        },
+        {
+          "text": "9.800 N",
+          "explanation": "Errada: esquece o coeficiente de atrito."
+        },
+        {
+          "text": "490 N",
+          "explanation": "Errada: erro de ordem de grandeza."
+        },
+        {
+          "text": "4.900 N",
+          "explanation": "Certa: fat = μ·N = 0,5 × 1.000 × 9,8."
+        },
+        {
+          "text": "19.600 N",
+          "explanation": "Errada: divide por μ em vez de multiplicar."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Após uma viagem longa, a pressão nos pneus aumenta mesmo sem entrar ar. Isso ocorre porque:",
+      "options": [
+        {
+          "text": "o aquecimento eleva a temperatura do gás, e a pressão cresce com a temperatura a volume aproximadamente constante",
+          "explanation": "Certa: relação entre pressão e temperatura de um gás."
+        },
+        {
+          "text": "o ar do pneu se condensa",
+          "explanation": "Errada: a condensação não aumenta a pressão."
+        },
+        {
+          "text": "a massa do ar aumenta",
+          "explanation": "Errada: a quantidade de gás é a mesma."
+        },
+        {
+          "text": "o volume do pneu diminui muito",
+          "explanation": "Errada: o volume varia pouco."
+        },
+        {
+          "text": "o ar vira líquido",
+          "explanation": "Errada: não ocorre mudança de fase."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Um veículo de 2.000 kg a 10 m/s freia até parar em 5 s com desaceleração constante. Qual é a intensidade da força resultante média?",
+      "options": [
+        {
+          "text": "40.000 N",
+          "explanation": "Errada: erro de ordem de grandeza."
+        },
+        {
+          "text": "400 N",
+          "explanation": "Errada: erro de ordem de grandeza."
+        },
+        {
+          "text": "4.000 N",
+          "explanation": "Certa: a = 10/5 = 2 m/s²; F = m·a = 2.000 × 2."
+        },
+        {
+          "text": "10.000 N",
+          "explanation": "Errada: multiplica massa por velocidade em vez de por aceleração."
+        },
+        {
+          "text": "2.000 N",
+          "explanation": "Errada: usa a = 1 m/s², mas a desaceleração é 2 m/s²."
+        }
+      ],
+      "correct": "C"
+    }
+  ],
+  "id": "f6b96ad2-fa6e-40c6-adc9-905c2a6a0446"
+}

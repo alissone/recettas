@@ -1,0 +1,545 @@
+{
+  "title": "Raciocínio Lógico e Matemática — Banco PRF 1",
+  "topic": "Raciocínio Lógico e Matemática",
+  "description": "Sequências, funções, lógica proposicional, probabilidade e problemas do dia a dia.",
+  "source": "Itens baseados na prova PRF 2019 (CEBRASPE), convertidos para A–E, e questões inéditas",
+  "color": "#7A5BC7",
+  "questions": [
+    {
+      "prompt": "Mantido o padrão da sequência, qual é o 12.º termo?",
+      "context": {
+        "text": "Uma unidade da PRF interceptou lotes de mercadorias com notas fiscais falsas. A sequência dos números das notas, ordenados pela data de interceptação, é: 25, 75, 50, 150, 100, 300, 200, 600, 400, 1.200, 800, ... Considere que o padrão se mantém."
+      },
+      "options": [
+        {
+          "text": "1.600",
+          "explanation": "Errada: seria o dobro de 800, mas 800 está na posição 11; o 12.º termo dobra o 10.º (1.200)."
+        },
+        {
+          "text": "1.200",
+          "explanation": "Errada: é o 10.º termo."
+        },
+        {
+          "text": "2.400",
+          "explanation": "Certa: os termos de posição par são 75, 150, 300, 600, 1.200 e o seguinte, 2.400 (sempre o dobro do anterior da mesma posição par)."
+        },
+        {
+          "text": "1.800",
+          "explanation": "Errada: não segue a regra de dobrar o termo duas posições antes."
+        },
+        {
+          "text": "3.600",
+          "explanation": "Errada: seria o 14.º termo se triplicasse; o padrão é o dobro, não o triplo."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Sendo an o n-ésimo termo, qual relação vale para n ≥ 3?",
+      "context": {
+        "text": "Uma unidade da PRF interceptou lotes de mercadorias com notas fiscais falsas. A sequência dos números das notas, ordenados pela data de interceptação, é: 25, 75, 50, 150, 100, 300, 200, 600, 400, 1.200, 800, ... Considere que o padrão se mantém."
+      },
+      "options": [
+        {
+          "text": "an = 2 · a(n−1)",
+          "explanation": "Errada: 50 não é o dobro de 75."
+        },
+        {
+          "text": "an = a(n−1) + a(n−2)",
+          "explanation": "Errada: 25 + 75 = 100, mas o terceiro termo é 50."
+        },
+        {
+          "text": "an = 3 · a(n−2)",
+          "explanation": "Errada: 3 · 25 = 75 seria o terceiro termo, mas é 50."
+        },
+        {
+          "text": "an = a(n−2) + 25",
+          "explanation": "Errada: 25 + 25 = 50 confere uma vez, mas 75 + 25 = 100 não é o quarto termo (150)."
+        },
+        {
+          "text": "an = 2 · a(n−2)",
+          "explanation": "Certa: cada termo é o dobro do que aparece duas posições antes (50 = 2·25, 150 = 2·75, 100 = 2·50...)."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Os números da sequência, na ordem, poderiam ser ordenadas de pontos do gráfico de uma função afim de inclinação positiva?",
+      "context": {
+        "text": "Uma unidade da PRF interceptou lotes de mercadorias com notas fiscais falsas. A sequência dos números das notas, ordenados pela data de interceptação, é: 25, 75, 50, 150, 100, 300, 200, 600, 400, 1.200, 800, ... Considere que o padrão se mantém."
+      },
+      "options": [
+        {
+          "text": "Sim, porque a sequência cresce em média.",
+          "explanation": "Errada: função afim crescente exige crescimento em todos os passos."
+        },
+        {
+          "text": "Não, pois a sequência não é sempre crescente (de 75 passa a 50).",
+          "explanation": "Certa: uma função afim crescente produziria valores sempre crescentes."
+        },
+        {
+          "text": "Sim, porque cada termo é o dobro de outro.",
+          "explanation": "Errada: dobrar não gera comportamento linear."
+        },
+        {
+          "text": "Sim, pois todos os termos são positivos.",
+          "explanation": "Errada: ser positivo não define função afim."
+        },
+        {
+          "text": "Não, pois a sequência é constante.",
+          "explanation": "Errada: os termos variam."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Segundo o modelo, quantos acidentes fatais se esperam no final do primeiro ano (x = 1)? (Use e^(−1) ≈ 0,37.)",
+      "context": {
+        "text": "Para avaliar uma campanha educativa, usa-se f(x) = 350 + 150·e^(−x), que modela o número de acidentes com vítimas fatais por ano, sendo x ≥ 0 o número de anos após o início da campanha."
+      },
+      "options": [
+        {
+          "text": "Cerca de 350",
+          "explanation": "Errada: 350 é o valor limite quando x cresce muito."
+        },
+        {
+          "text": "Cerca de 500",
+          "explanation": "Errada: é o valor para x = 0."
+        },
+        {
+          "text": "Cerca de 387",
+          "explanation": "Errada: erro de conta; 150·0,37 ≈ 55 e não 37."
+        },
+        {
+          "text": "Cerca de 405, ainda acima de 400, mas abaixo dos 500 do ano zero",
+          "explanation": "Certa: f(1) = 350 + 150·0,37 ≈ 405,5; f(0) = 350 + 150 = 500."
+        },
+        {
+          "text": "Menos de 300",
+          "explanation": "Errada: o valor nunca fica abaixo de 350."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "De acordo com o modelo, após dez anos haverá, nos anos seguintes, menos de 300 acidentes por ano?",
+      "context": {
+        "text": "Para avaliar uma campanha educativa, usa-se f(x) = 350 + 150·e^(−x), que modela o número de acidentes com vítimas fatais por ano, sendo x ≥ 0 o número de anos após o início da campanha."
+      },
+      "options": [
+        {
+          "text": "Não: como e^(−x) > 0, f(x) é sempre maior que 350.",
+          "explanation": "Certa: o termo exponencial é positivo, então f(x) > 350 para todo x."
+        },
+        {
+          "text": "Sim, porque a função é decrescente.",
+          "explanation": "Errada: ser decrescente não garante passar de 300; ela tem piso em 350."
+        },
+        {
+          "text": "Sim, porque e^(−10) é quase zero e 350 − 50 < 300.",
+          "explanation": "Errada: não há subtração; o termo exponencial soma ao 350."
+        },
+        {
+          "text": "Sim, pois a campanha zera os acidentes.",
+          "explanation": "Errada: o modelo não prevê zero."
+        },
+        {
+          "text": "Não, pois a função é crescente.",
+          "explanation": "Errada: e^(−x) diminui, então a função decresce."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Um preço sofre aumento de 20% e, em seguida, redução de 20% sobre o novo valor. O resultado final em relação ao preço original é:",
+      "options": [
+        {
+          "text": "igual ao preço original",
+          "explanation": "Errada: os percentuais incidem sobre bases diferentes."
+        },
+        {
+          "text": "aumento de 4%",
+          "explanation": "Errada: o produto 0,96 é menor que 1."
+        },
+        {
+          "text": "redução de 4%",
+          "explanation": "Certa: 1,2 × 0,8 = 0,96, ou seja, 4% menor."
+        },
+        {
+          "text": "redução de 2%",
+          "explanation": "Errada: não se obtém de 1,2 × 0,8."
+        },
+        {
+          "text": "aumento de 2%",
+          "explanation": "Errada: o produto é 0,96."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Um veículo percorre 120 km em 1 hora e 30 minutos. Sua velocidade média é:",
+      "options": [
+        {
+          "text": "90 km/h",
+          "explanation": "Errada: 120 ÷ 1,33; confunde 1h30 com 1h20."
+        },
+        {
+          "text": "100 km/h",
+          "explanation": "Errada: não corresponde a 120 ÷ 1,5."
+        },
+        {
+          "text": "120 km/h",
+          "explanation": "Errada: ignora os 30 minutos."
+        },
+        {
+          "text": "60 km/h",
+          "explanation": "Errada: seria 120 ÷ 2."
+        },
+        {
+          "text": "80 km/h",
+          "explanation": "Certa: 120 ÷ 1,5 = 80."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Cinco viaturas consomem 200 litros de combustível em 4 dias. No mesmo ritmo, quantos litros 8 viaturas consumirão em 5 dias?",
+      "options": [
+        {
+          "text": "320 litros",
+          "explanation": "Errada: considera só a proporção de viaturas (200 × 8/5) sem ajustar os dias."
+        },
+        {
+          "text": "400 litros",
+          "explanation": "Certa: consumo por viatura por dia = 10 L; 8 × 5 × 10 = 400."
+        },
+        {
+          "text": "250 litros",
+          "explanation": "Errada: considera só a proporção de dias."
+        },
+        {
+          "text": "500 litros",
+          "explanation": "Errada: erro de proporção; 8 viaturas × 5 dias × 10 L = 400."
+        },
+        {
+          "text": "160 litros",
+          "explanation": "Errada: reduz em vez de aumentar."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Duas patrulhas saem juntas do posto, uma retornando a cada 6 horas e outra a cada 8 horas. Depois de quantas horas elas estarão juntas novamente no posto?",
+      "options": [
+        {
+          "text": "12 horas",
+          "explanation": "Errada: 12 é múltiplo de 6, mas não de 8."
+        },
+        {
+          "text": "48 horas",
+          "explanation": "Errada: é múltiplo comum, mas não o menor."
+        },
+        {
+          "text": "14 horas",
+          "explanation": "Errada: é a soma, não o mmc."
+        },
+        {
+          "text": "24 horas",
+          "explanation": "Certa: mmc(6, 8) = 24."
+        },
+        {
+          "text": "2 horas",
+          "explanation": "Errada: é o mdc."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A negação lógica da proposição “Todo motorista respeita a sinalização” é:",
+      "options": [
+        {
+          "text": "Algum motorista não respeita a sinalização.",
+          "explanation": "Certa: negar “todos” equivale a existir ao menos um que não."
+        },
+        {
+          "text": "Nenhum motorista respeita a sinalização.",
+          "explanation": "Errada: é mais forte que a negação; basta um que descumpra."
+        },
+        {
+          "text": "Todo motorista não respeita a sinalização.",
+          "explanation": "Errada: equivale a “nenhum respeita”."
+        },
+        {
+          "text": "Algum motorista respeita a sinalização.",
+          "explanation": "Errada: é compatível com a afirmação original."
+        },
+        {
+          "text": "Existe motorista que respeita parte da sinalização.",
+          "explanation": "Errada: não nega a proposição original."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A negação lógica de “Se chove, a pista fica escorregadia” é:",
+      "options": [
+        {
+          "text": "Se não chove, a pista não fica escorregadia.",
+          "explanation": "Errada: é a inversa, não a negação."
+        },
+        {
+          "text": "Se a pista não fica escorregadia, não chove.",
+          "explanation": "Errada: é a contrapositiva, logicamente equivalente à original."
+        },
+        {
+          "text": "Chove e a pista não fica escorregadia.",
+          "explanation": "Certa: p → q é falsa só quando p é verdadeira e q é falsa; a negação é p ∧ ¬q."
+        },
+        {
+          "text": "Não chove ou a pista fica escorregadia.",
+          "explanation": "Errada: é equivalente à condicional original."
+        },
+        {
+          "text": "Chove e a pista fica escorregadia.",
+          "explanation": "Errada: confirma a condicional em vez de negá-la."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual proposição é logicamente equivalente a “Se o condutor está alcoolizado, então ele comete infração”?",
+      "options": [
+        {
+          "text": "Se o condutor comete infração, então ele está alcoolizado.",
+          "explanation": "Errada: é a recíproca; infração pode ter outras causas."
+        },
+        {
+          "text": "Se o condutor não está alcoolizado, então não comete infração.",
+          "explanation": "Errada: é a inversa e não é equivalente."
+        },
+        {
+          "text": "O condutor está alcoolizado e não comete infração.",
+          "explanation": "Errada: é a negação da condicional."
+        },
+        {
+          "text": "O condutor comete infração se, e somente se, está alcoolizado.",
+          "explanation": "Errada: bicondicional é mais forte que a condicional."
+        },
+        {
+          "text": "Se o condutor não comete infração, então ele não está alcoolizado.",
+          "explanation": "Certa: é a contrapositiva (¬q → ¬p), sempre equivalente."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Premissas: (1) Todo policial rodoviário é servidor público. (2) Todo servidor público tem deveres funcionais. Conclui-se necessariamente que:",
+      "options": [
+        {
+          "text": "Todo servidor público é policial rodoviário.",
+          "explanation": "Errada: inverte a relação de inclusão."
+        },
+        {
+          "text": "Todo policial rodoviário tem deveres funcionais.",
+          "explanation": "Certa: é o silogismo clássico (transitividade da inclusão)."
+        },
+        {
+          "text": "Algum servidor não tem deveres funcionais.",
+          "explanation": "Errada: contradiz a premissa 2."
+        },
+        {
+          "text": "Nenhum policial rodoviário é servidor público.",
+          "explanation": "Errada: contradiz a premissa 1."
+        },
+        {
+          "text": "Todo ser com deveres funcionais é policial rodoviário.",
+          "explanation": "Errada: inverte novamente."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Quantos anagramas distintos tem a palavra CARRO?",
+      "options": [
+        {
+          "text": "120",
+          "explanation": "Errada: é 5!, sem descontar a letra repetida."
+        },
+        {
+          "text": "30",
+          "explanation": "Errada: dividiria por 4."
+        },
+        {
+          "text": "24",
+          "explanation": "Errada: é 4!."
+        },
+        {
+          "text": "60",
+          "explanation": "Certa: 5!/2! = 120/2 = 60, pois a letra R se repete duas vezes."
+        },
+        {
+          "text": "10",
+          "explanation": "Errada: é combinação C(5,2), não anagrama."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Em uma fiscalização, 12 veículos são parados ao acaso, dos quais 3 estão irregulares. Escolhendo um veículo ao acaso, a probabilidade de ele estar irregular é:",
+      "options": [
+        {
+          "text": "1/4",
+          "explanation": "Certa: 3/12 = 1/4 = 25%."
+        },
+        {
+          "text": "1/3",
+          "explanation": "Errada: seria 4 irregulares em 12."
+        },
+        {
+          "text": "3/9",
+          "explanation": "Errada: usa 9 como total em vez de 12."
+        },
+        {
+          "text": "1/12",
+          "explanation": "Errada: é a probabilidade de um veículo específico ser escolhido."
+        },
+        {
+          "text": "3/4",
+          "explanation": "Errada: é a probabilidade de estar regular."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Qual é a soma dos termos da progressão aritmética 5, 8, 11, …, 29?",
+      "options": [
+        {
+          "text": "145",
+          "explanation": "Errada: erro de aritmética na soma."
+        },
+        {
+          "text": "261",
+          "explanation": "Errada: erro no cálculo."
+        },
+        {
+          "text": "153",
+          "explanation": "Certa: são 9 termos; S = (5 + 29) · 9 / 2 = 153."
+        },
+        {
+          "text": "170",
+          "explanation": "Errada: considera 10 termos."
+        },
+        {
+          "text": "34",
+          "explanation": "Errada: é apenas a soma do primeiro e do último."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Um capital de R$ 1.000,00 é aplicado a juros simples de 2% ao mês durante 6 meses. Os juros obtidos são de:",
+      "options": [
+        {
+          "text": "R$ 126,16",
+          "explanation": "Errada: é o valor obtido a juros compostos."
+        },
+        {
+          "text": "R$ 12,00",
+          "explanation": "Errada: erro de casa decimal."
+        },
+        {
+          "text": "R$ 60,00",
+          "explanation": "Errada: considera 3 meses."
+        },
+        {
+          "text": "R$ 1.120,00",
+          "explanation": "Errada: é o montante, não os juros."
+        },
+        {
+          "text": "R$ 120,00",
+          "explanation": "Certa: J = 1.000 × 0,02 × 6 = 120."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Numa pesquisa com 50 motoristas, 30 usam o aplicativo A, 25 usam o B e 10 usam ambos. Quantos não usam nenhum dos dois?",
+      "options": [
+        {
+          "text": "0",
+          "explanation": "Errada: ignora a interseção."
+        },
+        {
+          "text": "5",
+          "explanation": "Certa: união = 30 + 25 − 10 = 45; 50 − 45 = 5."
+        },
+        {
+          "text": "10",
+          "explanation": "Errada: usa só o número que usa ambos."
+        },
+        {
+          "text": "15",
+          "explanation": "Errada: erro ao subtrair."
+        },
+        {
+          "text": "20",
+          "explanation": "Errada: subtrai apenas 30."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Em um mapa na escala 1:10.000.000, um trecho de rodovia mede 2,5 cm. Qual é a distância real?",
+      "options": [
+        {
+          "text": "25 km",
+          "explanation": "Errada: erro de uma casa decimal."
+        },
+        {
+          "text": "2.500 km",
+          "explanation": "Errada: erro de uma casa decimal para mais."
+        },
+        {
+          "text": "100 km",
+          "explanation": "Errada: é a distância de 1 cm."
+        },
+        {
+          "text": "250 km",
+          "explanation": "Certa: 2,5 cm × 10.000.000 = 25.000.000 cm = 250 km."
+        },
+        {
+          "text": "25.000 km",
+          "explanation": "Errada: confunde a conversão de cm para km."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A média das idades de 5 agentes é 30 anos. Se um sexto agente, de 36 anos, se juntar ao grupo, a nova média será:",
+      "options": [
+        {
+          "text": "31 anos",
+          "explanation": "Certa: a soma original é 150; com 36, a soma é 186, e 186 ÷ 6 = 31."
+        },
+        {
+          "text": "33 anos",
+          "explanation": "Errada: é a média simples entre 30 e 36, ignorando os pesos diferentes dos grupos."
+        },
+        {
+          "text": "30 anos",
+          "explanation": "Errada: a média muda, pois o novo agente é mais velho."
+        },
+        {
+          "text": "36 anos",
+          "explanation": "Errada: é a idade do novo agente, não a média."
+        },
+        {
+          "text": "32 anos",
+          "explanation": "Errada: erro de conta; 186 ÷ 6 = 31."
+        }
+      ],
+      "correct": "A"
+    }
+  ],
+  "id": "c77c52f7-2fd4-42b7-bd5c-8d5032315d19"
+}

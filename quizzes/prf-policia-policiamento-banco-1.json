@@ -1,0 +1,545 @@
+{
+  "title": "História da Polícia e Policiamento — Banco 1",
+  "topic": "Segurança Pública",
+  "description": "Origem da polícia moderna, processo civilizador, tipos de policiamento e noções de criminologia.",
+  "source": "Itens baseados na prova PRF 2021 (CEBRASPE) sobre texto de C. Mauch, convertidos para A–E, e questões inéditas",
+  "color": "#6B6B76",
+  "questions": [
+    {
+      "prompt": "Segundo o texto, o que significou a passagem da polícia do sistema de justiça para o governo da cidade, nos EUA do século XIX?",
+      "context": {
+        "text": "Nos Estados Unidos da América, no século XIX, a passagem da polícia do sistema de justiça para o de governo da cidade significou também a passagem da noção de caça aos criminosos para a prevenção dos crimes, em um deslocamento do ato para o ator. Como na Europa, a ênfase na prevenção teria representado nova atitude diante do controle social, com o desenvolvimento pela polícia de uma habilidade específica, a de explicar e prevenir o comportamento criminoso. Isso acabou redundando no foco nas “classes perigosas”, ou seja, em setores específicos da sociedade vistos como produtores de comportamento criminoso."
+      },
+      "options": [
+        {
+          "text": "A mudança do foco na caça aos criminosos para a prevenção dos crimes",
+          "explanation": "Certa: o texto fala de um deslocamento do ato para o ator, com ênfase na prevenção."
+        },
+        {
+          "text": "O fim da prevenção e volta à repressão pura",
+          "explanation": "Errada: o texto descreve o oposto."
+        },
+        {
+          "text": "A extinção da polícia nas cidades",
+          "explanation": "Errada: a polícia passou a integrar o governo da cidade."
+        },
+        {
+          "text": "O fim dos estudos sobre criminalidade",
+          "explanation": "Errada: surgiram campos de saber sobre o tema."
+        },
+        {
+          "text": "A proibição de explicar o comportamento criminoso",
+          "explanation": "Errada: desenvolveu-se justamente a habilidade de explicá-lo."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "O que é possível inferir do primeiro parágrafo sobre o desenvolvimento dos saberes ligados à justiça criminal?",
+      "context": {
+        "text": "Nos Estados Unidos da América, no século XIX, a passagem da polícia do sistema de justiça para o de governo da cidade significou também a passagem da noção de caça aos criminosos para a prevenção dos crimes, em um deslocamento do ato para o ator. Como na Europa, a ênfase na prevenção teria representado nova atitude diante do controle social, com o desenvolvimento pela polícia de uma habilidade específica, a de explicar e prevenir o comportamento criminoso. Isso acabou redundando no foco nas “classes perigosas”, ou seja, em setores específicos da sociedade vistos como produtores de comportamento criminoso."
+      },
+      "options": [
+        {
+          "text": "Foi neutro, sem qualquer viés social",
+          "explanation": "Errada: o texto aponta viés."
+        },
+        {
+          "text": "Ocorreu apenas na Europa",
+          "explanation": "Errada: o texto trata dos EUA e da Europa."
+        },
+        {
+          "text": "Está associado a visões preconceituosas sobre certos grupos sociais, chamados “classes perigosas”",
+          "explanation": "Certa: o foco recaiu sobre setores vistos como produtores de comportamento criminoso."
+        },
+        {
+          "text": "Dispensou a explicação do comportamento criminoso",
+          "explanation": "Errada: ela foi central."
+        },
+        {
+          "text": "Foi dirigido às classes dominantes",
+          "explanation": "Errada: o foco foi em setores vistos como perigosos."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Segundo o segundo parágrafo, como era a violência no período medieval?",
+      "context": {
+        "text": "Na Europa ocidental, as novas instituições estatais de vigilância deveriam controlar o exercício da força em sociedades em que os níveis de violência física nas relações interpessoais e do Estado com a sociedade estavam em declínio. De acordo com a teoria do processo civilizador, de Norbert Elias, no Ocidente moderno a agressividade, assim como outras emoções e prazeres, foi domada, “refinada” e “civilizada”. O autor contrasta a violência “franca e desinibida” do período medieval, que não excluía ninguém da vida social e era socialmente permitida e até certo ponto necessária, com o autocontrole e a moderação das emoções que acabaram por se impor na modernidade."
+      },
+      "options": [
+        {
+          "text": "Totalmente proibida por lei",
+          "explanation": "Errada: era permitida."
+        },
+        {
+          "text": "Controlada por um Estado moderno",
+          "explanation": "Errada: o Estado moderno surgiu depois."
+        },
+        {
+          "text": "Rara e mal vista",
+          "explanation": "Errada: era comum."
+        },
+        {
+          "text": "Exclusiva das elites",
+          "explanation": "Errada: não excluía ninguém."
+        },
+        {
+          "text": "Comum e socialmente aceita, até certo ponto necessária",
+          "explanation": "Certa: era “franca e desinibida” e não excluía ninguém."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "De acordo com Norbert Elias, o processo civilizador caracteriza-se por:",
+      "context": {
+        "text": "Na Europa ocidental, as novas instituições estatais de vigilância deveriam controlar o exercício da força em sociedades em que os níveis de violência física nas relações interpessoais e do Estado com a sociedade estavam em declínio. De acordo com a teoria do processo civilizador, de Norbert Elias, no Ocidente moderno a agressividade, assim como outras emoções e prazeres, foi domada, “refinada” e “civilizada”. O autor contrasta a violência “franca e desinibida” do período medieval, que não excluía ninguém da vida social e era socialmente permitida e até certo ponto necessária, com o autocontrole e a moderação das emoções que acabaram por se impor na modernidade."
+      },
+      "options": [
+        {
+          "text": "aumento da violência interpessoal",
+          "explanation": "Errada: o texto fala em declínio."
+        },
+        {
+          "text": "autocontrole das emoções e moderação da agressividade, relacionados à formação dos Estados modernos",
+          "explanation": "Certa: o controle externo se converte em autocontrole."
+        },
+        {
+          "text": "ausência de regras sociais",
+          "explanation": "Errada: houve mais regras de convivência."
+        },
+        {
+          "text": "expressão desinibida de emoções",
+          "explanation": "Errada: era característica do período medieval."
+        },
+        {
+          "text": "desaparecimento do Estado",
+          "explanation": "Errada: o processo está ligado ao Estado moderno."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Pelo texto, o monopólio da violência legítima pelo Estado deveu-se:",
+      "context": {
+        "text": "Na Europa ocidental, as novas instituições estatais de vigilância deveriam controlar o exercício da força em sociedades em que os níveis de violência física nas relações interpessoais e do Estado com a sociedade estavam em declínio. De acordo com a teoria do processo civilizador, de Norbert Elias, no Ocidente moderno a agressividade, assim como outras emoções e prazeres, foi domada, “refinada” e “civilizada”. O autor contrasta a violência “franca e desinibida” do período medieval, que não excluía ninguém da vida social e era socialmente permitida e até certo ponto necessária, com o autocontrole e a moderação das emoções que acabaram por se impor na modernidade."
+      },
+      "options": [
+        {
+          "text": "a índices insustentáveis de violência entre indivíduos",
+          "explanation": "Errada: o texto fala em declínio da violência."
+        },
+        {
+          "text": "ao desaparecimento da polícia",
+          "explanation": "Errada: a polícia é instituição do Estado."
+        },
+        {
+          "text": "à abolição das leis",
+          "explanation": "Errada: o processo envolveu leis."
+        },
+        {
+          "text": "à organização e estabilização dos Estados modernos, associada ao autocontrole dos indivíduos, e não a um aumento insustentável de violência",
+          "explanation": "Certa: o texto fala em níveis de violência em declínio."
+        },
+        {
+          "text": "ao retorno à violência medieval",
+          "explanation": "Errada: é o contrário."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Max Weber definiu o Estado moderno como a instituição que detém:",
+      "options": [
+        {
+          "text": "o monopólio do uso legítimo da força física em um território",
+          "explanation": "Certa: é a definição clássica de Weber."
+        },
+        {
+          "text": "o monopólio da riqueza",
+          "explanation": "Errada: não é a definição."
+        },
+        {
+          "text": "o direito exclusivo de produzir bens",
+          "explanation": "Errada: não é definição de Estado."
+        },
+        {
+          "text": "a posse de todos os recursos naturais",
+          "explanation": "Errada: não é a definição."
+        },
+        {
+          "text": "a representação de interesses privados",
+          "explanation": "Errada: não é a definição."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "O princípio de Robert Peel (Londres, 1829), de que “a polícia é o público e o público é a polícia”, expressa a ideia de:",
+      "options": [
+        {
+          "text": "polícia isolada da comunidade",
+          "explanation": "Errada: o princípio defende aproximação."
+        },
+        {
+          "text": "polícia militarizada de combate",
+          "explanation": "Errada: o modelo inicial era civil e preventivo."
+        },
+        {
+          "text": "polícia que atua com legitimidade e cooperação da comunidade, cidadãos em uniforme",
+          "explanation": "Certa: a polícia depende da aprovação e da colaboração pública."
+        },
+        {
+          "text": "polícia sem regras",
+          "explanation": "Errada: a ideia valoriza legitimidade."
+        },
+        {
+          "text": "polícia exclusivamente investigativa",
+          "explanation": "Errada: o princípio enfatiza a prevenção."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "A teoria das “janelas quebradas” (Wilson e Kelling, 1982) sustenta que:",
+      "options": [
+        {
+          "text": "o crime só ocorre em áreas ricas",
+          "explanation": "Errada: não é o argumento."
+        },
+        {
+          "text": "a pobreza é a única causa do crime",
+          "explanation": "Errada: a teoria foca na desordem."
+        },
+        {
+          "text": "a polícia deve ignorar infrações menores",
+          "explanation": "Errada: o argumento é o oposto."
+        },
+        {
+          "text": "vidraças quebradas causam doenças",
+          "explanation": "Errada: a teoria não é de saúde."
+        },
+        {
+          "text": "sinais de desordem não corrigidos incentivam novas desordens e crimes mais graves",
+          "explanation": "Certa: a negligência com pequenos problemas sinaliza ausência de controle."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Policiamento comunitário caracteriza-se por:",
+      "options": [
+        {
+          "text": "operações exclusivamente repressivas",
+          "explanation": "Errada: não é o foco."
+        },
+        {
+          "text": "parceria com a comunidade na identificação e solução de problemas de segurança",
+          "explanation": "Certa: valoriza a prevenção e o vínculo com a população."
+        },
+        {
+          "text": "afastamento do policial da população",
+          "explanation": "Errada: o policiamento comunitário aproxima."
+        },
+        {
+          "text": "atuação somente em investigações sigilosas",
+          "explanation": "Errada: não é o foco."
+        },
+        {
+          "text": "exclusão de moradores do diálogo",
+          "explanation": "Errada: o diálogo é central."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "A diferença entre policiamento ostensivo e policiamento investigativo é que o primeiro:",
+      "options": [
+        {
+          "text": "é sempre sigiloso",
+          "explanation": "Errada: o ostensivo é visível."
+        },
+        {
+          "text": "só atua após o julgamento",
+          "explanation": "Errada: a investigação ocorre antes do julgamento."
+        },
+        {
+          "text": "investiga crimes passados",
+          "explanation": "Errada: é o investigativo."
+        },
+        {
+          "text": "é visível e voltado a prevenir e reprimir imediatamente, enquanto o investigativo apura crimes já ocorridos",
+          "explanation": "Certa: ostensivo atua com presença e prevenção; investigativo, na elucidação."
+        },
+        {
+          "text": "é exclusivo do Judiciário",
+          "explanation": "Errada: policiar não é função do Judiciário."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A discricionariedade policial é:",
+      "options": [
+        {
+          "text": "a margem de escolha do policial sobre como agir dentro dos limites da lei",
+          "explanation": "Certa: não se confunde com arbitrariedade."
+        },
+        {
+          "text": "liberdade para agir contra a lei",
+          "explanation": "Errada: isso é arbitrariedade."
+        },
+        {
+          "text": "obrigação de aplicar a mesma medida em qualquer caso",
+          "explanation": "Errada: a discricionariedade permite escolha."
+        },
+        {
+          "text": "possibilidade de ignorar a hierarquia",
+          "explanation": "Errada: não é isso."
+        },
+        {
+          "text": "poder de legislar",
+          "explanation": "Errada: legislar cabe ao Parlamento."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "O conceito de “cifra negra” da criminalidade refere-se:",
+      "options": [
+        {
+          "text": "aos crimes cometidos de madrugada",
+          "explanation": "Errada: não se refere ao horário."
+        },
+        {
+          "text": "às condenações revogadas",
+          "explanation": "Errada: não é o conceito."
+        },
+        {
+          "text": "aos crimes que ocorrem mas não chegam ao conhecimento das autoridades ou não são registrados",
+          "explanation": "Certa: as estatísticas oficiais subestimam a criminalidade real."
+        },
+        {
+          "text": "a crimes só contra o patrimônio",
+          "explanation": "Errada: abrange diferentes tipos."
+        },
+        {
+          "text": "às penas aplicadas em dobro",
+          "explanation": "Errada: não tem relação."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Na classificação clássica da prevenção do crime, a prevenção primária:",
+      "options": [
+        {
+          "text": "atua sobre condenados após a pena",
+          "explanation": "Errada: seria terciária."
+        },
+        {
+          "text": "atua sobre grupos de risco específicos",
+          "explanation": "Errada: seria secundária."
+        },
+        {
+          "text": "é exclusivamente repressiva",
+          "explanation": "Errada: a primária é preventiva."
+        },
+        {
+          "text": "é feita só pela polícia",
+          "explanation": "Errada: envolve várias políticas públicas."
+        },
+        {
+          "text": "atua nas causas sociais gerais, como educação, emprego e urbanização, antes que o problema apareça",
+          "explanation": "Certa: é voltada à população em geral."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "A prevenção terciária do crime tem como foco:",
+      "options": [
+        {
+          "text": "a educação de toda a população",
+          "explanation": "Errada: seria a primária."
+        },
+        {
+          "text": "a reintegração de quem já cometeu crime, para evitar reincidência",
+          "explanation": "Certa: foca em condenados e egressos."
+        },
+        {
+          "text": "o policiamento em áreas de risco",
+          "explanation": "Errada: seria secundária."
+        },
+        {
+          "text": "a eliminação de provas",
+          "explanation": "Errada: não tem relação."
+        },
+        {
+          "text": "a vigilância de menores sem histórico",
+          "explanation": "Errada: não é terciária."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual é uma crítica científica às teorias do criminoso nato, de Lombroso?",
+      "options": [
+        {
+          "text": "Elas explicam todos os crimes com precisão",
+          "explanation": "Errada: não explicam e foram refutadas."
+        },
+        {
+          "text": "Elas desconsideram o corpo humano",
+          "explanation": "Errada: pelo contrário, focam no corpo."
+        },
+        {
+          "text": "Elas são aceitas pela criminologia contemporânea",
+          "explanation": "Errada: foram superadas."
+        },
+        {
+          "text": "Elas atribuem o crime a traços físicos hereditários, sem comprovação e com viés discriminatório",
+          "explanation": "Certa: a teoria foi refutada por estudos posteriores."
+        },
+        {
+          "text": "Elas negam qualquer influência biológica",
+          "explanation": "Errada: afirmavam determinismo biológico."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "O “ciclo completo de polícia”, em debate no Brasil, refere-se a:",
+      "options": [
+        {
+          "text": "uma mesma instituição desempenhar tanto o policiamento ostensivo quanto a investigação",
+          "explanation": "Certa: o ciclo completo reúne prevenção, repressão e investigação em uma corporação."
+        },
+        {
+          "text": "polícia que atua apenas de dia",
+          "explanation": "Errada: não se refere a horário."
+        },
+        {
+          "text": "polícia que só investiga",
+          "explanation": "Errada: reúne ostensivo e investigativo."
+        },
+        {
+          "text": "polícia que só atua em ciclovias",
+          "explanation": "Errada: não tem relação."
+        },
+        {
+          "text": "polícia sem comando hierárquico",
+          "explanation": "Errada: não é isso."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A atuação policial baseada em evidências e na análise de dados (policiamento orientado por problemas) busca:",
+      "options": [
+        {
+          "text": "ignorar as estatísticas de ocorrências",
+          "explanation": "Errada: usa dados."
+        },
+        {
+          "text": "atuar aleatoriamente",
+          "explanation": "Errada: busca direcionar ações."
+        },
+        {
+          "text": "identificar padrões e causas de ocorrências para direcionar ações preventivas e eficazes",
+          "explanation": "Certa: usa informação para priorizar recursos."
+        },
+        {
+          "text": "agir sem planejamento",
+          "explanation": "Errada: busca planejar."
+        },
+        {
+          "text": "substituir a atuação humana por completo",
+          "explanation": "Errada: orienta, não substitui."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual atitude do policial se alinha ao controle democrático da atividade policial?",
+      "options": [
+        {
+          "text": "Agir sem registro das ocorrências",
+          "explanation": "Errada: dificulta o controle."
+        },
+        {
+          "text": "Recusar qualquer fiscalização externa",
+          "explanation": "Errada: o controle externo é essencial."
+        },
+        {
+          "text": "Descartar os protocolos quando conveniente",
+          "explanation": "Errada: os protocolos limitam o arbítrio."
+        },
+        {
+          "text": "Ocultar abusos de colegas",
+          "explanation": "Errada: o dever é comunicá-los."
+        },
+        {
+          "text": "Prestar contas, aceitar fiscalização e agir dentro da lei e dos protocolos",
+          "explanation": "Certa: a transparência e o controle legitimam a atuação policial."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual é a diferença básica entre polícia administrativa (ostensiva) e polícia judiciária?",
+      "options": [
+        {
+          "text": "A administrativa só atua depois do julgamento",
+          "explanation": "Errada: a atuação antecede o julgamento."
+        },
+        {
+          "text": "A administrativa atua principalmente na prevenção e na manutenção da ordem; a judiciária atua depois do fato, apurando infrações e auxiliando o Judiciário",
+          "explanation": "Certa: uma é preventiva e visível, a outra é investigativa."
+        },
+        {
+          "text": "A judiciária é responsável pelo policiamento de rua",
+          "explanation": "Errada: essa é a polícia ostensiva."
+        },
+        {
+          "text": "As duas são idênticas em função",
+          "explanation": "Errada: têm objetivos e momentos diferentes."
+        },
+        {
+          "text": "A judiciária julga os crimes",
+          "explanation": "Errada: o julgamento cabe ao Poder Judiciário."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O controle externo da atividade policial é exercido, no Brasil, principalmente por:",
+      "options": [
+        {
+          "text": "pela própria corporação, com exclusividade",
+          "explanation": "Errada: o controle interno é só uma das formas."
+        },
+        {
+          "text": "exclusivamente por empresas privadas",
+          "explanation": "Errada: não é essa a função delas."
+        },
+        {
+          "text": "pelo comando militar, sempre",
+          "explanation": "Errada: o controle externo é civil."
+        },
+        {
+          "text": "instituições como o Ministério Público, além do controle social e do Judiciário",
+          "explanation": "Certa: complementa o controle interno feito pelas corregedorias."
+        },
+        {
+          "text": "por ninguém, pois a atividade é livre de controle",
+          "explanation": "Errada: há controles internos e externos."
+        }
+      ],
+      "correct": "D"
+    }
+  ],
+  "id": "08427915-552f-44a2-97bd-1890c5d48c72"
+}

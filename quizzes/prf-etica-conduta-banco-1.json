@@ -1,0 +1,530 @@
+{
+  "title": "Ética e Conduta no Serviço Público — Banco PRF 1",
+  "topic": "Ética no Serviço Público",
+  "description": "Moralidade, conflito de interesses, sigilo, uso da força e condutas do servidor.",
+  "source": "Itens baseados na prova PRF 2019 (CEBRASPE), convertidos para A–E, e questões inéditas",
+  "color": "#B24A6B",
+  "questions": [
+    {
+      "prompt": "Sobre a moralidade na administração pública, assinale a alternativa correta.",
+      "options": [
+        {
+          "text": "Ela não se limita à distinção entre bem e mal: o servidor deve ter como fim o bem comum.",
+          "explanation": "Certa: a conduta do servidor exige, além do elemento ético, o foco no interesse coletivo."
+        },
+        {
+          "text": "Restringe-se à distinção entre bem e mal.",
+          "explanation": "Errada: a moralidade administrativa também exige legalidade, finalidade pública e bem comum."
+        },
+        {
+          "text": "É facultativa quando o ato é legal.",
+          "explanation": "Errada: ato legal pode ser imoral e ainda assim ser inválido."
+        },
+        {
+          "text": "Aplica-se só a altos cargos.",
+          "explanation": "Errada: vale para todos os servidores."
+        },
+        {
+          "text": "Só importa quando há fiscalização.",
+          "explanation": "Errada: o dever ético existe independentemente de fiscalização."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Um servidor sustenta que só precisa agir eticamente durante o expediente, pois fora dele é “vida particular”. Essa ideia está:",
+      "options": [
+        {
+          "text": "correta, porque a vida particular é inviolável em qualquer situação",
+          "explanation": "Errada: a conduta pública do servidor pode ter reflexos funcionais."
+        },
+        {
+          "text": "correta, desde que ele tenha cargo comissionado",
+          "explanation": "Errada: o tipo de cargo não muda o dever ético."
+        },
+        {
+          "text": "errada, pois a conduta fora do serviço também pode repercutir na imagem e na dignidade da função pública",
+          "explanation": "Certa: a reputação do servidor reflete na instituição."
+        },
+        {
+          "text": "errada apenas se ele for policial",
+          "explanation": "Errada: vale para qualquer servidor."
+        },
+        {
+          "text": "correta, desde que a conduta seja legal",
+          "explanation": "Errada: legalidade não afasta a avaliação ética."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Um servidor é visto habitualmente embriagado, dentro e fora do trabalho. Do ponto de vista ético:",
+      "options": [
+        {
+          "text": "Não há possibilidade de apuração, pois é conduta privada",
+          "explanation": "Errada: a conduta habitual pode afetar a imagem do cargo."
+        },
+        {
+          "text": "Só pode ser apurado se causar acidente",
+          "explanation": "Errada: a habitualidade basta para análise ética."
+        },
+        {
+          "text": "A Comissão de Ética aplica prisão",
+          "explanation": "Errada: a comissão não aplica pena privativa de liberdade."
+        },
+        {
+          "text": "Só o Judiciário pode analisar",
+          "explanation": "Errada: a Comissão de Ética atua no âmbito administrativo."
+        },
+        {
+          "text": "Seu comportamento pode ser apurado pela Comissão de Ética, que pode aplicar a sanção de censura",
+          "explanation": "Certa: a embriaguez habitual afeta a imagem do serviço, e a Comissão de Ética apura a conduta."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Um servidor usa colega do setor para resolver assuntos pessoais durante o expediente; outro colega percebe e fica calado por solidariedade. Em termos éticos:",
+      "options": [
+        {
+          "text": "Só quem desviou responde",
+          "explanation": "Errada: a conivência também é falta ética."
+        },
+        {
+          "text": "Ambos podem ser submetidos à Comissão de Ética: um pelo desvio, o outro pela conivência",
+          "explanation": "Certa: desviar servidor para interesse particular e ser conivente são condutas reprováveis."
+        },
+        {
+          "text": "Ninguém responde, pois é prática comum",
+          "explanation": "Errada: o costume não afasta a falta."
+        },
+        {
+          "text": "Só o colega silencioso responde",
+          "explanation": "Errada: quem desvia responde primeiro."
+        },
+        {
+          "text": "Só o chefe responde",
+          "explanation": "Errada: os servidores envolvidos também respondem."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Um policial recebe de um transportador, que é fiscalizado por ele, um relógio caro “de agradecimento”. A conduta correta é:",
+      "options": [
+        {
+          "text": "Aceitar, pois o presente foi espontâneo",
+          "explanation": "Errada: a espontaneidade não elimina o conflito de interesses."
+        },
+        {
+          "text": "Aceitar e não contar a ninguém",
+          "explanation": "Errada: além de antiético, esconder agrava a situação."
+        },
+        {
+          "text": "Aceitar e passar para um parente",
+          "explanation": "Errada: contorna a regra sem resolver o conflito."
+        },
+        {
+          "text": "Recusar o presente, por gerar conflito de interesses e comprometer a imparcialidade",
+          "explanation": "Certa: aceitar vantagem de quem é fiscalizado compromete a isenção."
+        },
+        {
+          "text": "Aceitar se o valor for baixo, sempre",
+          "explanation": "Errada: o problema é a relação com quem é fiscalizado, não só o valor."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual princípio da administração pública é violado quando um agente favorece um conhecido na fila de atendimento?",
+      "options": [
+        {
+          "text": "Impessoalidade",
+          "explanation": "Certa: o atendimento deve tratar todos de modo igual, sem favoritismos."
+        },
+        {
+          "text": "Publicidade",
+          "explanation": "Errada: refere-se à transparência dos atos."
+        },
+        {
+          "text": "Eficiência",
+          "explanation": "Errada: refere-se à qualidade e aos resultados do serviço."
+        },
+        {
+          "text": "Legalidade",
+          "explanation": "Errada: refere-se a agir conforme a lei."
+        },
+        {
+          "text": "Anterioridade",
+          "explanation": "Errada: não é princípio da administração pública."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Um servidor usa o carro oficial para levar a família ao shopping no fim de semana. Isso fere principalmente o princípio da:",
+      "options": [
+        {
+          "text": "publicidade, pois ninguém foi informado",
+          "explanation": "Errada: o problema é o uso privado do bem."
+        },
+        {
+          "text": "legalidade estrita, apenas se houve multa",
+          "explanation": "Errada: o uso privado do bem é irregular independentemente de multa."
+        },
+        {
+          "text": "moralidade e o dever de zelar pelo patrimônio público",
+          "explanation": "Certa: bens públicos servem ao interesse público, não ao particular."
+        },
+        {
+          "text": "eficiência, por causa do consumo de combustível",
+          "explanation": "Errada: embora haja custo, o foco é o desvio de finalidade."
+        },
+        {
+          "text": "anualidade",
+          "explanation": "Errada: não se aplica."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual atitude do servidor demonstra respeito ao sigilo funcional?",
+      "options": [
+        {
+          "text": "Postar detalhes de operação em andamento nas redes sociais",
+          "explanation": "Errada: pode comprometer a operação e a segurança."
+        },
+        {
+          "text": "Compartilhar dados de investigados com amigos",
+          "explanation": "Errada: viola sigilo e privacidade."
+        },
+        {
+          "text": "Revelar a imprensa o conteúdo de procedimento sigiloso",
+          "explanation": "Errada: pode comprometer a investigação."
+        },
+        {
+          "text": "Vender informações para empresas",
+          "explanation": "Errada: é conduta ilícita e antiética."
+        },
+        {
+          "text": "Não divulgar informações obtidas em razão do cargo que não sejam públicas",
+          "explanation": "Certa: o sigilo protege investigações e dados pessoais."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual é a postura esperada de um servidor ao presenciar um colega praticar ato claramente ilícito?",
+      "options": [
+        {
+          "text": "Ignorar, para preservar a amizade",
+          "explanation": "Errada: a omissão pode ser falta funcional."
+        },
+        {
+          "text": "Comunicar à autoridade competente ou à corregedoria",
+          "explanation": "Certa: o dever de lealdade à instituição e à lei exige a comunicação."
+        },
+        {
+          "text": "Participar, para ser aceito",
+          "explanation": "Errada: torna-se coautor."
+        },
+        {
+          "text": "Divulgar apenas entre colegas",
+          "explanation": "Errada: não resolve e pode gerar prejuízo à apuração."
+        },
+        {
+          "text": "Esperar que o colega peça ajuda",
+          "explanation": "Errada: a comunicação é dever, não favor."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O princípio da proporcionalidade no uso da força pelo policial significa que:",
+      "options": [
+        {
+          "text": "deve-se sempre usar a força máxima disponível",
+          "explanation": "Errada: a força excessiva é abuso."
+        },
+        {
+          "text": "a força só pode ser usada contra pessoas armadas",
+          "explanation": "Errada: a proporcionalidade avalia a ameaça, não só armas."
+        },
+        {
+          "text": "não se pode usar força em hipótese alguma",
+          "explanation": "Errada: a força é permitida quando necessária e legal."
+        },
+        {
+          "text": "a força deve ser a mínima necessária para cumprir o objetivo legítimo, em intensidade compatível com a ameaça",
+          "explanation": "Certa: a resposta deve ser adequada ao risco enfrentado."
+        },
+        {
+          "text": "a força é decidida pela opinião do público",
+          "explanation": "Errada: critérios são técnicos e jurídicos, não de opinião."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual exemplo caracteriza nepotismo?",
+      "options": [
+        {
+          "text": "Nomear um parente próximo para cargo em comissão subordinado à própria autoridade",
+          "explanation": "Certa: favorecimento por parentesco, vedado pela Súmula Vinculante 13 do STF."
+        },
+        {
+          "text": "Nomear por concurso público",
+          "explanation": "Errada: seleção impessoal é o oposto do nepotismo."
+        },
+        {
+          "text": "Promover por mérito comprovado",
+          "explanation": "Errada: não há favorecimento por parentesco."
+        },
+        {
+          "text": "Contratar por licitação a melhor proposta",
+          "explanation": "Errada: licitação visa impessoalidade."
+        },
+        {
+          "text": "Convocar aprovado em concurso",
+          "explanation": "Errada: é o procedimento correto."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Qual atitude demonstra cortesia e urbanidade no atendimento ao cidadão?",
+      "options": [
+        {
+          "text": "Responder com ironia quando o cidadão insistir",
+          "explanation": "Errada: viola a urbanidade."
+        },
+        {
+          "text": "Atender melhor quem é conhecido",
+          "explanation": "Errada: viola a impessoalidade."
+        },
+        {
+          "text": "Tratar com respeito, clareza e sem discriminação, mesmo em desacordo",
+          "explanation": "Certa: o atendimento deve ser respeitoso e impessoal."
+        },
+        {
+          "text": "Dar informações incompletas para se livrar do atendimento",
+          "explanation": "Errada: viola o dever de informar."
+        },
+        {
+          "text": "Recusar atendimento por impaciência",
+          "explanation": "Errada: o atendimento é dever do servidor."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "O servidor público que recebe vantagem indevida para deixar de aplicar uma multa pratica, em termos conceituais:",
+      "options": [
+        {
+          "text": "corrupção ativa",
+          "explanation": "Errada: é praticada por quem oferece a vantagem."
+        },
+        {
+          "text": "prevaricação",
+          "explanation": "Errada: é retardar ou deixar de praticar ato de ofício para satisfazer interesse ou sentimento pessoal; aqui o ponto central é o recebimento de vantagem."
+        },
+        {
+          "text": "peculato",
+          "explanation": "Errada: é apropriação ou desvio de bem público."
+        },
+        {
+          "text": "advocacia administrativa",
+          "explanation": "Errada: é patrocinar interesse privado perante a administração."
+        },
+        {
+          "text": "corrupção passiva",
+          "explanation": "Certa: o servidor solicita ou recebe vantagem em razão da função."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "O particular que oferece dinheiro a um policial para evitar uma autuação pratica, em termos conceituais:",
+      "options": [
+        {
+          "text": "corrupção passiva",
+          "explanation": "Errada: é praticada pelo servidor que recebe."
+        },
+        {
+          "text": "corrupção ativa",
+          "explanation": "Certa: é o ato de oferecer ou prometer vantagem indevida a funcionário público."
+        },
+        {
+          "text": "desacato",
+          "explanation": "Errada: é desrespeitar o funcionário no exercício da função."
+        },
+        {
+          "text": "resistência",
+          "explanation": "Errada: é opor-se à execução de ato legal mediante violência ou ameaça."
+        },
+        {
+          "text": "concussão",
+          "explanation": "Errada: é o servidor exigir a vantagem."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "A publicidade como princípio da administração pública significa:",
+      "options": [
+        {
+          "text": "fazer propaganda pessoal do gestor",
+          "explanation": "Errada: promoção pessoal é vedada."
+        },
+        {
+          "text": "manter todos os atos em segredo",
+          "explanation": "Errada: a regra é a transparência."
+        },
+        {
+          "text": "divulgar dados pessoais de todos",
+          "explanation": "Errada: dados pessoais têm proteção."
+        },
+        {
+          "text": "transparência dos atos administrativos, salvo hipóteses de sigilo previstas em lei",
+          "explanation": "Certa: a regra é a divulgação, e o sigilo é exceção."
+        },
+        {
+          "text": "publicar apenas atos favoráveis",
+          "explanation": "Errada: a transparência abrange todos os atos."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Um servidor com acesso a dados sensíveis consulta, por curiosidade, informações de uma celebridade. Essa conduta é:",
+      "options": [
+        {
+          "text": "antiética e pode gerar responsabilização, pois o acesso deve ter finalidade funcional",
+          "explanation": "Certa: acesso sem finalidade do serviço viola sigilo e privacidade."
+        },
+        {
+          "text": "aceitável, pois o servidor tem a senha",
+          "explanation": "Errada: ter acesso não autoriza uso sem finalidade."
+        },
+        {
+          "text": "aceitável, se não divulgar",
+          "explanation": "Errada: a consulta indevida já é violação."
+        },
+        {
+          "text": "obrigatória, para fins de controle",
+          "explanation": "Errada: não há esse dever."
+        },
+        {
+          "text": "irrelevante, pois dados são públicos",
+          "explanation": "Errada: dados sensíveis são protegidos."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Qual comportamento caracteriza assédio moral no trabalho?",
+      "options": [
+        {
+          "text": "Uma orientação técnica feita com respeito",
+          "explanation": "Errada: a crítica construtiva não é assédio."
+        },
+        {
+          "text": "Uma cobrança de metas razoáveis",
+          "explanation": "Errada: a cobrança legítima não é assédio."
+        },
+        {
+          "text": "Humilhações repetidas e sistemáticas que atingem a dignidade do trabalhador",
+          "explanation": "Certa: a repetição e o objetivo de degradar o ambiente caracterizam o assédio."
+        },
+        {
+          "text": "Uma divergência pontual de opiniões",
+          "explanation": "Errada: a divergência isolada não caracteriza assédio."
+        },
+        {
+          "text": "Elogio público a um colega",
+          "explanation": "Errada: não é conduta degradante."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "O servidor que atrasa deliberadamente um procedimento para prejudicar um desafeto está violando, em primeiro lugar, o princípio da:",
+      "options": [
+        {
+          "text": "anualidade",
+          "explanation": "Errada: não se aplica à situação."
+        },
+        {
+          "text": "especialização",
+          "explanation": "Errada: não é princípio violado."
+        },
+        {
+          "text": "territorialidade",
+          "explanation": "Errada: não se aplica."
+        },
+        {
+          "text": "autotutela",
+          "explanation": "Errada: refere-se à revisão dos próprios atos pela administração."
+        },
+        {
+          "text": "impessoalidade e da moralidade",
+          "explanation": "Certa: age por motivação pessoal, em desvio de finalidade."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "O dever de probidade do servidor público consiste em:",
+      "options": [
+        {
+          "text": "obter vantagens de pequeno valor, desde que discretas",
+          "explanation": "Errada: qualquer vantagem indevida viola a probidade."
+        },
+        {
+          "text": "agir com honestidade e retidão, sem obter vantagens indevidas em razão do cargo",
+          "explanation": "Certa: probidade é honestidade no trato da coisa pública."
+        },
+        {
+          "text": "seguir ordens sem questionar",
+          "explanation": "Errada: probidade não é obediência cega."
+        },
+        {
+          "text": "evitar contato com o público",
+          "explanation": "Errada: não se relaciona."
+        },
+        {
+          "text": "priorizar o benefício dos colegas",
+          "explanation": "Errada: o foco é o interesse público."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Um servidor participa de comissão que escolherá fornecedor, e uma das empresas concorrentes pertence ao seu cunhado. A conduta ética adequada é:",
+      "options": [
+        {
+          "text": "participar normalmente, pois o parentesco é por afinidade",
+          "explanation": "Errada: o vínculo familiar ainda gera suspeita de parcialidade."
+        },
+        {
+          "text": "votar a favor da empresa para evitar desconfiança",
+          "explanation": "Errada: favorece interesse privado."
+        },
+        {
+          "text": "votar contra a empresa para parecer imparcial",
+          "explanation": "Errada: a atuação ainda é parcial; o correto é se afastar."
+        },
+        {
+          "text": "declarar o impedimento e afastar-se da decisão",
+          "explanation": "Certa: o conflito de interesses compromete a imparcialidade, e o dever é comunicar e se afastar."
+        },
+        {
+          "text": "manter o parentesco em sigilo",
+          "explanation": "Errada: ocultar o vínculo agrava o conflito."
+        }
+      ],
+      "correct": "D"
+    }
+  ],
+  "id": "39781e76-c486-4ea3-9951-b229eee95ce1"
+}

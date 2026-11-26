@@ -1,0 +1,533 @@
+{
+  "title": "Geografia, Atualidades e História da PRF — Banco 1",
+  "topic": "Geografia e Atualidades",
+  "description": "Modal rodoviário, rede de transportes, urbanização, economia e história da PRF.",
+  "source": "Itens baseados nas provas PRF 2019 e Curso de Formação 2009 (UnB/CESPE), convertidos para A–E, e questões inéditas",
+  "color": "#5E8C3A",
+  "questions": [
+    {
+      "prompt": "Segundo o texto, qual afirmação sobre o transporte rodoviário no Brasil é sustentada?",
+      "context": {
+        "text": "O Brasil é o país com a maior concentração rodoviária de transporte de cargas e passageiros entre as principais economias mundiais. Segundo dados do Banco Mundial referentes a 2013, 58% do transporte no país é feito por rodovias, contra 53% da Austrália, 50% da China, 43% da Rússia e 8% do Canadá."
+      },
+      "options": [
+        {
+          "text": "O Canadá é o país que mais depende de rodovias.",
+          "explanation": "Errada: o Canadá tem só 8%."
+        },
+        {
+          "text": "O Brasil tem a maior concentração rodoviária de transporte entre as economias citadas.",
+          "explanation": "Certa: 58% é o maior percentual da lista."
+        },
+        {
+          "text": "A China depende mais de rodovias que o Brasil.",
+          "explanation": "Errada: a China tem 50%."
+        },
+        {
+          "text": "A Austrália depende menos de rodovias que a Rússia.",
+          "explanation": "Errada: 53% da Austrália é maior que 43% da Rússia."
+        },
+        {
+          "text": "O Brasil usa pouco o modal rodoviário.",
+          "explanation": "Errada: usa muito."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Em relação ao frete e às grandes distâncias entre regiões produtoras, centros consumidores e portos, assinale a afirmação correta.",
+      "options": [
+        {
+          "text": "Não influenciam o preço dos produtos.",
+          "explanation": "Errada: o frete compõe o custo final."
+        },
+        {
+          "text": "Influenciam só a exportação de minérios.",
+          "explanation": "Errada: afetam produtos agropecuários e industriais."
+        },
+        {
+          "text": "Reduzem o custo dos produtos.",
+          "explanation": "Errada: custos logísticos altos elevam o preço."
+        },
+        {
+          "text": "Esses fatores impactam o preço dos produtos e a competitividade nos mercados nacional e internacional.",
+          "explanation": "Certa: o custo logístico entra no preço final."
+        },
+        {
+          "text": "Afetam apenas o mercado interno.",
+          "explanation": "Errada: afetam também a competitividade externa."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual afirmação sobre a predominância do modal rodoviário no Brasil é mais adequada?",
+      "options": [
+        {
+          "text": "Torna o país vulnerável a custos de combustível e a interrupções nas rodovias, e outros países têm matriz mais diversificada",
+          "explanation": "Certa: matriz concentrada em um modal aumenta riscos e custos."
+        },
+        {
+          "text": "Torna o Brasil mais eficiente que todos os países desenvolvidos",
+          "explanation": "Errada: matriz diversificada costuma reduzir custos para cargas pesadas."
+        },
+        {
+          "text": "É vantagem exclusiva para o transporte de minérios",
+          "explanation": "Errada: minérios usam mais ferrovias."
+        },
+        {
+          "text": "Não tem relação com custos logísticos",
+          "explanation": "Errada: a matriz de transportes afeta custos."
+        },
+        {
+          "text": "Elimina a necessidade de ferrovias e hidrovias",
+          "explanation": "Errada: a diversificação continua desejável."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Segundo a numeração do Plano Nacional de Viação, as rodovias federais radiais, que partem de Brasília, recebem:",
+      "options": [
+        {
+          "text": "numeração iniciada em 1 (BR-1XX)",
+          "explanation": "Errada: são as longitudinais."
+        },
+        {
+          "text": "numeração iniciada em 2 (BR-2XX)",
+          "explanation": "Errada: são as transversais."
+        },
+        {
+          "text": "numeração iniciada em 0 (BR-0XX)",
+          "explanation": "Certa: ex.: BR-010 (Belém–Brasília)."
+        },
+        {
+          "text": "numeração iniciada em 3 (BR-3XX)",
+          "explanation": "Errada: são as diagonais."
+        },
+        {
+          "text": "numeração iniciada em 4 (BR-4XX)",
+          "explanation": "Errada: são as de ligação."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual é a maior rodovia federal do Brasil em extensão?",
+      "options": [
+        {
+          "text": "BR-101",
+          "explanation": "Errada: é a litorânea; também é extensa, mas menor."
+        },
+        {
+          "text": "BR-163",
+          "explanation": "Errada: liga Mato Grosso ao Pará, bem menor."
+        },
+        {
+          "text": "BR-230 (Transamazônica)",
+          "explanation": "Errada: é extensa, mas menor que a BR-116."
+        },
+        {
+          "text": "BR-040",
+          "explanation": "Errada: liga Brasília ao Rio de Janeiro, bem menor."
+        },
+        {
+          "text": "BR-116",
+          "explanation": "Certa: liga o Ceará ao Rio Grande do Sul, com mais de 4.500 km."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "As rodovias federais longitudinais, no Plano Nacional de Viação, orientam-se no sentido:",
+      "options": [
+        {
+          "text": "leste–oeste, com numeração iniciada em 2",
+          "explanation": "Errada: são as transversais."
+        },
+        {
+          "text": "norte–sul, e recebem numeração iniciada em 1",
+          "explanation": "Certa: ex.: BR-116 e BR-101."
+        },
+        {
+          "text": "radial, com numeração iniciada em 0",
+          "explanation": "Errada: são as radiais."
+        },
+        {
+          "text": "diagonal, com numeração iniciada em 3",
+          "explanation": "Errada: são as diagonais."
+        },
+        {
+          "text": "local, com numeração iniciada em 4",
+          "explanation": "Errada: são as de ligação."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "A Polícia Rodoviária Federal tem origem em 1928. Quem criou a então chamada “Polícia de Estradas”?",
+      "options": [
+        {
+          "text": "Getúlio Vargas",
+          "explanation": "Errada: iniciou outro período, a partir de 1930."
+        },
+        {
+          "text": "Juscelino Kubitschek",
+          "explanation": "Errada: governou nos anos 1950, quando foi construída Brasília."
+        },
+        {
+          "text": "Dom Pedro II",
+          "explanation": "Errada: foi imperador no século XIX."
+        },
+        {
+          "text": "O presidente Washington Luís",
+          "explanation": "Certa: foi criada em 1928, quando o país ainda tinha poucas estradas."
+        },
+        {
+          "text": "Eurico Gaspar Dutra",
+          "explanation": "Errada: governou depois de 1945."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A criação da PRF, em 1928, deu-se:",
+      "options": [
+        {
+          "text": "num período em que o Brasil ainda não tinha uma grande malha rodoviária, durante a República Velha",
+          "explanation": "Certa: as grandes rodovias vieram depois."
+        },
+        {
+          "text": "depois da construção das grandes rodovias nacionais",
+          "explanation": "Errada: a malha cresceu depois."
+        },
+        {
+          "text": "durante o Império",
+          "explanation": "Errada: o Império terminou em 1889."
+        },
+        {
+          "text": "já com o nome atual de PRF",
+          "explanation": "Errada: a denominação atual veio depois."
+        },
+        {
+          "text": "sob o regime militar",
+          "explanation": "Errada: o regime militar começou em 1964."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A Constituição de 1988 define a PRF como:",
+      "options": [
+        {
+          "text": "órgão estadual de trânsito urbano",
+          "explanation": "Errada: é federal e rodoviária."
+        },
+        {
+          "text": "guarda municipal",
+          "explanation": "Errada: é outra instituição."
+        },
+        {
+          "text": "órgão permanente, estruturado em carreira, destinado ao patrulhamento ostensivo das rodovias federais",
+          "explanation": "Certa: está prevista no capítulo da segurança pública."
+        },
+        {
+          "text": "órgão de inteligência militar",
+          "explanation": "Errada: não tem natureza militar."
+        },
+        {
+          "text": "polícia civil da União",
+          "explanation": "Errada: não é polícia judiciária."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual dessas atividades se insere entre as atribuições da PRF nas rodovias federais?",
+      "options": [
+        {
+          "text": "Julgar infrações penais",
+          "explanation": "Errada: o julgamento cabe ao Judiciário."
+        },
+        {
+          "text": "Fazer o policiamento ostensivo das ruas das cidades",
+          "explanation": "Errada: o policiamento urbano é de competência estadual e municipal."
+        },
+        {
+          "text": "Legislar sobre trânsito",
+          "explanation": "Errada: legislar é competência do Poder Legislativo."
+        },
+        {
+          "text": "Atuar apenas com educação no trânsito",
+          "explanation": "Errada: as atribuições são mais amplas."
+        },
+        {
+          "text": "O combate ao tráfico de drogas e armas, à exploração sexual de menores, ao trabalho escravo e a crimes ambientais",
+          "explanation": "Certa: a PRF atua na prevenção e repressão a diversos crimes nas rodovias."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Nas primeiras décadas da PRF, qual cidade era a capital do Brasil?",
+      "options": [
+        {
+          "text": "Brasília",
+          "explanation": "Errada: foi inaugurada em 1960."
+        },
+        {
+          "text": "Rio de Janeiro",
+          "explanation": "Certa: foi capital até 1960."
+        },
+        {
+          "text": "São Paulo",
+          "explanation": "Errada: nunca foi capital federal."
+        },
+        {
+          "text": "Salvador",
+          "explanation": "Errada: foi capital colonial até 1763."
+        },
+        {
+          "text": "Belo Horizonte",
+          "explanation": "Errada: é capital de Minas Gerais."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Segundo o processo de modernização iniciado na Era Vargas (1930–1945), qual empresa estatal foi criada nesse governo?",
+      "options": [
+        {
+          "text": "Petrobras",
+          "explanation": "Errada: foi criada em 1953, no segundo governo Vargas."
+        },
+        {
+          "text": "Embraer",
+          "explanation": "Errada: foi criada em 1969."
+        },
+        {
+          "text": "Itaipu Binacional",
+          "explanation": "Errada: foi criada em 1973."
+        },
+        {
+          "text": "Companhia Siderúrgica Nacional (CSN)",
+          "explanation": "Certa: criada em 1941, em Volta Redonda."
+        },
+        {
+          "text": "Telebras",
+          "explanation": "Errada: foi criada em 1972."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Em relação à economia brasileira, assinale a afirmação correta.",
+      "options": [
+        {
+          "text": "O setor de serviços ampliou sua participação no PIB e se relaciona com a complexidade crescente do agronegócio, com serviços de tecnologia, transporte e finanças.",
+          "explanation": "Certa: o agronegócio demanda serviços de apoio em toda a cadeia."
+        },
+        {
+          "text": "O setor de serviços perdeu participação no PIB.",
+          "explanation": "Errada: ganhou participação."
+        },
+        {
+          "text": "O agronegócio é independente de serviços.",
+          "explanation": "Errada: depende de logística, finanças e tecnologia."
+        },
+        {
+          "text": "A indústria é hoje o maior setor do PIB brasileiro.",
+          "explanation": "Errada: o setor de serviços é o maior."
+        },
+        {
+          "text": "O agronegócio não tem importância econômica.",
+          "explanation": "Errada: é estratégico."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Segundo a noção de território de Milton Santos, na atualidade o território:",
+      "options": [
+        {
+          "text": "limita-se a espaços vizinhos contíguos",
+          "explanation": "Errada: o autor amplia o conceito."
+        },
+        {
+          "text": "é determinado somente pelo clima",
+          "explanation": "Errada: o conceito envolve relações sociais."
+        },
+        {
+          "text": "extrapola a ideia de espaços contíguos e inclui redes formadas por pontos distantes, ligados por processos sociais",
+          "explanation": "Certa: o território é visto como rede, além da região contígua."
+        },
+        {
+          "text": "não se relaciona com a economia",
+          "explanation": "Errada: o espaço econômico é organizado em redes."
+        },
+        {
+          "text": "existe apenas dentro das fronteiras nacionais",
+          "explanation": "Errada: as redes ultrapassam fronteiras."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "A globalização econômica, em geral, tende a:",
+      "options": [
+        {
+          "text": "eliminar automaticamente as desigualdades regionais",
+          "explanation": "Errada: o processo costuma ser seletivo."
+        },
+        {
+          "text": "distribuir investimentos igualmente",
+          "explanation": "Errada: investimentos são concentrados."
+        },
+        {
+          "text": "reduzir o fluxo de informações",
+          "explanation": "Errada: o fluxo de informações aumenta."
+        },
+        {
+          "text": "isolar as economias locais",
+          "explanation": "Errada: aumenta a interdependência."
+        },
+        {
+          "text": "concentrar investimentos em regiões selecionadas, o que pode ampliar desigualdades regionais",
+          "explanation": "Certa: o capital se dirige a lugares com melhores condições."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Atualmente, a população brasileira vive predominantemente:",
+      "options": [
+        {
+          "text": "em áreas rurais",
+          "explanation": "Errada: a maioria vive em cidades."
+        },
+        {
+          "text": "em áreas urbanas, com taxa de urbanização superior a 80%",
+          "explanation": "Certa: o processo de urbanização se acelerou a partir de meados do século XX."
+        },
+        {
+          "text": "em áreas de fronteira",
+          "explanation": "Errada: não é a concentração principal."
+        },
+        {
+          "text": "distribuída igualmente entre campo e cidade",
+          "explanation": "Errada: predomina a população urbana."
+        },
+        {
+          "text": "apenas em capitais",
+          "explanation": "Errada: inclui cidades médias e pequenas."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "A urbanização brasileira do século XX teve como impulso:",
+      "options": [
+        {
+          "text": "o fim do transporte rodoviário",
+          "explanation": "Errada: o rodoviarismo se expandiu."
+        },
+        {
+          "text": "a ausência de industrialização",
+          "explanation": "Errada: a industrialização foi motor."
+        },
+        {
+          "text": "a redução do emprego urbano",
+          "explanation": "Errada: a oferta urbana atraiu migrantes."
+        },
+        {
+          "text": "a industrialização e as transformações econômicas posteriores à Segunda Guerra, com migração do campo para a cidade",
+          "explanation": "Certa: o êxodo rural alimentou o crescimento urbano."
+        },
+        {
+          "text": "a proibição da migração interna",
+          "explanation": "Errada: a migração foi intensa."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual é uma característica do modelo de desenvolvimento adotado após o golpe de 1964?",
+      "options": [
+        {
+          "text": "Estímulo à industrialização e à expansão de infraestrutura, com forte presença do Estado e abertura ao capital externo",
+          "explanation": "Certa: marcou o período do “milagre econômico”."
+        },
+        {
+          "text": "Fechamento total da economia",
+          "explanation": "Errada: houve abertura ao capital externo."
+        },
+        {
+          "text": "Ausência do Estado na economia",
+          "explanation": "Errada: o Estado foi muito presente."
+        },
+        {
+          "text": "Foco exclusivo na agricultura",
+          "explanation": "Errada: a industrialização foi prioridade."
+        },
+        {
+          "text": "Fim das obras de infraestrutura",
+          "explanation": "Errada: houve grandes obras, como a Transamazônica."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A Rodovia Transamazônica (BR-230) foi construída com objetivo de:",
+      "options": [
+        {
+          "text": "ligar apenas as capitais do Sul",
+          "explanation": "Errada: corta o Norte e o Nordeste."
+        },
+        {
+          "text": "substituir ferrovias do Sudeste",
+          "explanation": "Errada: não era esse o objetivo."
+        },
+        {
+          "text": "integrar a Amazônia ao restante do país e estimular a ocupação, nos anos 1970",
+          "explanation": "Certa: foi um dos projetos do período militar."
+        },
+        {
+          "text": "escoar produtos pelos portos do Sul",
+          "explanation": "Errada: sua função era integração e ocupação."
+        },
+        {
+          "text": "ser exclusivamente turística",
+          "explanation": "Errada: tinha foco geopolítico e de integração."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Para cargas pesadas transportadas a longas distâncias, como minérios e grãos, quais modais costumam ter menor custo por tonelada-quilômetro que o rodoviário?",
+      "options": [
+        {
+          "text": "Aéreo",
+          "explanation": "Errada: é o mais caro por tonelada-quilômetro."
+        },
+        {
+          "text": "Dutoviário para passageiros",
+          "explanation": "Errada: dutos movimentam fluidos, não passageiros."
+        },
+        {
+          "text": "Somente o rodoviário",
+          "explanation": "Errada: para esses casos tende a ser mais caro."
+        },
+        {
+          "text": "Nenhum, pois todos custam o mesmo",
+          "explanation": "Errada: os custos variam entre modais."
+        },
+        {
+          "text": "Ferroviário e hidroviário",
+          "explanation": "Certa: ganham em escala e eficiência energética em grandes volumes e distâncias."
+        }
+      ],
+      "correct": "E"
+    }
+  ],
+  "id": "e9fd137d-6c3b-4e15-a3cb-2a34352f8b31"
+}

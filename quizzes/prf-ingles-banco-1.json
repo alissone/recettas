@@ -1,0 +1,551 @@
+{
+  "title": "Inglês — Banco PRF 1",
+  "topic": "Inglês",
+  "description": "Interpretação do texto sobre a crise de energia no Texas e gramática básica.",
+  "source": "Itens baseados na prova PRF 2021 (CEBRASPE), convertidos para A–E, e questões inéditas",
+  "color": "#C4513A",
+  "questions": [
+    {
+      "prompt": "According to the text, the extreme cold in Texas:",
+      "context": {
+        "text": "A deep freeze this week in the Lone Star state, which relies on electricity to heat many homes, is causing power demand to skyrocket. At the same time, natural gas, coal, wind and nuclear facilities in Texas have been knocked offline by the unthinkably low temperatures."
+      },
+      "options": [
+        {
+          "text": "had no effect on power plants",
+          "explanation": "Errada: facilities were knocked offline."
+        },
+        {
+          "text": "only affected wind turbines",
+          "explanation": "Errada: gas, coal and nuclear facilities were also affected."
+        },
+        {
+          "text": "caused problems for the state’s energy system",
+          "explanation": "Certa: power demand rose while several energy facilities were knocked offline."
+        },
+        {
+          "text": "reduced demand for electricity",
+          "explanation": "Errada: demand skyrocketed."
+        },
+        {
+          "text": "improved production of natural gas",
+          "explanation": "Errada: gas facilities were knocked offline."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "In the last paragraph, “That” in “That means that…” refers to:",
+      "context": {
+        "text": "The energy crisis in Texas raises also questions about the nature of the state’s deregulated and decentralized electric grid. Unlike other states, Texas has made a conscious decision to isolate its grid from the rest of the country. That means that when things are running smoothly, Texas can’t export excess power to neighboring states. And in the current crisis, it can’t import power either."
+      },
+      "options": [
+        {
+          "text": "the wind turbines freezing",
+          "explanation": "Errada: wind turbines are not mentioned in the paragraph."
+        },
+        {
+          "text": "the energy exports to Florida",
+          "explanation": "Errada: Florida is not mentioned in the paragraph."
+        },
+        {
+          "text": "the cold weather in Iowa",
+          "explanation": "Errada: Iowa is not mentioned in the paragraph."
+        },
+        {
+          "text": "the experts’ opinion",
+          "explanation": "Errada: experts are not mentioned in the paragraph."
+        },
+        {
+          "text": "Texas’s decision to isolate its grid from the rest of the country",
+          "explanation": "Certa: the pronoun summarizes the previous sentence."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Which statement is supported by the text?",
+      "context": {
+        "text": "The energy crisis in Texas raises also questions about the nature of the state’s deregulated and decentralized electric grid. Unlike other states, Texas has made a conscious decision to isolate its grid from the rest of the country. That means that when things are running smoothly, Texas can’t export excess power to neighboring states. And in the current crisis, it can’t import power either."
+      },
+      "options": [
+        {
+          "text": "Texas imported power during the crisis.",
+          "explanation": "Errada: the text says it can’t import power."
+        },
+        {
+          "text": "Texas could not import power from other states during the crisis.",
+          "explanation": "Certa: the isolated grid prevents both export and import."
+        },
+        {
+          "text": "Texas exports power only in a crisis.",
+          "explanation": "Errada: it can’t export even when things run smoothly."
+        },
+        {
+          "text": "Texas shares its grid with neighboring states.",
+          "explanation": "Errada: it chose to isolate its grid."
+        },
+        {
+          "text": "The grid in Texas is fully regulated.",
+          "explanation": "Errada: the grid is described as deregulated."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "About Texas’s electricity production, the text says that:",
+      "context": {
+        "text": "It’s striking that these power outages are happening in a state with abundant energy resources. Texas produces more electricity than any other US state — generating almost twice as much as Florida, the next-closest, according to federal statistics."
+      },
+      "options": [
+        {
+          "text": "Florida and Texas produce similar amounts",
+          "explanation": "Errada: Texas generates almost twice as much."
+        },
+        {
+          "text": "Texas produces less than Florida",
+          "explanation": "Errada: Texas produces more."
+        },
+        {
+          "text": "Texas stopped producing electricity before the crisis",
+          "explanation": "Errada: it was producing, but the crisis reduced output."
+        },
+        {
+          "text": "it is the highest among US states, almost twice as high as Florida’s",
+          "explanation": "Certa: Florida is the next-closest."
+        },
+        {
+          "text": "Florida is the largest producer in the country",
+          "explanation": "Errada: Texas is the largest."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "The text suggests that wind power:",
+      "context": {
+        "text": "Even though other places with colder weather (like Iowa and Denmark) rely on wind for even larger shares of power, experts said the turbines in Texas were not winterized for the unexpected freeze."
+      },
+      "options": [
+        {
+          "text": "works well in other cold places, like Iowa and Denmark",
+          "explanation": "Certa: they rely on wind for larger shares of power."
+        },
+        {
+          "text": "never works in cold weather",
+          "explanation": "Errada: other cold places use it well."
+        },
+        {
+          "text": "is not used in Denmark",
+          "explanation": "Errada: Denmark relies on wind."
+        },
+        {
+          "text": "is the only source that failed",
+          "explanation": "Errada: other sources also failed."
+        },
+        {
+          "text": "is more popular in Texas than anywhere else",
+          "explanation": "Errada: Iowa and Denmark rely on wind for larger shares."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "In the sentence, “Yet” could be replaced by “Even so” without changing the meaning?",
+      "context": {
+        "text": "Natural gas and coal-fired power plants need water to stay online. Yet those water facilities froze in the cold temperatures and others lost access to the electricity they require to operate."
+      },
+      "options": [
+        {
+          "text": "No, because “Even so” expresses cause",
+          "explanation": "Errada: “Even so” does not express cause."
+        },
+        {
+          "text": "No, because “Yet” expresses addition",
+          "explanation": "Errada: “Yet” is contrastive here."
+        },
+        {
+          "text": "Yes, because both express contrast with the previous idea",
+          "explanation": "Certa: “Yet” and “Even so” are adversative/concessive connectors here."
+        },
+        {
+          "text": "No, because “Even so” is used only in questions",
+          "explanation": "Errada: it is not restricted to questions."
+        },
+        {
+          "text": "Yes, because both mean “therefore”",
+          "explanation": "Errada: “therefore” expresses consequence."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Which of the following is the best reading of “the focus on wind is a red herring”?",
+      "context": {
+        "text": "“In terms of the blame game, the focus on wind is a red herring. It’s more of a political issue than what is causing the power problems on the grid,” said Dan Cohan, associate professor of environmental engineering."
+      },
+      "options": [
+        {
+          "text": "Wind is the main cause of the problems",
+          "explanation": "Errada: the speaker says the opposite."
+        },
+        {
+          "text": "Wind is good for fish farms",
+          "explanation": "Errada: it is an idiom, not literal."
+        },
+        {
+          "text": "The blame game is over",
+          "explanation": "Errada: the speaker still discusses blame."
+        },
+        {
+          "text": "Wind turbines are red",
+          "explanation": "Errada: it is an idiom."
+        },
+        {
+          "text": "The attention given to wind distracts from the real causes",
+          "explanation": "Certa: a “red herring” is a misleading clue."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Choose the correct option: “She ___ in Brasília since 2015.”",
+      "options": [
+        {
+          "text": "lived",
+          "explanation": "Errada: simple past does not fit “since” with an ongoing situation."
+        },
+        {
+          "text": "has lived",
+          "explanation": "Certa: present perfect with “since” links past to present."
+        },
+        {
+          "text": "is living",
+          "explanation": "Errada: not natural with “since”."
+        },
+        {
+          "text": "lives",
+          "explanation": "Errada: simple present does not express the duration with “since”."
+        },
+        {
+          "text": "was lived",
+          "explanation": "Errada: wrong passive form."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Choose the correct option: “If the road ___ icy, the officer would close it.”",
+      "options": [
+        {
+          "text": "is",
+          "explanation": "Errada: first conditional would use “will close”."
+        },
+        {
+          "text": "will be",
+          "explanation": "Errada: “will” does not appear in the if-clause."
+        },
+        {
+          "text": "would be",
+          "explanation": "Errada: “would” does not appear in the if-clause."
+        },
+        {
+          "text": "were",
+          "explanation": "Certa: second conditional uses simple past subjunctive “were”."
+        },
+        {
+          "text": "been",
+          "explanation": "Errada: incomplete verb form."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Choose the correct option: “The driver said that he ___ the speed limit.”",
+      "options": [
+        {
+          "text": "had not noticed",
+          "explanation": "Certa: reported speech after “said” shifts present perfect/past to past perfect."
+        },
+        {
+          "text": "has not noticed",
+          "explanation": "Errada: present perfect does not fit reported past."
+        },
+        {
+          "text": "does not notice",
+          "explanation": "Errada: wrong tense for the situation."
+        },
+        {
+          "text": "will not notice",
+          "explanation": "Errada: future does not fit."
+        },
+        {
+          "text": "not noticed",
+          "explanation": "Errada: missing auxiliary."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Choose the correct passive form: “The police seized the cargo.”",
+      "options": [
+        {
+          "text": "The cargo seized the police.",
+          "explanation": "Errada: changes the meaning."
+        },
+        {
+          "text": "The cargo is seized by the police.",
+          "explanation": "Errada: changes the tense to present."
+        },
+        {
+          "text": "The cargo was seized by the police.",
+          "explanation": "Certa: past simple passive = was/were + past participle."
+        },
+        {
+          "text": "The cargo was seizing by the police.",
+          "explanation": "Errada: wrong form of the verb."
+        },
+        {
+          "text": "The cargo has seize by the police.",
+          "explanation": "Errada: wrong auxiliary and participle."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Choose the correct option: “The officer ___ I met yesterday works at the checkpoint.”",
+      "options": [
+        {
+          "text": "which",
+          "explanation": "Errada: “which” is for things."
+        },
+        {
+          "text": "whose",
+          "explanation": "Errada: “whose” shows possession."
+        },
+        {
+          "text": "where",
+          "explanation": "Errada: “where” refers to places."
+        },
+        {
+          "text": "what",
+          "explanation": "Errada: “what” is not a relative pronoun here."
+        },
+        {
+          "text": "whom (or who)",
+          "explanation": "Certa: relative pronoun for a person."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Which of the following is a false cognate (“falso cognato”) in English and Portuguese?",
+      "options": [
+        {
+          "text": "“animal” and “animal”",
+          "explanation": "Errada: it is a true cognate."
+        },
+        {
+          "text": "“actually” does not mean “atualmente” (it means “na verdade”)",
+          "explanation": "Certa: “atualmente” is “currently”."
+        },
+        {
+          "text": "“hospital” and “hospital”",
+          "explanation": "Errada: it is a true cognate."
+        },
+        {
+          "text": "“family” and “família”",
+          "explanation": "Errada: it is a true cognate."
+        },
+        {
+          "text": "“police” and “polícia”",
+          "explanation": "Errada: it is a true cognate."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "What does “pretend” mean in English?",
+      "options": [
+        {
+          "text": "Pretender",
+          "explanation": "Errada: “pretender” translates as “intend”."
+        },
+        {
+          "text": "Prender",
+          "explanation": "Errada: it would be “arrest” or “fasten”."
+        },
+        {
+          "text": "Pretextar",
+          "explanation": "Errada: not the meaning."
+        },
+        {
+          "text": "Fingir",
+          "explanation": "Certa: “to pretend” is to act as if something were true."
+        },
+        {
+          "text": "Presumir",
+          "explanation": "Errada: it would be “assume”."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Choose the best preposition: “The truck is parked ___ the entrance of the station.”",
+      "options": [
+        {
+          "text": "at",
+          "explanation": "Certa: “at” is used for specific points or places."
+        },
+        {
+          "text": "on",
+          "explanation": "Errada: used for surfaces."
+        },
+        {
+          "text": "in",
+          "explanation": "Errada: used for enclosed spaces."
+        },
+        {
+          "text": "of",
+          "explanation": "Errada: does not indicate position."
+        },
+        {
+          "text": "by of",
+          "explanation": "Errada: not a valid preposition."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Choose the correct comparative: “This highway is ___ than the old one.”",
+      "options": [
+        {
+          "text": "more safe",
+          "explanation": "Errada: non-standard for short adjectives."
+        },
+        {
+          "text": "most safe",
+          "explanation": "Errada: superlative form."
+        },
+        {
+          "text": "safer",
+          "explanation": "Certa: one-syllable adjectives take -er."
+        },
+        {
+          "text": "safe",
+          "explanation": "Errada: positive form does not fit “than”."
+        },
+        {
+          "text": "more safer",
+          "explanation": "Errada: double comparative."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Choose the correct modal: “Drivers ___ wear seat belts. It is mandatory.”",
+      "options": [
+        {
+          "text": "might",
+          "explanation": "Errada: expresses possibility."
+        },
+        {
+          "text": "could",
+          "explanation": "Errada: expresses ability or possibility."
+        },
+        {
+          "text": "may not",
+          "explanation": "Errada: would express prohibition or possibility."
+        },
+        {
+          "text": "would",
+          "explanation": "Errada: expresses a hypothetical situation."
+        },
+        {
+          "text": "must",
+          "explanation": "Certa: “must” expresses obligation."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "In “Despite the rain, the patrol continued”, “Despite” introduces an idea of:",
+      "options": [
+        {
+          "text": "cause",
+          "explanation": "Errada: the rain is not presented as a cause."
+        },
+        {
+          "text": "contrast (concession)",
+          "explanation": "Certa: it presents a fact that does not prevent the result."
+        },
+        {
+          "text": "purpose",
+          "explanation": "Errada: the rain is not a goal."
+        },
+        {
+          "text": "condition",
+          "explanation": "Errada: no hypothetical condition."
+        },
+        {
+          "text": "addition",
+          "explanation": "Errada: it contrasts rather than adds."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Which sentence is correct?",
+      "options": [
+        {
+          "text": "There is many cars on the road.",
+          "explanation": "Errada: “is” does not agree with a plural noun."
+        },
+        {
+          "text": "They are many cars on the road.",
+          "explanation": "Errada: “There are” is needed to express existence."
+        },
+        {
+          "text": "It have many cars on the road.",
+          "explanation": "Errada: wrong structure."
+        },
+        {
+          "text": "There are many cars on the road.",
+          "explanation": "Certa: “There are” agrees with the plural “cars”."
+        },
+        {
+          "text": "There be many car on road.",
+          "explanation": "Errada: wrong verb form and missing articles."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "In “The police seized the cargo”, the word “seized” is closest in meaning to:",
+      "options": [
+        {
+          "text": "confiscated",
+          "explanation": "Certa: “to seize” is to take possession of something by authority."
+        },
+        {
+          "text": "delivered",
+          "explanation": "Errada: “delivered” means to bring to someone."
+        },
+        {
+          "text": "lost",
+          "explanation": "Errada: “lost” means no longer having something."
+        },
+        {
+          "text": "bought",
+          "explanation": "Errada: “bought” implies a purchase."
+        },
+        {
+          "text": "painted",
+          "explanation": "Errada: unrelated to the meaning."
+        }
+      ],
+      "correct": "A"
+    }
+  ],
+  "id": "2825ca91-a6a1-489b-b728-1a9434a72fd9"
+}

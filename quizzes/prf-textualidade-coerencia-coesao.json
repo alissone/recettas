@@ -1,0 +1,1065 @@
+{
+  "title": "Coerência e Coesão — Textualidade",
+  "topic": "Língua Portuguesa",
+  "description": "Coerência, coesão referencial, lexical e sequencial, e relações lógico-semânticas dos conectivos.",
+  "source": "Baseado no slide 1.2 (Textualidade) e na ficha de estudo correspondente",
+  "color": "#3F7CAC",
+  "questions": [
+    {
+      "prompt": "A coerência textual refere-se principalmente:",
+      "options": [
+        {
+          "text": "à articulação gramatical entre palavras, orações e parágrafos",
+          "explanation": "Errada: descreve a coesão, que é formal."
+        },
+        {
+          "text": "à lógica e ao sentido global do texto, sem contradições e adequado ao contexto",
+          "explanation": "Certa: é o nível do sentido, da lógica e da adequação ao mundo e à situação."
+        },
+        {
+          "text": "ao uso obrigatório de conectivos em todas as frases",
+          "explanation": "Errada: conectivos ajudam, mas não garantem coerência."
+        },
+        {
+          "text": "à ausência de erros de ortografia e de pontuação",
+          "explanation": "Errada: correção gramatical não é coerência."
+        },
+        {
+          "text": "ao tamanho dos parágrafos e à quantidade de adjetivos",
+          "explanation": "Errada: forma e extensão não definem coerência."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "A coesão textual refere-se principalmente:",
+      "options": [
+        {
+          "text": "à lógica e ao sentido global do texto",
+          "explanation": "Errada: descreve a coerência."
+        },
+        {
+          "text": "à adequação do texto ao conhecimento de mundo do leitor",
+          "explanation": "Errada: é parte da coerência."
+        },
+        {
+          "text": "à ausência de contradições entre as ideias",
+          "explanation": "Errada: é a não contradição, regra de coerência."
+        },
+        {
+          "text": "aos laços formais e gramaticais entre palavras, orações e parágrafos",
+          "explanation": "Certa: pronomes, conjunções e repetições estabelecem a ligação formal."
+        },
+        {
+          "text": "à escolha do gênero e do suporte do texto",
+          "explanation": "Errada: gênero e suporte são outra discussão."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Um texto que usa bem conectivos e pronomes, mas apresenta ideias contraditórias, é:",
+      "options": [
+        {
+          "text": "coeso, mas incoerente",
+          "explanation": "Certa: a ligação formal existe, mas o sentido não se sustenta."
+        },
+        {
+          "text": "coerente, mas sem coesão",
+          "explanation": "Errada: faltaria coesão, e ela está presente."
+        },
+        {
+          "text": "coeso e coerente",
+          "explanation": "Errada: contradições comprometem a coerência."
+        },
+        {
+          "text": "nem coeso nem coerente",
+          "explanation": "Errada: os conectivos e pronomes corretos garantem a coesão."
+        },
+        {
+          "text": "coerente por ter conectivos corretos",
+          "explanation": "Errada: conectivo correto não cria coerência."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Um texto com poucos conectivos, mas cujas ideias se encadeiam de modo lógico, pode ser:",
+      "options": [
+        {
+          "text": "incoerente, pois coesão é condição obrigatória da coerência",
+          "explanation": "Errada: coesão e coerência são independentes em parte."
+        },
+        {
+          "text": "sempre incorreto, pois falta pontuação",
+          "explanation": "Errada: pontuação não é o critério."
+        },
+        {
+          "text": "coerente, ainda que com pouca coesão explícita",
+          "explanation": "Certa: o sentido pode ser recuperado pelo leitor mesmo sem marcas formais."
+        },
+        {
+          "text": "coeso, pois a lógica garante a coesão",
+          "explanation": "Errada: coesão é formal."
+        },
+        {
+          "text": "sem sentido, porque textos precisam ter conectivos",
+          "explanation": "Errada: o sentido pode vir implícito."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual das metarregras de coerência de Charolles exige que o texto traga informações novas ao longo do desenvolvimento?",
+      "options": [
+        {
+          "text": "repetição",
+          "explanation": "Errada: exige elementos recorrentes que liguem as partes."
+        },
+        {
+          "text": "não contradição",
+          "explanation": "Errada: exige que nenhuma parte contradiga outra."
+        },
+        {
+          "text": "relação",
+          "explanation": "Errada: exige que os fatos expressos sejam congruentes no mundo representado."
+        },
+        {
+          "text": "ordenação",
+          "explanation": "Errada: não é uma das quatro metarregras clássicas."
+        },
+        {
+          "text": "progressão",
+          "explanation": "Certa: o texto deve avançar, acrescentando informação nova."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "A metarregra da não contradição determina que:",
+      "options": [
+        {
+          "text": "o texto retome elementos já ditos",
+          "explanation": "Errada: é a regra da repetição."
+        },
+        {
+          "text": "nenhum elemento do texto contrarie outro ou o conhecimento de mundo",
+          "explanation": "Certa: contradições internas ou externas rompem a coerência."
+        },
+        {
+          "text": "o texto acrescente informações novas",
+          "explanation": "Errada: é a progressão."
+        },
+        {
+          "text": "os fatos sejam compatíveis entre si no mundo representado",
+          "explanation": "Errada: é a relação."
+        },
+        {
+          "text": "o texto use sempre conectivos adversativos",
+          "explanation": "Errada: não há esse requisito."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual afirmação ilustra incoerência por contradição?",
+      "options": [
+        {
+          "text": "“O laboratório estava vazio; por isso, ninguém usou os equipamentos.”",
+          "explanation": "Errada: relação lógica de causa e consequência."
+        },
+        {
+          "text": "“O laboratório estava cheio; por isso, foi preciso fazer fila.”",
+          "explanation": "Errada: causa e consequência coerentes."
+        },
+        {
+          "text": "“O laboratório estava vazio, mas ainda assim estava limpo.”",
+          "explanation": "Errada: sem contradição."
+        },
+        {
+          "text": "“O laboratório estava vazio; por isso, vários técnicos usaram os equipamentos ao mesmo tempo.”",
+          "explanation": "Certa: vazio e uso simultâneo por vários técnicos se contradizem."
+        },
+        {
+          "text": "“O laboratório fechou; portanto, os técnicos saíram.”",
+          "explanation": "Errada: encadeamento lógico."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual par de elementos exemplifica coesão referencial?",
+      "options": [
+        {
+          "text": "pronome e o termo que ele retoma",
+          "explanation": "Certa: o pronome retoma um termo anterior (ou antecipa um posterior)."
+        },
+        {
+          "text": "conectivo e a oração que ele liga",
+          "explanation": "Errada: ligação entre orações é sequencial."
+        },
+        {
+          "text": "verbo e seu complemento",
+          "explanation": "Errada: é relação sintática, não referencial."
+        },
+        {
+          "text": "título e o número de parágrafos",
+          "explanation": "Errada: não é recurso coesivo."
+        },
+        {
+          "text": "adjetivo e o substantivo que ele qualifica",
+          "explanation": "Errada: é concordância."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Em “Mariana chegou cedo. Ela abriu a loja”, o pronome “ela” estabelece coesão:",
+      "options": [
+        {
+          "text": "sequencial, por indicar tempo",
+          "explanation": "Errada: não marca sequência."
+        },
+        {
+          "text": "lexical, por repetir a palavra",
+          "explanation": "Errada: há pronome, não repetição de palavra."
+        },
+        {
+          "text": "referencial, por retomar “Mariana”",
+          "explanation": "Certa: é anáfora pronominal."
+        },
+        {
+          "text": "por elipse, pois o termo foi omitido",
+          "explanation": "Errada: há pronome explícito."
+        },
+        {
+          "text": "por catáfora, pois antecipa o nome",
+          "explanation": "Errada: o nome já apareceu, é anáfora."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Em “Eis o que ele disse: o prazo termina hoje”, o termo “o que” funciona como:",
+      "options": [
+        {
+          "text": "anáfora, pois retoma algo já dito",
+          "explanation": "Errada: a informação vem depois."
+        },
+        {
+          "text": "elipse, pois o termo foi omitido",
+          "explanation": "Errada: o termo está presente."
+        },
+        {
+          "text": "conectivo de oposição",
+          "explanation": "Errada: não opõe ideias."
+        },
+        {
+          "text": "repetição lexical",
+          "explanation": "Errada: não há repetição de palavra."
+        },
+        {
+          "text": "catáfora, pois antecipa o que será dito",
+          "explanation": "Certa: aponta para algo que vem a seguir."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Em “Os alunos chegaram. Ø Sentaram-se”, a ausência de sujeito explícito caracteriza:",
+      "options": [
+        {
+          "text": "catáfora",
+          "explanation": "Errada: não antecipa nada."
+        },
+        {
+          "text": "elipse",
+          "explanation": "Certa: o sujeito é omitido por ser recuperável no contexto."
+        },
+        {
+          "text": "repetição lexical",
+          "explanation": "Errada: nada se repete."
+        },
+        {
+          "text": "hiperonímia",
+          "explanation": "Errada: não há termo mais geral."
+        },
+        {
+          "text": "conector sequencial",
+          "explanation": "Errada: não há conectivo."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Em “O goleiro defendeu o pênalti. O jogador, decepcionado, saiu de campo”, o termo “o jogador” retoma o termo anterior por:",
+      "options": [
+        {
+          "text": "elipse do sujeito",
+          "explanation": "Errada: há expressão explícita."
+        },
+        {
+          "text": "pronome pessoal",
+          "explanation": "Errada: não é pronome."
+        },
+        {
+          "text": "conector de conclusão",
+          "explanation": "Errada: não há conectivo."
+        },
+        {
+          "text": "substituição por termo diferente, mas que mantém a referência no contexto",
+          "explanation": "Certa: a retomada por expressão nominal é recurso lexical."
+        },
+        {
+          "text": "repetição idêntica da palavra",
+          "explanation": "Errada: “goleiro” e “jogador” são palavras diferentes; “jogador” não repete “goleiro”."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Em “Comprei maçãs, laranjas e uvas. As frutas estavam frescas”, “as frutas” é:",
+      "options": [
+        {
+          "text": "hiperônimo que retoma os itens citados",
+          "explanation": "Certa: termo geral que engloba as frutas listadas."
+        },
+        {
+          "text": "hipônimo que especifica uma só fruta",
+          "explanation": "Errada: seria o caso de “maçã”."
+        },
+        {
+          "text": "pronome relativo",
+          "explanation": "Errada: não é pronome."
+        },
+        {
+          "text": "conector causal",
+          "explanation": "Errada: não liga orações."
+        },
+        {
+          "text": "elipse nominal",
+          "explanation": "Errada: o termo está explícito."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A repetição proposital de uma palavra-chave, como recurso, é coesão:",
+      "options": [
+        {
+          "text": "referencial pronominal",
+          "explanation": "Errada: não envolve pronome."
+        },
+        {
+          "text": "sequencial por conjunção",
+          "explanation": "Errada: não envolve conjunção."
+        },
+        {
+          "text": "lexical, por reiteração",
+          "explanation": "Certa: repetir termos é recurso lexical, usado com moderação."
+        },
+        {
+          "text": "por elipse",
+          "explanation": "Errada: nada é omitido."
+        },
+        {
+          "text": "sempre errada, por ser pleonástica",
+          "explanation": "Errada: bem usada, a repetição é válida."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "A coesão sequencial é realizada principalmente por:",
+      "options": [
+        {
+          "text": "pronomes que retomam termos anteriores",
+          "explanation": "Errada: é coesão referencial."
+        },
+        {
+          "text": "sinônimos e hiperônimos",
+          "explanation": "Errada: é coesão lexical."
+        },
+        {
+          "text": "omissão de termos recuperáveis",
+          "explanation": "Errada: é elipse, referencial."
+        },
+        {
+          "text": "títulos e subtítulos do texto",
+          "explanation": "Errada: são recursos de organização, não de coesão sequencial."
+        },
+        {
+          "text": "conjunções e marcadores lógicos e temporais que fazem o texto avançar",
+          "explanation": "Certa: ligam partes e organizam a progressão."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Em “Estudou muito; contudo, não passou”, “contudo” expressa:",
+      "options": [
+        {
+          "text": "causa",
+          "explanation": "Errada: não explica a razão do resultado."
+        },
+        {
+          "text": "adversidade",
+          "explanation": "Certa: opõe o esforço ao resultado."
+        },
+        {
+          "text": "conclusão",
+          "explanation": "Errada: não conclui o raciocínio."
+        },
+        {
+          "text": "explicação",
+          "explanation": "Errada: não justifica a primeira oração."
+        },
+        {
+          "text": "finalidade",
+          "explanation": "Errada: não indica objetivo."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual conectivo é de adversidade?",
+      "options": [
+        {
+          "text": "portanto",
+          "explanation": "Errada: é conclusivo."
+        },
+        {
+          "text": "porque",
+          "explanation": "Errada: é causal/explicativo."
+        },
+        {
+          "text": "conforme",
+          "explanation": "Errada: expressa conformidade."
+        },
+        {
+          "text": "todavia",
+          "explanation": "Certa: opõe ideias."
+        },
+        {
+          "text": "à medida que",
+          "explanation": "Errada: expressa proporção."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Em “Embora estivesse cansado, concluiu o trabalho”, “embora” expressa:",
+      "options": [
+        {
+          "text": "concessão",
+          "explanation": "Certa: o cansaço seria obstáculo, mas não impediu o resultado."
+        },
+        {
+          "text": "adversidade",
+          "explanation": "Errada: a concessão subordina; a adversidade coordena, como em “estava cansado, mas concluiu”."
+        },
+        {
+          "text": "causa",
+          "explanation": "Errada: o cansaço não explica a conclusão."
+        },
+        {
+          "text": "conclusão",
+          "explanation": "Errada: não conclui nada."
+        },
+        {
+          "text": "condição",
+          "explanation": "Errada: não há hipótese a cumprir."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Em “Está chovendo; logo, levarei o guarda-chuva”, “logo” expressa:",
+      "options": [
+        {
+          "text": "causa",
+          "explanation": "Errada: a causa seria a chuva, e “logo” não a introduz."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Errada: não há obstáculo."
+        },
+        {
+          "text": "conclusão",
+          "explanation": "Certa: introduz a consequência esperada."
+        },
+        {
+          "text": "proporção",
+          "explanation": "Errada: não relaciona intensidade."
+        },
+        {
+          "text": "finalidade",
+          "explanation": "Errada: não indica propósito."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Em “Não saia, pois está chovendo”, a conjunção “pois” expressa:",
+      "options": [
+        {
+          "text": "conclusão",
+          "explanation": "Errada: o “pois” conclusivo vem depois do verbo, como em “Chove; devo, pois, ficar”."
+        },
+        {
+          "text": "adversidade",
+          "explanation": "Errada: não opõe ideias."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Errada: não apresenta obstáculo."
+        },
+        {
+          "text": "finalidade",
+          "explanation": "Errada: não indica objetivo."
+        },
+        {
+          "text": "explicação",
+          "explanation": "Certa: justifica a ordem dada, na oração anterior."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Em “O trem atrasou porque houve um acidente”, “porque” expressa:",
+      "options": [
+        {
+          "text": "conclusão",
+          "explanation": "Errada: não conclui."
+        },
+        {
+          "text": "causa",
+          "explanation": "Certa: apresenta o motivo do atraso."
+        },
+        {
+          "text": "condição",
+          "explanation": "Errada: não há hipótese."
+        },
+        {
+          "text": "comparação",
+          "explanation": "Errada: não compara."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Errada: não há obstáculo."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Em “Se estudar, passará”, o conectivo “se” expressa:",
+      "options": [
+        {
+          "text": "causa",
+          "explanation": "Errada: não apresenta motivo."
+        },
+        {
+          "text": "tempo",
+          "explanation": "Errada: não situa o fato no tempo."
+        },
+        {
+          "text": "adversidade",
+          "explanation": "Errada: não opõe ideias."
+        },
+        {
+          "text": "condição",
+          "explanation": "Certa: o resultado depende de a condição ocorrer."
+        },
+        {
+          "text": "conformidade",
+          "explanation": "Errada: não indica conformidade."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Em “Estudou para que passasse”, “para que” expressa:",
+      "options": [
+        {
+          "text": "finalidade",
+          "explanation": "Certa: indica o objetivo do estudo."
+        },
+        {
+          "text": "causa",
+          "explanation": "Errada: não indica o motivo."
+        },
+        {
+          "text": "condição",
+          "explanation": "Errada: não impõe hipótese."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Errada: não apresenta obstáculo."
+        },
+        {
+          "text": "proporção",
+          "explanation": "Errada: não relaciona intensidades."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Em “Fez a prova conforme o professor orientou”, “conforme” expressa:",
+      "options": [
+        {
+          "text": "causa",
+          "explanation": "Errada: não é motivo."
+        },
+        {
+          "text": "proporção",
+          "explanation": "Errada: não relaciona intensidade."
+        },
+        {
+          "text": "conformidade",
+          "explanation": "Certa: indica concordância com algo."
+        },
+        {
+          "text": "finalidade",
+          "explanation": "Errada: não é objetivo."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Errada: não apresenta obstáculo."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Em “À medida que estudava, ficava mais confiante”, a expressão “à medida que” indica:",
+      "options": [
+        {
+          "text": "conformidade",
+          "explanation": "Errada: não indica concordância."
+        },
+        {
+          "text": "condição",
+          "explanation": "Errada: não há hipótese."
+        },
+        {
+          "text": "adversidade",
+          "explanation": "Errada: não opõe."
+        },
+        {
+          "text": "causa",
+          "explanation": "Errada: não indica motivo imediato."
+        },
+        {
+          "text": "proporção",
+          "explanation": "Certa: as duas ações crescem juntas."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "A palavra “como” pode expressar causa, comparação ou conformidade. Em qual frase expressa causa?",
+      "options": [
+        {
+          "text": "“Ele corre como um atleta.”",
+          "explanation": "Errada: é comparação."
+        },
+        {
+          "text": "“Como estava doente, faltou ao trabalho.”",
+          "explanation": "Certa: apresenta o motivo da falta."
+        },
+        {
+          "text": "“Fez o bolo como a receita indicava.”",
+          "explanation": "Errada: é conformidade."
+        },
+        {
+          "text": "“Chegou como esperado.”",
+          "explanation": "Errada: conformidade."
+        },
+        {
+          "text": "“Falou como se soubesse.”",
+          "explanation": "Errada: comparação hipotética."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O princípio de que o conectivo deve ser interpretado no contexto, e não como palavra isolada, é importante porque:",
+      "options": [
+        {
+          "text": "cada conectivo tem sempre um único valor fixo",
+          "explanation": "Errada: o valor depende do contexto."
+        },
+        {
+          "text": "conectivos nunca alteram o sentido",
+          "explanation": "Errada: alteram a relação entre ideias."
+        },
+        {
+          "text": "só os adversativos exigem contexto",
+          "explanation": "Errada: muitos conectivos são ambíguos."
+        },
+        {
+          "text": "uma mesma palavra pode expressar relações diferentes conforme o contexto",
+          "explanation": "Certa: “como” e “e”, por exemplo, mudam de valor."
+        },
+        {
+          "text": "a banca exige que se ignore o contexto",
+          "explanation": "Errada: o contexto é o critério central."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Em “Estudou muito e não passou”, a conjunção “e” expressa:",
+      "options": [
+        {
+          "text": "adversidade (valor de “mas”)",
+          "explanation": "Certa: o contexto opõe esforço e resultado."
+        },
+        {
+          "text": "adição simples",
+          "explanation": "Errada: não apenas soma."
+        },
+        {
+          "text": "conclusão",
+          "explanation": "Errada: não conclui."
+        },
+        {
+          "text": "causa",
+          "explanation": "Errada: não apresenta motivo."
+        },
+        {
+          "text": "finalidade",
+          "explanation": "Errada: não indica objetivo."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Qual par de conectivos pode substituir-se sem alterar a relação lógica?",
+      "options": [
+        {
+          "text": "“mas” e “portanto”",
+          "explanation": "Errada: adversativo e conclusivo."
+        },
+        {
+          "text": "“porque” e “embora”",
+          "explanation": "Errada: causa e concessão."
+        },
+        {
+          "text": "“mas” e “porém”",
+          "explanation": "Certa: ambos são adversativos."
+        },
+        {
+          "text": "“logo” e “porque”",
+          "explanation": "Errada: conclusão e causa."
+        },
+        {
+          "text": "“se” e “conforme”",
+          "explanation": "Errada: condição e conformidade."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual alternativa substitui “embora” por conectivo de mesma relação?",
+      "options": [
+        {
+          "text": "“portanto”",
+          "explanation": "Errada: conclusão."
+        },
+        {
+          "text": "“porque”",
+          "explanation": "Errada: causa."
+        },
+        {
+          "text": "“conforme”",
+          "explanation": "Errada: conformidade."
+        },
+        {
+          "text": "“logo”",
+          "explanation": "Errada: conclusão."
+        },
+        {
+          "text": "“ainda que”",
+          "explanation": "Certa: ambos são concessivos."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "No texto, o conectivo “mas” expressa:",
+      "context": {
+        "text": "A organização temia a baixa adesão, mas o evento reuniu mais de mil pessoas."
+      },
+      "options": [
+        {
+          "text": "causa, explicando por que o evento deu certo",
+          "explanation": "Errada: não há explicação."
+        },
+        {
+          "text": "adversidade, opondo a incerteza ao sucesso do evento",
+          "explanation": "Certa: contrapõe duas ideias."
+        },
+        {
+          "text": "conclusão, retomando o que foi dito",
+          "explanation": "Errada: não conclui."
+        },
+        {
+          "text": "condição, indicando uma hipótese",
+          "explanation": "Errada: não há hipótese."
+        },
+        {
+          "text": "finalidade, apontando um objetivo",
+          "explanation": "Errada: não indica propósito."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "No texto, o trecho “Por isso” introduz:",
+      "context": {
+        "text": "As chuvas foram escassas e os reservatórios baixaram. Por isso, a prefeitura anunciou o racionamento."
+      },
+      "options": [
+        {
+          "text": "uma oposição ao que foi dito antes",
+          "explanation": "Errada: não opõe."
+        },
+        {
+          "text": "uma concessão ao leitor",
+          "explanation": "Errada: não concede."
+        },
+        {
+          "text": "uma comparação entre cidades",
+          "explanation": "Errada: não compara."
+        },
+        {
+          "text": "uma conclusão ou consequência do que foi dito antes",
+          "explanation": "Certa: liga a causa (falta de água) ao efeito (racionamento)."
+        },
+        {
+          "text": "uma condição para o racionamento",
+          "explanation": "Errada: não impõe hipótese."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "O texto a seguir apresenta problema de:",
+      "context": {
+        "text": "João chegou atrasado à reunião; por isso, foi o primeiro a chegar e esperou todos os colegas."
+      },
+      "options": [
+        {
+          "text": "coerência, por contradição entre ideias",
+          "explanation": "Certa: não é possível chegar atrasado e ao mesmo tempo ser o primeiro a chegar."
+        },
+        {
+          "text": "coesão referencial, por pronome mal empregado",
+          "explanation": "Errada: os pronomes estão corretos."
+        },
+        {
+          "text": "coesão sequencial, por falta de conectivo",
+          "explanation": "Errada: há conectivo."
+        },
+        {
+          "text": "pontuação, por vírgula excessiva",
+          "explanation": "Errada: não há esse problema."
+        },
+        {
+          "text": "ortografia, por palavras mal escritas",
+          "explanation": "Errada: a grafia está correta."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Em “Pedro disse a João que ele seria promovido”, o pronome “ele” apresenta problema de:",
+      "options": [
+        {
+          "text": "concordância verbal",
+          "explanation": "Errada: o verbo concorda."
+        },
+        {
+          "text": "pontuação",
+          "explanation": "Errada: não é problema de pontuação."
+        },
+        {
+          "text": "ambiguidade referencial, pois pode retomar Pedro ou João",
+          "explanation": "Certa: o leitor não sabe quem seria promovido."
+        },
+        {
+          "text": "regência",
+          "explanation": "Errada: não envolve regência."
+        },
+        {
+          "text": "repetição lexical",
+          "explanation": "Errada: não há repetição."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual reescrita elimina a ambiguidade da frase “Pedro disse a João que ele seria promovido”?",
+      "options": [
+        {
+          "text": "“Pedro disse a João que ele seria promovido, e ele ficou feliz.”",
+          "explanation": "Errada: mantém a ambiguidade."
+        },
+        {
+          "text": "“Pedro disse que ele seria promovido a João.”",
+          "explanation": "Errada: continua ambígua."
+        },
+        {
+          "text": "“Disse-se que ele seria promovido.”",
+          "explanation": "Errada: perde o interlocutor e a clareza."
+        },
+        {
+          "text": "“Pedro, que disse a João, seria promovido ele.”",
+          "explanation": "Errada: construção confusa e incorreta."
+        },
+        {
+          "text": "“Pedro disse a João: ‘Você será promovido’.”",
+          "explanation": "Certa: deixa claro que João será promovido."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "A coesão sem coerência pode ocorrer quando:",
+      "options": [
+        {
+          "text": "o texto tem ideias lógicas e poucos conectivos",
+          "explanation": "Errada: isso é coerência sem muita coesão."
+        },
+        {
+          "text": "o texto tem conectivos corretos, mas ideias sem relação lógica",
+          "explanation": "Certa: as marcas formais não sustentam o sentido."
+        },
+        {
+          "text": "o texto não tem pontuação",
+          "explanation": "Errada: pontuação não define a situação."
+        },
+        {
+          "text": "o texto usa só pronomes",
+          "explanation": "Errada: não é a condição."
+        },
+        {
+          "text": "o texto é muito curto",
+          "explanation": "Errada: o tamanho não define."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual dos itens NÃO é recurso de coesão?",
+      "options": [
+        {
+          "text": "o uso de pronomes que retomam termos",
+          "explanation": "Errada: é coesão referencial."
+        },
+        {
+          "text": "o uso de conjunções entre orações",
+          "explanation": "Errada: é coesão sequencial."
+        },
+        {
+          "text": "a reiteração de uma palavra-chave",
+          "explanation": "Errada: é coesão lexical."
+        },
+        {
+          "text": "a adequação do conteúdo ao conhecimento de mundo do leitor",
+          "explanation": "Certa: é fator de coerência, não de coesão."
+        },
+        {
+          "text": "a elipse do sujeito recuperável",
+          "explanation": "Errada: é coesão referencial."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "No texto, o termo “a medida” retoma:",
+      "context": {
+        "text": "O governo propôs reduzir a jornada de trabalho. A medida divide opiniões entre empresários e trabalhadores."
+      },
+      "options": [
+        {
+          "text": "a proposta de reduzir a jornada de trabalho, por meio de expressão nominal",
+          "explanation": "Certa: resume a ideia anterior em um termo genérico."
+        },
+        {
+          "text": "o presidente, por pronome",
+          "explanation": "Errada: não há pronome."
+        },
+        {
+          "text": "as empresas, por elipse",
+          "explanation": "Errada: não há omissão."
+        },
+        {
+          "text": "a jornada, por catáfora",
+          "explanation": "Errada: retoma algo já dito."
+        },
+        {
+          "text": "o debate, por conector",
+          "explanation": "Errada: não é conector."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "No trecho, “tal fato” funciona como:",
+      "context": {
+        "text": "O rio transbordou durante a madrugada. Tal fato obrigou centenas de famílias a deixar suas casas."
+      },
+      "options": [
+        {
+          "text": "catáfora que antecipa a próxima ideia",
+          "explanation": "Errada: o fato já foi dito."
+        },
+        {
+          "text": "conectivo adversativo",
+          "explanation": "Errada: não opõe."
+        },
+        {
+          "text": "anáfora que resume a informação anterior",
+          "explanation": "Certa: retoma a ideia do período anterior."
+        },
+        {
+          "text": "elipse de sujeito",
+          "explanation": "Errada: não omite termo."
+        },
+        {
+          "text": "verbo de ligação",
+          "explanation": "Errada: não é verbo."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "A melhor estratégia para classificar um conectivo em prova é:",
+      "options": [
+        {
+          "text": "memorizar um único valor para cada palavra",
+          "explanation": "Errada: um mesmo conectivo pode mudar de valor."
+        },
+        {
+          "text": "ignorar as orações vizinhas",
+          "explanation": "Errada: o contexto está nelas."
+        },
+        {
+          "text": "escolher sempre a relação de causa",
+          "explanation": "Errada: não é critério."
+        },
+        {
+          "text": "considerar só a posição da palavra na frase",
+          "explanation": "Errada: a posição sozinha não define."
+        },
+        {
+          "text": "identificar a relação lógico-semântica no contexto da frase",
+          "explanation": "Certa: a palavra isolada pode enganar."
+        }
+      ],
+      "correct": "E"
+    }
+  ],
+  "id": "eed1d62d-5a7c-4f32-b76c-8682a75ff1f1"
+}

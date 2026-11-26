@@ -1,0 +1,539 @@
+{
+  "title": "Língua Portuguesa — Banco PRF 1",
+  "topic": "Língua Portuguesa",
+  "description": "Coesão, gramática, pontuação, interpretação e vocabulário no estilo PRF/CEBRASPE.",
+  "source": "Itens baseados na prova PRF 2019 (CEBRASPE), convertidos para A–E, e questões inéditas",
+  "color": "#3F7CAC",
+  "questions": [
+    {
+      "prompt": "Na frase “Os preços subiram em razão de uma greve de caminhoneiros”, a locução “em razão de” expressa ideia de:",
+      "options": [
+        {
+          "text": "finalidade",
+          "explanation": "Errada: finalidade indicaria o objetivo (“a fim de”, “para”), não o motivo."
+        },
+        {
+          "text": "causa",
+          "explanation": "Certa: “em razão de” introduz o motivo pelo qual os preços subiram (a greve)."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Errada: concessão exigiria ideia de contraste inesperado (“apesar de”, “embora”)."
+        },
+        {
+          "text": "condição",
+          "explanation": "Errada: condição seria expressa por “se”, “caso”, “desde que”."
+        },
+        {
+          "text": "oposição",
+          "explanation": "Errada: oposição usaria “mas”, “porém”; aqui há relação de causa e efeito."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Em “O trânsito das capitais, assim como o das cidades médias, exige atenção redobrada”, a expressão “assim como” estabelece entre as ideias uma relação de:",
+      "options": [
+        {
+          "text": "oposição entre os dois trânsitos",
+          "explanation": "Errada: não há contraste; os dois exigem atenção."
+        },
+        {
+          "text": "causa e consequência",
+          "explanation": "Errada: um trânsito não é causa do outro."
+        },
+        {
+          "text": "condição",
+          "explanation": "Errada: não há hipótese a ser cumprida."
+        },
+        {
+          "text": "comparação (semelhança) entre os dois trânsitos",
+          "explanation": "Certa: aproxima dois termos que compartilham a mesma característica."
+        },
+        {
+          "text": "conclusão",
+          "explanation": "Errada: a expressão não conclui raciocínio nenhum."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "No trecho a seguir, qual é o sujeito da forma verbal “cercam”?",
+      "context": {
+        "text": "Os processos de produção dos objetos que nos cercam movimentam relações diversas entre os indivíduos."
+      },
+      "options": [
+        {
+          "text": "o pronome relativo “que”",
+          "explanation": "Certa: “que” retoma “objetos” e funciona como sujeito de “cercam”."
+        },
+        {
+          "text": "“Os processos de produção dos objetos”",
+          "explanation": "Errada: esse é o sujeito de “movimentam”, não de “cercam”."
+        },
+        {
+          "text": "“nos”",
+          "explanation": "Errada: “nos” é objeto direto (os objetos cercam a nós)."
+        },
+        {
+          "text": "“relações diversas”",
+          "explanation": "Errada: é o objeto direto de “movimentam”."
+        },
+        {
+          "text": "“os indivíduos”",
+          "explanation": "Errada: termo que faz parte de outra oração e não pratica a ação de cercar."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Assinale a alternativa em que o uso do sinal indicativo de crase está correto.",
+      "options": [
+        {
+          "text": "Entreguei o documento à policial que estava a direita da viatura.",
+          "explanation": "Errada: “à direita” exige crase, e “a direita” está incorreto."
+        },
+        {
+          "text": "Entreguei o documento a policial que estava à direita da viatura.",
+          "explanation": "Errada: “policial” masculino exige “ao”; “a policial” só serve para o feminino."
+        },
+        {
+          "text": "Entreguei o documento ao policial que estava à direita da viatura.",
+          "explanation": "Certa: “ao” (masculino) antes de “policial”; “à direita” é locução adverbial feminina e leva crase."
+        },
+        {
+          "text": "Fui à pé até a viatura.",
+          "explanation": "Errada: não há crase antes de palavra masculina como “pé”."
+        },
+        {
+          "text": "Avisei à ninguém sobre a operação.",
+          "explanation": "Errada: não há crase antes do pronome indefinido “ninguém”."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Assinale a frase correta quanto à concordância verbal.",
+      "options": [
+        {
+          "text": "Haviam muitos veículos parados no acostamento.",
+          "explanation": "Errada: “haver” impessoal não vai ao plural; o correto é “havia”."
+        },
+        {
+          "text": "Fazem dois anos que a rodovia foi duplicada.",
+          "explanation": "Errada: “fazer” indicando tempo decorrido é impessoal; “faz dois anos”."
+        },
+        {
+          "text": "Devem haver muitas multas pendentes.",
+          "explanation": "Errada: o auxiliar acompanha o verbo impessoal e fica no singular: “deve haver”."
+        },
+        {
+          "text": "Existe muitos veículos parados no acostamento.",
+          "explanation": "Errada: “existir” é pessoal e concorda com o sujeito: “existem muitos veículos”."
+        },
+        {
+          "text": "Havia muitos veículos parados no acostamento.",
+          "explanation": "Certa: “haver” no sentido de existir é impessoal e fica no singular."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Assinale a alternativa que apresenta regência verbal de acordo com a norma-padrão.",
+      "options": [
+        {
+          "text": "Aspirava o cargo de inspetor desde jovem.",
+          "explanation": "Errada: no sentido de almejar, “aspirar” rege “a”: “aspirava ao cargo”."
+        },
+        {
+          "text": "O policial obedeceu ao regulamento da corporação.",
+          "explanation": "Certa: “obedecer” é transitivo indireto (obedecer a alguém ou algo)."
+        },
+        {
+          "text": "Assistimos o jogo pela televisão.",
+          "explanation": "Errada: no sentido de ver, “assistir” rege “a”: “assistimos ao jogo”."
+        },
+        {
+          "text": "Prefiro mais caminhar do que dirigir.",
+          "explanation": "Errada: “preferir” se constrói com “a”, sem “mais” nem “do que”: “prefiro caminhar a dirigir”."
+        },
+        {
+          "text": "O agente visou o cargo de chefe de posto.",
+          "explanation": "Errada: no sentido de almejar, “visar” rege “a”: “visou ao cargo”."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Assinale a alternativa em que a pontuação está correta.",
+      "options": [
+        {
+          "text": "Os motoristas imprudentes, causam muitos acidentes.",
+          "explanation": "Errada: não se separa sujeito e verbo por vírgula."
+        },
+        {
+          "text": "O motorista apesar, do aviso ultrapassou o limite de velocidade.",
+          "explanation": "Errada: a vírgula separa a preposição de seu complemento."
+        },
+        {
+          "text": "O agente disse, que o posto estava fechado.",
+          "explanation": "Errada: não se usa vírgula entre o verbo e a oração objeto direto."
+        },
+        {
+          "text": "O motorista, apesar do aviso, ultrapassou o limite de velocidade.",
+          "explanation": "Certa: a expressão intercalada “apesar do aviso” fica entre vírgulas."
+        },
+        {
+          "text": "Os policiais, e os agentes chegaram cedo.",
+          "explanation": "Errada: a conjunção “e” entre sujeitos diferentes não é precedida de vírgula."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Complete: “A empresa ___ sede visitamos fica em Brasília.”",
+      "options": [
+        {
+          "text": "cuja",
+          "explanation": "Certa: indica posse (sede da empresa) e concorda com o termo possuído, “sede”."
+        },
+        {
+          "text": "que",
+          "explanation": "Errada: “que” não exprime posse e deixaria o trecho sem sentido."
+        },
+        {
+          "text": "onde",
+          "explanation": "Errada: “onde” indica lugar e não relaciona posse."
+        },
+        {
+          "text": "a qual",
+          "explanation": "Errada: “a qual” não pode vir antes de substantivo sem artigo; a posse pede “cuja”."
+        },
+        {
+          "text": "quem",
+          "explanation": "Errada: “quem” retoma pessoas e não vem seguido de substantivo."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Complete: “Não sei ___ ele faltou ao treinamento.”",
+      "options": [
+        {
+          "text": "porque",
+          "explanation": "Errada: “porque” é conjunção explicativa/causal, não introduz pergunta indireta."
+        },
+        {
+          "text": "porquê",
+          "explanation": "Errada: “porquê” é substantivo (o motivo) e vem acompanhado de artigo."
+        },
+        {
+          "text": "por que",
+          "explanation": "Certa: em oração interrogativa indireta, usa-se “por que” separado e sem acento."
+        },
+        {
+          "text": "por quê",
+          "explanation": "Errada: “por quê” só aparece antes de pausa forte, como em “Faltou por quê?”."
+        },
+        {
+          "text": "pôr que",
+          "explanation": "Errada: “pôr” é verbo e não faz sentido aqui."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Complete: “O ___ motorista agiu ___ ao ignorar a sinalização.”",
+      "options": [
+        {
+          "text": "mal … mau",
+          "explanation": "Errada: inverte as classes; “mal” não qualifica substantivo."
+        },
+        {
+          "text": "mau … mau",
+          "explanation": "Errada: o segundo termo modifica o verbo “agiu”, então exige advérbio."
+        },
+        {
+          "text": "mal … mal",
+          "explanation": "Errada: o primeiro termo qualifica “motorista”, então exige adjetivo."
+        },
+        {
+          "text": "mau … má",
+          "explanation": "Errada: “má” é o feminino de “mau” e não modifica verbo."
+        },
+        {
+          "text": "mau … mal",
+          "explanation": "Certa: “mau” é adjetivo (oposto de bom) e “mal” é advérbio (oposto de bem)."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Em “Embora estivesse cansado, o policial concluiu a ronda”, a conjunção “embora” introduz oração que expressa:",
+      "options": [
+        {
+          "text": "causa",
+          "explanation": "Errada: o cansaço não é apresentado como motivo da ronda."
+        },
+        {
+          "text": "concessão",
+          "explanation": "Certa: apresenta um fato que seria obstáculo, mas não impediu o resultado."
+        },
+        {
+          "text": "condição",
+          "explanation": "Errada: não há hipótese a ser cumprida."
+        },
+        {
+          "text": "finalidade",
+          "explanation": "Errada: não há objetivo envolvido."
+        },
+        {
+          "text": "conformidade",
+          "explanation": "Errada: não há ideia de acordo com algo (“conforme”, “segundo”)."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Passando para a voz passiva a frase “Os agentes apreenderam a carga”, obtém-se:",
+      "options": [
+        {
+          "text": "A carga apreendeu os agentes.",
+          "explanation": "Errada: inverte os papéis, alterando o sentido."
+        },
+        {
+          "text": "Os agentes foram apreendidos pela carga.",
+          "explanation": "Errada: inverte o sentido da frase original."
+        },
+        {
+          "text": "A carga foram apreendidas pelos agentes.",
+          "explanation": "Errada: o verbo deve concordar com “a carga” (singular): “foi apreendida”."
+        },
+        {
+          "text": "A carga foi apreendida pelos agentes.",
+          "explanation": "Certa: o objeto vira sujeito, o verbo ser + particípio concorda com ele, e o sujeito original vira agente da passiva."
+        },
+        {
+          "text": "Os agentes foi apreendido a carga.",
+          "explanation": "Errada: não é voz passiva, e há erro de concordância."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Na frase “Vendem-se carros usados”, a palavra “se” é classificada como:",
+      "options": [
+        {
+          "text": "partícula apassivadora",
+          "explanation": "Certa: forma passiva sintética; “carros usados” é o sujeito e por isso o verbo vai ao plural."
+        },
+        {
+          "text": "índice de indeterminação do sujeito",
+          "explanation": "Errada: ocorreria com verbo intransitivo/transitivo indireto, sempre no singular (“Precisa-se de motoristas”)."
+        },
+        {
+          "text": "pronome reflexivo",
+          "explanation": "Errada: os carros não vendem a si mesmos."
+        },
+        {
+          "text": "parte integrante do verbo",
+          "explanation": "Errada: “vender” não é pronominal."
+        },
+        {
+          "text": "conjunção condicional",
+          "explanation": "Errada: não introduz oração condicional."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Complete: “A diretoria ___ o erro da ata, corrigindo-o antes da assinatura.”",
+      "options": [
+        {
+          "text": "ratificou",
+          "explanation": "Errada: “ratificar” é confirmar, validar, o oposto de corrigir."
+        },
+        {
+          "text": "retificaram",
+          "explanation": "Errada: o sujeito “a diretoria” está no singular."
+        },
+        {
+          "text": "retificou",
+          "explanation": "Certa: “retificar” é corrigir."
+        },
+        {
+          "text": "ratificaram",
+          "explanation": "Errada: sentido de confirmar e concordância errada."
+        },
+        {
+          "text": "retifiquei",
+          "explanation": "Errada: a primeira pessoa não concorda com “a diretoria”."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Com base no texto, assinale a conclusão que ele sustenta.",
+      "context": {
+        "text": "A taxa de acidentes nas rodovias federais caiu 12% após a campanha educativa, embora o fluxo de veículos tenha crescido no mesmo período."
+      },
+      "options": [
+        {
+          "text": "A queda nos acidentes foi causada pelo aumento do fluxo.",
+          "explanation": "Errada: o texto relaciona a queda à campanha e não ao fluxo."
+        },
+        {
+          "text": "A campanha foi ineficaz.",
+          "explanation": "Errada: houve redução de 12% após a campanha."
+        },
+        {
+          "text": "O fluxo de veículos diminuiu no período.",
+          "explanation": "Errada: o texto diz que o fluxo cresceu."
+        },
+        {
+          "text": "Os acidentes foram eliminados.",
+          "explanation": "Errada: houve redução de 12%, não eliminação."
+        },
+        {
+          "text": "A queda nos acidentes ocorreu mesmo com o aumento do fluxo de veículos.",
+          "explanation": "Certa: “embora” marca concessão: o fluxo cresceu, mas os acidentes caíram."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual é a ideia central do texto?",
+      "context": {
+        "text": "Poucos motoristas leem o manual do veículo; muitos o consideram desnecessário até a primeira pane."
+      },
+      "options": [
+        {
+          "text": "Elogio à leitura atenta de manuais por todos os motoristas.",
+          "explanation": "Errada: o texto diz que poucos leem."
+        },
+        {
+          "text": "Crítica ao hábito de negligenciar instruções até que um problema apareça.",
+          "explanation": "Certa: o texto aponta que o manual só é valorizado depois da pane."
+        },
+        {
+          "text": "Defesa de que o manual é de fato desnecessário.",
+          "explanation": "Errada: o tom é crítico, e a pane revela a falta que ele faz."
+        },
+        {
+          "text": "Descrição técnica de como evitar panes.",
+          "explanation": "Errada: o texto não traz instruções técnicas."
+        },
+        {
+          "text": "Constatação de que panes são raras.",
+          "explanation": "Errada: o texto não trata da frequência de panes."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Assinale a alternativa em que todas as palavras estão grafadas corretamente.",
+      "options": [
+        {
+          "text": "excessão, privilégio, beneficente, obsessão",
+          "explanation": "Errada: “excessão” deve ser “exceção”."
+        },
+        {
+          "text": "exceção, previlégio, beneficente, obsessão",
+          "explanation": "Errada: “previlégio” deve ser “privilégio”."
+        },
+        {
+          "text": "exceção, privilégio, beneficiente, obsessão",
+          "explanation": "Errada: “beneficiente” deve ser “beneficente”."
+        },
+        {
+          "text": "exceção, privilégio, beneficente, obsessão",
+          "explanation": "Certa: as quatro grafias seguem a ortografia vigente."
+        },
+        {
+          "text": "exceção, privilégio, beneficente, obseção",
+          "explanation": "Errada: “obseção” deve ser “obsessão”."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Assinale a alternativa com colocação pronominal adequada à norma-padrão.",
+      "options": [
+        {
+          "text": "Não se esqueça dos documentos.",
+          "explanation": "Certa: a palavra negativa “não” atrai o pronome, que fica antes do verbo (próclise)."
+        },
+        {
+          "text": "Se esqueça dos documentos.",
+          "explanation": "Errada: na norma-padrão não se inicia frase com pronome oblíquo átono."
+        },
+        {
+          "text": "Não esqueça-se dos documentos.",
+          "explanation": "Errada: com “não” é obrigatória a próclise."
+        },
+        {
+          "text": "Esqueça-se não dos documentos.",
+          "explanation": "Errada: a negação deve vir antes do verbo, e o pronome a acompanha."
+        },
+        {
+          "text": "Esqueceu se dos documentos.",
+          "explanation": "Errada: falta o hífen da ênclise."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Assinale a frase correta quanto ao emprego de “há” e “a” em indicações de tempo.",
+      "options": [
+        {
+          "text": "Ele se formou a três anos.",
+          "explanation": "Errada: “a” sozinho não indica passado; deve-se usar “há”."
+        },
+        {
+          "text": "Há três anos atrás ele se formou.",
+          "explanation": "Errada: “há” e “atrás” formam pleonasmo; basta um deles."
+        },
+        {
+          "text": "Ele se formou há três anos.",
+          "explanation": "Certa: “há” indica tempo já passado."
+        },
+        {
+          "text": "Daqui há três anos ele se forma.",
+          "explanation": "Errada: para tempo futuro usa-se “a”: “daqui a três anos”."
+        },
+        {
+          "text": "Faz três anos atrás que ele se formou.",
+          "explanation": "Errada: “faz” e “atrás” também formam pleonasmo."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Em “O policial abordou o motorista e pediu-lhe os documentos”, o pronome “lhe” retoma:",
+      "options": [
+        {
+          "text": "o policial, sujeito da oração",
+          "explanation": "Errada: “lhe” é pronome oblíquo e não retoma o sujeito."
+        },
+        {
+          "text": "os documentos",
+          "explanation": "Errada: os documentos são o objeto direto; “lhe” não substitui objeto direto."
+        },
+        {
+          "text": "a abordagem",
+          "explanation": "Errada: “abordagem” não aparece no texto como termo retomável."
+        },
+        {
+          "text": "o policial e o motorista",
+          "explanation": "Errada: “lhe” é singular e retoma só um termo."
+        },
+        {
+          "text": "o motorista, como objeto indireto de “pediu”",
+          "explanation": "Certa: pede-se algo a alguém; “lhe” equivale a “ao motorista”."
+        }
+      ],
+      "correct": "E"
+    }
+  ],
+  "id": "73453f39-b637-409e-984a-808b80a71f7c"
+}

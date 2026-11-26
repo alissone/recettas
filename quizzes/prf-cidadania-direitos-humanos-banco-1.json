@@ -1,0 +1,530 @@
+{
+  "title": "Cidadania Policial e Direitos Humanos — Banco 1",
+  "topic": "Direitos Humanos",
+  "description": "Direitos humanos, cidadania no agir policial, uso da força, algemas e grupos vulneráveis.",
+  "source": "Itens baseados na prova do Curso de Formação DPRF 2009 (UnB/CESPE), convertidos para A–E, e questões inéditas",
+  "color": "#2D6A9F",
+  "questions": [
+    {
+      "prompt": "A Declaração Universal dos Direitos Humanos, de 1948, é considerada marco por ter:",
+      "options": [
+        {
+          "text": "criado um tribunal com poder de prender violadores",
+          "explanation": "Errada: a Declaração não criou tribunal."
+        },
+        {
+          "text": "limitado os direitos a cidadãos de países signatários",
+          "explanation": "Errada: a ideia é a universalidade."
+        },
+        {
+          "text": "separado direitos civis e políticos dos econômicos e sociais",
+          "explanation": "Errada: a concepção contemporânea afirma a indivisibilidade."
+        },
+        {
+          "text": "consagrado a concepção contemporânea de direitos humanos, baseada na universalidade e na indivisibilidade",
+          "explanation": "Certa: afirma que os direitos são de todos e interdependentes."
+        },
+        {
+          "text": "revogado as Constituições nacionais",
+          "explanation": "Errada: não revoga normas internas."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Quando se diz que os direitos humanos são indivisíveis e interdependentes, quer-se dizer que:",
+      "options": [
+        {
+          "text": "os direitos civis, políticos, econômicos, sociais e culturais se reforçam e devem ser protegidos em conjunto",
+          "explanation": "Certa: a violação de um afeta o gozo dos demais."
+        },
+        {
+          "text": "só os direitos civis e políticos são exigíveis",
+          "explanation": "Errada: a indivisibilidade rejeita essa separação."
+        },
+        {
+          "text": "os direitos podem ser concedidos por etapas",
+          "explanation": "Errada: não há hierarquia que justifique ignorar alguns."
+        },
+        {
+          "text": "cada país escolhe os direitos que aplica",
+          "explanation": "Errada: o princípio é universal."
+        },
+        {
+          "text": "os direitos pertencem só aos adultos",
+          "explanation": "Errada: todos os seres humanos são titulares."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "O sistema internacional de proteção dos direitos humanos é composto:",
+      "options": [
+        {
+          "text": "apenas pelo sistema da ONU",
+          "explanation": "Errada: existem sistemas regionais."
+        },
+        {
+          "text": "somente pelos sistemas regionais",
+          "explanation": "Errada: o sistema global é central."
+        },
+        {
+          "text": "pelo sistema global (ONU), de alcance geral e especial, e pelos sistemas regionais, como o interamericano",
+          "explanation": "Certa: os sistemas se complementam."
+        },
+        {
+          "text": "exclusivamente por tribunais nacionais",
+          "explanation": "Errada: há mecanismos internacionais."
+        },
+        {
+          "text": "por acordos privados entre empresas",
+          "explanation": "Errada: o sistema é formado por Estados e organizações internacionais."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "A Convenção Americana de Direitos Humanos (Pacto de São José da Costa Rica) pertence ao sistema:",
+      "options": [
+        {
+          "text": "global da ONU",
+          "explanation": "Errada: a Convenção Americana é da OEA."
+        },
+        {
+          "text": "europeu",
+          "explanation": "Errada: o sistema europeu tem a Convenção Europeia de Direitos Humanos."
+        },
+        {
+          "text": "africano",
+          "explanation": "Errada: o sistema africano tem a Carta Africana."
+        },
+        {
+          "text": "apenas do Mercosul",
+          "explanation": "Errada: o Mercosul não é o organismo responsável."
+        },
+        {
+          "text": "regional interamericano, e o Brasil aderiu a ela",
+          "explanation": "Certa: foi adotada em 1969, no âmbito da OEA."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "O policial, do ponto de vista da cidadania, é melhor descrito como:",
+      "options": [
+        {
+          "text": "uma autoridade acima da lei",
+          "explanation": "Errada: o policial está submetido à lei."
+        },
+        {
+          "text": "um cidadão qualificado, que representa o Estado no contato mais imediato com a população",
+          "explanation": "Certa: o policial é cidadão e age em nome do Estado."
+        },
+        {
+          "text": "um agente isento de controle",
+          "explanation": "Errada: está sujeito a controles interno e externo."
+        },
+        {
+          "text": "alguém sem direitos por ser agente do Estado",
+          "explanation": "Errada: possui direitos como qualquer cidadão."
+        },
+        {
+          "text": "um adversário da sociedade",
+          "explanation": "Errada: sua função é proteger a sociedade."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O que se entende por “dimensão pedagógica” do agir policial?",
+      "options": [
+        {
+          "text": "A obrigação de dar aulas regulares nas escolas",
+          "explanation": "Errada: é um aspecto da conduta, não uma carga horária."
+        },
+        {
+          "text": "A possibilidade de punir exemplarmente para dar exemplo",
+          "explanation": "Errada: a punição abusiva viola direitos."
+        },
+        {
+          "text": "A prioridade da repressão sobre a prevenção",
+          "explanation": "Errada: a dimensão pedagógica valoriza a prevenção."
+        },
+        {
+          "text": "A conduta do policial, com respeito à lei e aos direitos, educa e orienta o comportamento da população",
+          "explanation": "Certa: o exemplo e a abordagem correta ensinam civilidade."
+        },
+        {
+          "text": "O treinamento exclusivo em técnicas de combate",
+          "explanation": "Errada: não se limita a técnica."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Sobre a hierarquia no ambiente policial, é correto afirmar que:",
+      "options": [
+        {
+          "text": "deve ser exercida com base na lei e na razão, e não no personalismo ou no autoritarismo",
+          "explanation": "Certa: hierarquia legítima não confunde autoridade com arbítrio."
+        },
+        {
+          "text": "é absoluta, e ordens manifestamente ilegais devem ser cumpridas",
+          "explanation": "Errada: ordem manifestamente ilegal não deve ser cumprida."
+        },
+        {
+          "text": "é incompatível com os direitos humanos",
+          "explanation": "Errada: respeita a lei e é compatível com direitos."
+        },
+        {
+          "text": "deve ser abolida nas corporações",
+          "explanation": "Errada: é necessária ao funcionamento."
+        },
+        {
+          "text": "depende da simpatia pessoal do chefe",
+          "explanation": "Errada: o personalismo é o que se busca evitar."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "De acordo com a Súmula Vinculante 11 do STF, o uso de algemas é:",
+      "options": [
+        {
+          "text": "obrigatório em toda prisão",
+          "explanation": "Errada: não é automático."
+        },
+        {
+          "text": "proibido em qualquer hipótese",
+          "explanation": "Errada: é permitido nas hipóteses indicadas."
+        },
+        {
+          "text": "excepcional, justificado por resistência, fundado receio de fuga ou perigo à integridade, com justificativa escrita",
+          "explanation": "Certa: o uso fora dessas hipóteses pode gerar responsabilidade."
+        },
+        {
+          "text": "livre, a critério do agente, sem necessidade de justificativa",
+          "explanation": "Errada: exige justificativa escrita."
+        },
+        {
+          "text": "permitido apenas contra pessoas de baixa renda",
+          "explanation": "Errada: seria discriminatório."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "O princípio da igualdade, aplicado à atuação policial, exige que:",
+      "options": [
+        {
+          "text": "pessoas de maior renda tenham tratamento preferencial",
+          "explanation": "Errada: viola a igualdade."
+        },
+        {
+          "text": "abordagens sejam feitas apenas contra grupos “suspeitos”",
+          "explanation": "Errada: o perfilamento discriminatório é ilegal."
+        },
+        {
+          "text": "a lei seja aplicada de modo diferente conforme a aparência",
+          "explanation": "Errada: a lei se aplica a todos."
+        },
+        {
+          "text": "idosos sejam excluídos de proteção",
+          "explanation": "Errada: idosos têm proteção reforçada."
+        },
+        {
+          "text": "todas as pessoas sejam tratadas sem discriminação de raça, cor, sexo, idade, origem ou condição social",
+          "explanation": "Certa: ninguém pode ser alvo de tratamento arbitrário por esses fatores."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual é o dever do Estado, da sociedade e da família em relação às pessoas idosas, segundo a Constituição?",
+      "options": [
+        {
+          "text": "Responsabilidade apenas da família",
+          "explanation": "Errada: o dever é compartilhado com o Estado e a sociedade."
+        },
+        {
+          "text": "Amparar as pessoas idosas, assegurando sua participação na comunidade, defendendo sua dignidade e bem-estar e garantindo o direito à vida",
+          "explanation": "Certa: o dever é compartilhado."
+        },
+        {
+          "text": "Responsabilidade apenas do Estado",
+          "explanation": "Errada: a família e a sociedade também têm deveres."
+        },
+        {
+          "text": "Não há dever específico",
+          "explanation": "Errada: a Constituição prevê expressamente esse amparo."
+        },
+        {
+          "text": "Dever apenas das instituições privadas",
+          "explanation": "Errada: o dever envolve Estado, sociedade e família."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "A proibição da tortura, no direito internacional dos direitos humanos, é considerada:",
+      "options": [
+        {
+          "text": "relativa, admitida em casos de crimes graves",
+          "explanation": "Errada: não há exceção."
+        },
+        {
+          "text": "válida somente em tempos de paz",
+          "explanation": "Errada: vale em qualquer situação."
+        },
+        {
+          "text": "dependente da autorização do juiz",
+          "explanation": "Errada: nenhum juiz pode autorizar tortura."
+        },
+        {
+          "text": "absoluta, não admitindo exceção nem em estado de guerra ou emergência",
+          "explanation": "Certa: nenhuma circunstância a justifica."
+        },
+        {
+          "text": "aplicável apenas a presos políticos",
+          "explanation": "Errada: protege todas as pessoas."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Os Princípios Básicos da ONU sobre o Uso da Força e Armas de Fogo orientam que o uso da força deve ser:",
+      "options": [
+        {
+          "text": "legal, necessário e proporcional, empregado como último recurso e com respeito à vida",
+          "explanation": "Certa: são os critérios básicos do uso da força."
+        },
+        {
+          "text": "sempre letal, para garantir a obediência",
+          "explanation": "Errada: o uso letal é excepcional."
+        },
+        {
+          "text": "discricionário, sem limites",
+          "explanation": "Errada: há limites."
+        },
+        {
+          "text": "proibido em qualquer circunstância",
+          "explanation": "Errada: é permitido nas condições indicadas."
+        },
+        {
+          "text": "justificado pela opinião pública",
+          "explanation": "Errada: critérios são legais e técnicos."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "O uso de arma de fogo pelo policial, quando necessário e proporcional em situação de legítima defesa:",
+      "options": [
+        {
+          "text": "é sempre proibido",
+          "explanation": "Errada: não há proibição absoluta."
+        },
+        {
+          "text": "é livre em qualquer situação",
+          "explanation": "Errada: exige necessidade e proporcionalidade."
+        },
+        {
+          "text": "é admitido, pois a proibição absoluta do uso de arma não existe no ordenamento",
+          "explanation": "Certa: a legítima defesa é causa de exclusão da ilicitude, respeitados necessidade e proporcionalidade."
+        },
+        {
+          "text": "só é permitido a policiais de elite",
+          "explanation": "Errada: vale para qualquer policial em situação legal."
+        },
+        {
+          "text": "só com autorização prévia do juiz",
+          "explanation": "Errada: a autorização prévia é inviável em situação de risco imediato."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "A garantia da integridade física e moral do preso significa que:",
+      "options": [
+        {
+          "text": "o preso perde todos os direitos",
+          "explanation": "Errada: preservam-se os não atingidos pela sentença."
+        },
+        {
+          "text": "a violência é aceitável para obter confissão",
+          "explanation": "Errada: confissão obtida sob tortura é ilícita."
+        },
+        {
+          "text": "apenas presos provisórios têm esse direito",
+          "explanation": "Errada: vale para todos os presos."
+        },
+        {
+          "text": "a garantia vale só em dias úteis",
+          "explanation": "Errada: é permanente."
+        },
+        {
+          "text": "o Estado deve respeitar a dignidade da pessoa presa, vedados maus-tratos e tortura",
+          "explanation": "Certa: a perda da liberdade não retira a dignidade."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "O princípio da presunção de inocência significa que:",
+      "options": [
+        {
+          "text": "o suspeito deve provar sua inocência",
+          "explanation": "Errada: o ônus é da acusação."
+        },
+        {
+          "text": "ninguém será considerado culpado até o trânsito em julgado de sentença penal condenatória",
+          "explanation": "Certa: o ônus de provar a culpa é da acusação."
+        },
+        {
+          "text": "a prisão em flagrante é proibida",
+          "explanation": "Errada: o flagrante é permitido."
+        },
+        {
+          "text": "a polícia não pode investigar",
+          "explanation": "Errada: a investigação é legítima."
+        },
+        {
+          "text": "o acusado é considerado culpado até prova em contrário",
+          "explanation": "Errada: seria o inverso."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O Código de Conduta para Funcionários Responsáveis pela Aplicação da Lei, da ONU, estabelece que esses funcionários devem:",
+      "options": [
+        {
+          "text": "obedecer apenas a ordens superiores, sem questionar",
+          "explanation": "Errada: ordens ilegais não devem ser cumpridas."
+        },
+        {
+          "text": "usar a força sempre que houver resistência",
+          "explanation": "Errada: a força é excepcional."
+        },
+        {
+          "text": "manter segredo sobre denúncias de tortura",
+          "explanation": "Errada: devem denunciar."
+        },
+        {
+          "text": "respeitar e proteger a dignidade humana e manter e defender os direitos humanos de todas as pessoas",
+          "explanation": "Certa: é o primeiro princípio do Código."
+        },
+        {
+          "text": "priorizar a segurança pública acima dos direitos humanos",
+          "explanation": "Errada: segurança e direitos não são excludentes."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A abordagem policial, em um Estado democrático de direito, deve ser:",
+      "options": [
+        {
+          "text": "fundada em suspeita objetiva, com respeito à dignidade da pessoa abordada",
+          "explanation": "Certa: abordagem arbitrária ou discriminatória é ilegal."
+        },
+        {
+          "text": "baseada em aparência ou preconceito",
+          "explanation": "Errada: discriminatória."
+        },
+        {
+          "text": "realizada com humilhação para intimidar",
+          "explanation": "Errada: viola a dignidade."
+        },
+        {
+          "text": "proibida em qualquer hipótese",
+          "explanation": "Errada: é instrumento legítimo."
+        },
+        {
+          "text": "aplicável apenas a pobres",
+          "explanation": "Errada: seria discriminatório."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Sobre o direito à vida e à segurança, assinale a afirmação mais adequada à atuação policial:",
+      "options": [
+        {
+          "text": "Só a vida de pessoas “de bem” merece proteção",
+          "explanation": "Errada: todos têm direito à vida."
+        },
+        {
+          "text": "A violação de direitos é aceitável para conter a criminalidade",
+          "explanation": "Errada: não se admite."
+        },
+        {
+          "text": "A segurança pública deve ser promovida com respeito aos direitos fundamentais, pois proteger a vida inclui a de suspeitos",
+          "explanation": "Certa: o objetivo é proteger todas as pessoas."
+        },
+        {
+          "text": "Direitos humanos são obstáculo ao trabalho policial",
+          "explanation": "Errada: são base do trabalho."
+        },
+        {
+          "text": "A segurança dispensa a lei",
+          "explanation": "Errada: a legalidade é indispensável."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Em relação aos direitos humanos dos próprios policiais, é correto afirmar que:",
+      "options": [
+        {
+          "text": "não têm direitos por serem agentes do Estado",
+          "explanation": "Errada: são titulares de direitos."
+        },
+        {
+          "text": "só têm deveres",
+          "explanation": "Errada: possuem direitos e deveres."
+        },
+        {
+          "text": "sua saúde mental é irrelevante",
+          "explanation": "Errada: a saúde mental é aspecto central."
+        },
+        {
+          "text": "só os superiores têm direitos",
+          "explanation": "Errada: os direitos valem para todos."
+        },
+        {
+          "text": "também são titulares de direitos humanos, como condições dignas de trabalho, saúde e respeito",
+          "explanation": "Certa: os direitos humanos se aplicam a todos."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "O combate à discriminação é compromisso do Brasil, por força constitucional e de tratados internacionais, porque:",
+      "options": [
+        {
+          "text": "a discriminação é permitida contra minorias",
+          "explanation": "Errada: é vedada."
+        },
+        {
+          "text": "todos são iguais perante a lei, sem distinção de qualquer natureza",
+          "explanation": "Certa: a igualdade perante a lei é direito fundamental."
+        },
+        {
+          "text": "os tratados valem só no exterior",
+          "explanation": "Errada: vinculam o Estado brasileiro."
+        },
+        {
+          "text": "só a discriminação racial é combatida",
+          "explanation": "Errada: a vedação é ampla."
+        },
+        {
+          "text": "é uma mera recomendação sem efeito",
+          "explanation": "Errada: há dever jurídico."
+        }
+      ],
+      "correct": "B"
+    }
+  ],
+  "id": "97d1cf59-473f-40cf-8cbe-0a6fa8df2e0b"
+}

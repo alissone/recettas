@@ -1,0 +1,530 @@
+{
+  "title": "Informática — Banco PRF 1",
+  "topic": "Informática",
+  "description": "Internet, nuvem, segurança da informação, redes e Windows.",
+  "source": "Itens baseados na prova PRF 2019 (CEBRASPE), convertidos para A–E, e questões inéditas",
+  "color": "#2E9E8F",
+  "questions": [
+    {
+      "prompt": "Sobre o acesso a uma página web que contenha código de vírus de script, assinale a alternativa correta.",
+      "options": [
+        {
+          "text": "Nenhum vírus pode agir apenas pelo acesso a uma página.",
+          "explanation": "Errada: scripts maliciosos podem rodar ao carregar a página."
+        },
+        {
+          "text": "O script só executa se o usuário baixar e abrir um anexo.",
+          "explanation": "Errada: vírus de script podem rodar sem download de arquivo."
+        },
+        {
+          "text": "Só acontece em páginas HTTPS.",
+          "explanation": "Errada: HTTPS protege o transporte, não o conteúdo."
+        },
+        {
+          "text": "A execução automática do script pode ocorrer, dependendo das configurações do navegador.",
+          "explanation": "Certa: scripts embutidos em páginas podem rodar sem ação do usuário se o navegador permitir."
+        },
+        {
+          "text": "Só afeta o servidor da página.",
+          "explanation": "Errada: o script executa no navegador do visitante."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A computação em nuvem do tipo SaaS (software as a service) permite que o usuário:",
+      "options": [
+        {
+          "text": "acesse aplicativos e serviços de qualquer local com um computador conectado à Internet",
+          "explanation": "Certa: o software é entregue pronto pelo provedor via web."
+        },
+        {
+          "text": "administre o hardware e o sistema operacional do provedor",
+          "explanation": "Errada: isso se aproxima de IaaS."
+        },
+        {
+          "text": "desenvolva e implante aplicações em plataforma gerenciada, sem gerenciar infraestrutura",
+          "explanation": "Errada: esse é o PaaS."
+        },
+        {
+          "text": "instale o aplicativo apenas em servidores próprios",
+          "explanation": "Errada: no SaaS o provedor hospeda o software."
+        },
+        {
+          "text": "utilize o serviço apenas sem conexão à Internet",
+          "explanation": "Errada: o SaaS depende de conexão."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Por meio de uma aplicação de acesso remoto, é possível:",
+      "options": [
+        {
+          "text": "apenas copiar arquivos, sem controlar o computador",
+          "explanation": "Errada: o controle remoto permite operar o computador."
+        },
+        {
+          "text": "acessar computadores somente na mesma sala",
+          "explanation": "Errada: a distância física não importa."
+        },
+        {
+          "text": "acessar e controlar um computador a distância, desde que ambos estejam conectados à rede",
+          "explanation": "Certa: é a função de ferramentas como RDP e VNC."
+        },
+        {
+          "text": "acessar computadores desligados",
+          "explanation": "Errada: o computador precisa estar ligado."
+        },
+        {
+          "text": "controlar computadores sem qualquer autenticação",
+          "explanation": "Errada: exige autenticação e configuração."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "As versões modernas dos navegadores Chrome, Firefox e Edge reconhecem, em instalação padrão, os protocolos FTP, SMTP e NNTP?",
+      "options": [
+        {
+          "text": "Sim, todos os três, e implementam transferência, correio e notícias",
+          "explanation": "Errada: esse suporte foi removido ou nunca existiu."
+        },
+        {
+          "text": "Sim, mas apenas o SMTP",
+          "explanation": "Errada: navegadores não enviam e-mail via SMTP."
+        },
+        {
+          "text": "Sim, mas apenas o FTP e o NNTP",
+          "explanation": "Errada: os navegadores atuais removeram o suporte a FTP."
+        },
+        {
+          "text": "Sim, mas só com extensões gratuitas",
+          "explanation": "Errada: a questão trata da instalação padrão."
+        },
+        {
+          "text": "Não: SMTP é de envio de e-mail, NNTP é de notícias, e os navegadores atuais não os suportam nativamente",
+          "explanation": "Certa: navegadores modernos usam principalmente HTTP/HTTPS."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual protocolo é utilizado para o envio de mensagens de correio eletrônico entre servidores?",
+      "options": [
+        {
+          "text": "POP3",
+          "explanation": "Errada: serve para o cliente baixar e-mails do servidor."
+        },
+        {
+          "text": "SMTP",
+          "explanation": "Certa: Simple Mail Transfer Protocol envia e-mails."
+        },
+        {
+          "text": "IMAP",
+          "explanation": "Errada: serve para acessar e sincronizar e-mails no servidor."
+        },
+        {
+          "text": "FTP",
+          "explanation": "Errada: transfere arquivos, não e-mails."
+        },
+        {
+          "text": "DNS",
+          "explanation": "Errada: traduz nomes de domínio em endereços IP."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O serviço DNS tem como função principal:",
+      "options": [
+        {
+          "text": "criptografar a comunicação entre cliente e servidor",
+          "explanation": "Errada: é função de TLS/HTTPS."
+        },
+        {
+          "text": "atribuir endereços IP automaticamente às máquinas",
+          "explanation": "Errada: é função do DHCP."
+        },
+        {
+          "text": "enviar e-mails",
+          "explanation": "Errada: é função do SMTP."
+        },
+        {
+          "text": "traduzir nomes de domínio em endereços IP",
+          "explanation": "Certa: permite acessar sites por nomes fáceis de lembrar."
+        },
+        {
+          "text": "bloquear acessos não autorizados",
+          "explanation": "Errada: é função de firewall."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "O endereço de uma página começa com “https://”. Isso indica que:",
+      "options": [
+        {
+          "text": "a comunicação com o servidor é criptografada por TLS",
+          "explanation": "Certa: HTTPS protege a confidencialidade e a integridade do tráfego."
+        },
+        {
+          "text": "o conteúdo do site é livre de vírus",
+          "explanation": "Errada: HTTPS não garante que o conteúdo seja seguro."
+        },
+        {
+          "text": "o site é oficial do governo",
+          "explanation": "Errada: qualquer site pode ter certificado."
+        },
+        {
+          "text": "o acesso é feito apenas por intranet",
+          "explanation": "Errada: HTTPS é muito usado na Internet pública."
+        },
+        {
+          "text": "os dados ficam salvos no computador local",
+          "explanation": "Errada: não tem relação com armazenamento local."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "O golpe em que o atacante envia mensagens falsas imitando uma instituição para obter senhas e dados pessoais chama-se:",
+      "options": [
+        {
+          "text": "ransomware",
+          "explanation": "Errada: sequestra dados mediante criptografia e exige resgate."
+        },
+        {
+          "text": "sniffing",
+          "explanation": "Errada: captura tráfego de rede."
+        },
+        {
+          "text": "phishing",
+          "explanation": "Certa: usa engenharia social via mensagens ou sites falsos."
+        },
+        {
+          "text": "spoofing de GPS",
+          "explanation": "Errada: falsifica localização."
+        },
+        {
+          "text": "backup",
+          "explanation": "Errada: é uma cópia de segurança, não um golpe."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "O malware que criptografa os arquivos da vítima e exige pagamento para liberá-los é o:",
+      "options": [
+        {
+          "text": "spyware",
+          "explanation": "Errada: espiona atividades do usuário."
+        },
+        {
+          "text": "adware",
+          "explanation": "Errada: exibe propagandas indesejadas."
+        },
+        {
+          "text": "worm",
+          "explanation": "Errada: replica-se pela rede, sem exigir resgate."
+        },
+        {
+          "text": "keylogger",
+          "explanation": "Errada: registra teclas digitadas."
+        },
+        {
+          "text": "ransomware",
+          "explanation": "Certa: combina criptografia maliciosa e extorsão."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual a principal diferença entre worm e vírus de computador?",
+      "options": [
+        {
+          "text": "O worm só afeta celulares.",
+          "explanation": "Errada: afeta qualquer sistema conectado."
+        },
+        {
+          "text": "O worm se propaga sozinho pela rede, enquanto o vírus depende de ser executado em um arquivo hospedeiro.",
+          "explanation": "Certa: o worm é autônomo; o vírus se anexa a programas ou arquivos."
+        },
+        {
+          "text": "O vírus não se replica.",
+          "explanation": "Errada: replicar-se é característica do vírus."
+        },
+        {
+          "text": "Os dois são idênticos.",
+          "explanation": "Errada: diferem na forma de propagação."
+        },
+        {
+          "text": "O worm é um programa legítimo de segurança.",
+          "explanation": "Errada: worm é malware."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual é a função principal de um firewall?",
+      "options": [
+        {
+          "text": "Remover todos os vírus já instalados",
+          "explanation": "Errada: é função de antivírus."
+        },
+        {
+          "text": "Fazer backup dos arquivos",
+          "explanation": "Errada: não é sua função."
+        },
+        {
+          "text": "Aumentar a velocidade da Internet",
+          "explanation": "Errada: não visa velocidade."
+        },
+        {
+          "text": "Filtrar o tráfego de rede conforme regras de segurança",
+          "explanation": "Certa: permite ou bloqueia conexões."
+        },
+        {
+          "text": "Criptografar o disco rígido",
+          "explanation": "Errada: criptografia de disco é outro recurso."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Na criptografia assimétrica, a comunicação segura é obtida com:",
+      "options": [
+        {
+          "text": "um par de chaves: uma pública e uma privada",
+          "explanation": "Certa: o que uma cifra, a outra decifra."
+        },
+        {
+          "text": "uma única chave compartilhada por ambos",
+          "explanation": "Errada: descreve a criptografia simétrica."
+        },
+        {
+          "text": "nenhuma chave",
+          "explanation": "Errada: toda criptografia usa chaves."
+        },
+        {
+          "text": "somente chaves públicas",
+          "explanation": "Errada: a privada é necessária para decifrar ou assinar."
+        },
+        {
+          "text": "somente senhas de usuário",
+          "explanation": "Errada: senha não substitui o par de chaves."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A autenticação em dois fatores (2FA) aumenta a segurança porque exige:",
+      "options": [
+        {
+          "text": "duas senhas digitadas em sequência",
+          "explanation": "Errada: ambas são do mesmo tipo (algo que se sabe)."
+        },
+        {
+          "text": "uma senha mais longa",
+          "explanation": "Errada: o tamanho não cria segundo fator."
+        },
+        {
+          "text": "dois elementos de categorias diferentes, como algo que se sabe e algo que se possui",
+          "explanation": "Certa: ex.: senha e código enviado ao celular."
+        },
+        {
+          "text": "troca de senha a cada dia",
+          "explanation": "Errada: não é 2FA."
+        },
+        {
+          "text": "acesso apenas de redes internas",
+          "explanation": "Errada: restringe local, não adiciona fator."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual prática é a mais adequada para proteger dados contra falhas de disco ou ransomware?",
+      "options": [
+        {
+          "text": "Armazenar o backup na mesma pasta dos arquivos originais",
+          "explanation": "Errada: uma falha ou ataque afetaria ambos."
+        },
+        {
+          "text": "Instalar vários antivírus ao mesmo tempo",
+          "explanation": "Errada: não substitui o backup e pode causar conflitos."
+        },
+        {
+          "text": "Desativar o firewall para evitar bloqueios",
+          "explanation": "Errada: aumenta a exposição."
+        },
+        {
+          "text": "Usar a mesma senha em todos os serviços",
+          "explanation": "Errada: aumenta o risco, não protege os dados."
+        },
+        {
+          "text": "Manter cópias de segurança (backup) periódicas, inclusive fora do computador original",
+          "explanation": "Certa: permite restaurar os dados após perda ou sequestro."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Uma VPN (rede privada virtual) é usada principalmente para:",
+      "options": [
+        {
+          "text": "acelerar o download de arquivos",
+          "explanation": "Errada: não é seu objetivo."
+        },
+        {
+          "text": "criar um canal criptografado entre o usuário e uma rede, mesmo sobre a Internet pública",
+          "explanation": "Certa: protege o tráfego e permite acesso remoto seguro."
+        },
+        {
+          "text": "remover anúncios de páginas web",
+          "explanation": "Errada: não tem esse propósito."
+        },
+        {
+          "text": "hospedar sites",
+          "explanation": "Errada: hospedagem é outro serviço."
+        },
+        {
+          "text": "converter nomes de domínio em IP",
+          "explanation": "Errada: é função do DNS."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual a diferença entre Internet e intranet?",
+      "options": [
+        {
+          "text": "A intranet é mais rápida por definição.",
+          "explanation": "Errada: velocidade não define a intranet."
+        },
+        {
+          "text": "A Internet é restrita a uma empresa.",
+          "explanation": "Errada: a Internet é pública e global."
+        },
+        {
+          "text": "A intranet não usa protocolos TCP/IP.",
+          "explanation": "Errada: usa as mesmas tecnologias."
+        },
+        {
+          "text": "A intranet é uma rede privada, normalmente de uma organização, que usa as mesmas tecnologias da Internet.",
+          "explanation": "Certa: acesso restrito a usuários autorizados."
+        },
+        {
+          "text": "São sinônimos.",
+          "explanation": "Errada: diferem em escopo e acesso."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Ataques de negação de serviço distribuído (DDoS) têm como objetivo:",
+      "options": [
+        {
+          "text": "tornar um serviço indisponível, sobrecarregando-o com requisições de muitas origens",
+          "explanation": "Certa: esgotam os recursos do alvo."
+        },
+        {
+          "text": "roubar senhas digitadas pelo usuário",
+          "explanation": "Errada: seria keylogger ou phishing."
+        },
+        {
+          "text": "criptografar arquivos e pedir resgate",
+          "explanation": "Errada: é ransomware."
+        },
+        {
+          "text": "instalar publicidade indesejada",
+          "explanation": "Errada: é adware."
+        },
+        {
+          "text": "corrigir vulnerabilidades do sistema",
+          "explanation": "Errada: o DDoS é um ataque."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "No Windows, qual atalho de teclado bloqueia rapidamente a estação de trabalho?",
+      "options": [
+        {
+          "text": "Ctrl + C",
+          "explanation": "Errada: copia o item selecionado."
+        },
+        {
+          "text": "Alt + F4",
+          "explanation": "Errada: fecha a janela ativa."
+        },
+        {
+          "text": "Windows + L",
+          "explanation": "Certa: bloqueia a sessão, exigindo senha para voltar."
+        },
+        {
+          "text": "Ctrl + Z",
+          "explanation": "Errada: desfaz a última ação."
+        },
+        {
+          "text": "Windows + D",
+          "explanation": "Errada: mostra a área de trabalho."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual é a função de um cookie em um navegador?",
+      "options": [
+        {
+          "text": "Bloquear anúncios",
+          "explanation": "Errada: não é função de cookies."
+        },
+        {
+          "text": "Executar vírus",
+          "explanation": "Errada: cookies são dados, não programas."
+        },
+        {
+          "text": "Aumentar a velocidade da Internet",
+          "explanation": "Errada: não é objetivo."
+        },
+        {
+          "text": "Fazer backup do disco",
+          "explanation": "Errada: não tem relação."
+        },
+        {
+          "text": "Armazenar pequenos dados enviados por sites, como preferências e sessão de login",
+          "explanation": "Certa: permite lembrar o usuário entre acessos."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual a principal diferença entre os protocolos POP3 e IMAP no recebimento de e-mails?",
+      "options": [
+        {
+          "text": "O POP3 envia mensagens e o IMAP só recebe",
+          "explanation": "Errada: o envio é feito pelo SMTP."
+        },
+        {
+          "text": "O POP3 costuma baixar as mensagens para o dispositivo, enquanto o IMAP as mantém no servidor e sincroniza entre dispositivos",
+          "explanation": "Certa: o IMAP é mais adequado a quem acessa o e-mail de vários aparelhos."
+        },
+        {
+          "text": "O IMAP baixa as mensagens e as apaga sempre do servidor",
+          "explanation": "Errada: essa é a lógica mais comum do POP3."
+        },
+        {
+          "text": "Ambos servem para enviar e-mails entre servidores",
+          "explanation": "Errada: o envio é feito pelo SMTP."
+        },
+        {
+          "text": "O POP3 criptografa tudo e o IMAP nunca pode ser criptografado",
+          "explanation": "Errada: ambos podem usar conexão criptografada."
+        }
+      ],
+      "correct": "B"
+    }
+  ],
+  "id": "54dc49e8-cece-45dc-9258-e42935be59c9"
+}

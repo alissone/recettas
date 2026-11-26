@@ -1,0 +1,530 @@
+{
+  "title": "Acidentes de Trânsito e Levantamento de Local — Banco 1",
+  "topic": "Acidentes de Trânsito",
+  "description": "Procedimentos no local, vestígios, tipos de acidente, socorro e registro.",
+  "source": "Itens baseados na prova do Curso de Formação DPRF 2009 (UnB/CESPE), convertidos para A–E, e questões inéditas",
+  "color": "#A33B3B",
+  "questions": [
+    {
+      "prompt": "Em termos técnicos, acidente de trânsito é:",
+      "options": [
+        {
+          "text": "qualquer discussão entre motoristas",
+          "explanation": "Errada: acidente exige dano."
+        },
+        {
+          "text": "apenas colisão entre dois veículos",
+          "explanation": "Errada: inclui atropelamentos, capotamentos e outros."
+        },
+        {
+          "text": "somente evento com morte",
+          "explanation": "Errada: inclui danos materiais ou lesões."
+        },
+        {
+          "text": "o evento intencional para causar dano",
+          "explanation": "Errada: o acidente não é intencional."
+        },
+        {
+          "text": "evento em que há danos pessoais e/ou materiais, com participação de ao menos um veículo em circulação na via",
+          "explanation": "Certa: a definição envolve veículo em circulação e danos."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Ao chegar a um local de acidente com vítimas, a primeira providência do policial é:",
+      "options": [
+        {
+          "text": "elaborar o croqui detalhado antes de qualquer outra medida",
+          "explanation": "Errada: o registro vem depois do socorro e da segurança."
+        },
+        {
+          "text": "garantir a segurança do local, sinalizar e providenciar socorro às vítimas",
+          "explanation": "Certa: preservar vidas e evitar novos acidentes é prioridade."
+        },
+        {
+          "text": "remover os veículos rapidamente",
+          "explanation": "Errada: remover antes da perícia pode destruir vestígios."
+        },
+        {
+          "text": "identificar o culpado e aplicar multa imediata",
+          "explanation": "Errada: a prioridade é o socorro."
+        },
+        {
+          "text": "aguardar a chegada da imprensa",
+          "explanation": "Errada: não é providência."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Por que é importante evitar remover veículos e vestígios do leito da via antes da perícia, quando possível?",
+      "options": [
+        {
+          "text": "Porque isso sempre gera multa ao policial",
+          "explanation": "Errada: o motivo é técnico."
+        },
+        {
+          "text": "Porque os veículos precisam ficar até anoitecer",
+          "explanation": "Errada: não há esse critério."
+        },
+        {
+          "text": "Porque a perícia só atua à noite",
+          "explanation": "Errada: não há relação."
+        },
+        {
+          "text": "Porque a alteração do local pode comprometer a reconstituição do acidente",
+          "explanation": "Certa: posição final, marcas de frenagem e peças são evidências."
+        },
+        {
+          "text": "Porque é regra de cortesia",
+          "explanation": "Errada: é questão de preservação de provas."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Quando for imprescindível movimentar veículos para garantir socorro ou segurança, o policial deve:",
+      "options": [
+        {
+          "text": "marcar previamente a posição original (fotos, medidas, marcações no solo) para possibilitar o registro",
+          "explanation": "Certa: a documentação preserva a informação."
+        },
+        {
+          "text": "não registrar nada para ganhar tempo",
+          "explanation": "Errada: perde-se informação."
+        },
+        {
+          "text": "mover tudo para o acostamento sem controle",
+          "explanation": "Errada: causa perda de elementos."
+        },
+        {
+          "text": "pedir às vítimas que posicionem os veículos",
+          "explanation": "Errada: não deve delegar o registro às partes."
+        },
+        {
+          "text": "descartar a ocorrência",
+          "explanation": "Errada: a ocorrência deve ser registrada."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A vítima de acidente com suspeita de lesão na coluna deve, em regra:",
+      "options": [
+        {
+          "text": "ser levantada rapidamente para ficar em pé",
+          "explanation": "Errada: pode agravar lesões."
+        },
+        {
+          "text": "ser carregada no carro particular imediatamente",
+          "explanation": "Errada: o socorro deve ser feito por equipe adequada."
+        },
+        {
+          "text": "ser movimentada o mínimo possível, salvo risco iminente como incêndio ou atropelamento adicional",
+          "explanation": "Certa: a movimentação inadequada pode agravar a lesão."
+        },
+        {
+          "text": "receber líquido para beber",
+          "explanation": "Errada: não se oferece líquido a vítimas graves."
+        },
+        {
+          "text": "ser deixada sem atenção",
+          "explanation": "Errada: deve-se monitorar até a chegada do socorro."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Em um acidente com motociclista, o capacete deve ser:",
+      "options": [
+        {
+          "text": "retirado imediatamente por qualquer pessoa",
+          "explanation": "Errada: pode agravar lesões."
+        },
+        {
+          "text": "sempre cortado com ferramenta",
+          "explanation": "Errada: depende da situação."
+        },
+        {
+          "text": "jogado fora para liberar espaço",
+          "explanation": "Errada: não é procedimento."
+        },
+        {
+          "text": "ignorado, pois não interfere",
+          "explanation": "Errada: sua retirada exige cuidados."
+        },
+        {
+          "text": "mantido, salvo necessidade de desobstruir vias aéreas, e retirado apenas por quem tenha treinamento",
+          "explanation": "Certa: a retirada incorreta pode agravar lesão cervical."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "As marcas de frenagem no asfalto servem, entre outras coisas, para:",
+      "options": [
+        {
+          "text": "provar sempre quem é o culpado",
+          "explanation": "Errada: são um elemento entre outros."
+        },
+        {
+          "text": "estimar a velocidade do veículo antes da frenagem e entender a dinâmica do acidente",
+          "explanation": "Certa: o comprimento da marca relaciona-se com a velocidade."
+        },
+        {
+          "text": "determinar a marca do veículo",
+          "explanation": "Errada: não é a função primária."
+        },
+        {
+          "text": "medir a temperatura do asfalto",
+          "explanation": "Errada: não é a função."
+        },
+        {
+          "text": "substituir o croqui",
+          "explanation": "Errada: complementam o registro."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O croqui do local do acidente tem como objetivo:",
+      "options": [
+        {
+          "text": "substituir a perícia oficial",
+          "explanation": "Errada: não substitui a perícia."
+        },
+        {
+          "text": "servir apenas como propaganda institucional",
+          "explanation": "Errada: é documento técnico."
+        },
+        {
+          "text": "registrar somente os documentos dos condutores",
+          "explanation": "Errada: o croqui é gráfico do local."
+        },
+        {
+          "text": "representar graficamente a posição de veículos, vítimas, vestígios e elementos da via",
+          "explanation": "Certa: ajuda a reconstituir o evento."
+        },
+        {
+          "text": "calcular multas",
+          "explanation": "Errada: não é sua função."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Para localizar um acidente em rodovia federal de forma precisa, usa-se normalmente:",
+      "options": [
+        {
+          "text": "a identificação da rodovia, o quilômetro e o sentido da via",
+          "explanation": "Certa: ex.: BR-040, km 120, sentido crescente."
+        },
+        {
+          "text": "apenas o nome do motorista",
+          "explanation": "Errada: não localiza o evento."
+        },
+        {
+          "text": "somente a cor do veículo",
+          "explanation": "Errada: não localiza o evento."
+        },
+        {
+          "text": "a data de nascimento das vítimas",
+          "explanation": "Errada: não localiza."
+        },
+        {
+          "text": "o número de passageiros",
+          "explanation": "Errada: não localiza."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Qual termo designa o deslocamento de um veículo que, ao perder a aderência, gira sobre o próprio eixo vertical?",
+      "options": [
+        {
+          "text": "Capotamento",
+          "explanation": "Errada: é giro em torno do eixo longitudinal, com o veículo virando."
+        },
+        {
+          "text": "Tombamento",
+          "explanation": "Errada: é quando o veículo cai de lado."
+        },
+        {
+          "text": "Rodopio (ou giro)",
+          "explanation": "Certa: é o movimento rotacional no plano da pista."
+        },
+        {
+          "text": "Atropelamento",
+          "explanation": "Errada: é o choque com pessoa ou animal."
+        },
+        {
+          "text": "Engavetamento",
+          "explanation": "Errada: é colisão em cadeia."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Capotamento é o tipo de acidente em que:",
+      "options": [
+        {
+          "text": "o veículo cai de lado sem rodar, com as rodas no chão",
+          "explanation": "Errada: o conceito mais próximo é tombamento."
+        },
+        {
+          "text": "há choque com pedestre",
+          "explanation": "Errada: seria atropelamento."
+        },
+        {
+          "text": "há colisão em cadeia",
+          "explanation": "Errada: seria engavetamento."
+        },
+        {
+          "text": "o veículo sai da pista sem tombar",
+          "explanation": "Errada: seria saída de pista."
+        },
+        {
+          "text": "o veículo gira em torno de seu eixo longitudinal, ficando total ou parcialmente com as rodas para cima",
+          "explanation": "Certa: é a definição de capotamento."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "A colisão entre veículos que trafegam no mesmo sentido, quando um atinge a traseira do outro, é chamada de:",
+      "options": [
+        {
+          "text": "colisão frontal",
+          "explanation": "Errada: ocorre em sentidos opostos."
+        },
+        {
+          "text": "colisão traseira",
+          "explanation": "Certa: o veículo de trás atinge a traseira do da frente."
+        },
+        {
+          "text": "colisão lateral",
+          "explanation": "Errada: ocorre na lateral."
+        },
+        {
+          "text": "atropelamento",
+          "explanation": "Errada: envolve pedestre."
+        },
+        {
+          "text": "abalroamento transversal",
+          "explanation": "Errada: ocorre em ângulo, quando um cruza a trajetória do outro."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O fator que mais contribui para acidentes, segundo estudos de segurança viária, costuma ser:",
+      "options": [
+        {
+          "text": "o clima, em todos os casos",
+          "explanation": "Errada: condições climáticas contribuem, mas o comportamento é predominante."
+        },
+        {
+          "text": "a cor do veículo",
+          "explanation": "Errada: não é fator relevante."
+        },
+        {
+          "text": "o horário de funcionamento do comércio",
+          "explanation": "Errada: não é fator."
+        },
+        {
+          "text": "o fator humano, como excesso de velocidade, uso de álcool e distração",
+          "explanation": "Certa: a conduta do condutor é o fator predominante."
+        },
+        {
+          "text": "a idade do asfalto isoladamente",
+          "explanation": "Errada: a via contribui, mas o fator humano predomina."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A “regra dos dois segundos” orienta o condutor a:",
+      "options": [
+        {
+          "text": "manter distância segura do veículo da frente, equivalente a pelo menos dois segundos de percurso",
+          "explanation": "Certa: dá tempo para reagir e frear."
+        },
+        {
+          "text": "ultrapassar sempre em dois segundos",
+          "explanation": "Errada: não é objetivo."
+        },
+        {
+          "text": "frear somente depois de dois segundos",
+          "explanation": "Errada: não é a regra."
+        },
+        {
+          "text": "manter a velocidade por dois segundos",
+          "explanation": "Errada: não é a regra."
+        },
+        {
+          "text": "buzinar duas vezes",
+          "explanation": "Errada: não é a regra."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Após o evento, a elaboração do boletim de acidente de trânsito (BAT) tem por finalidade:",
+      "options": [
+        {
+          "text": "apenas informar a seguradora",
+          "explanation": "Errada: serve a vários fins."
+        },
+        {
+          "text": "punir o motorista automaticamente",
+          "explanation": "Errada: não impõe penalidade por si."
+        },
+        {
+          "text": "registrar oficialmente os dados do evento para fins estatísticos, administrativos e judiciais",
+          "explanation": "Certa: o registro subsidia ações e políticas de segurança."
+        },
+        {
+          "text": "substituir o laudo pericial",
+          "explanation": "Errada: são documentos distintos."
+        },
+        {
+          "text": "evitar que haja investigação",
+          "explanation": "Errada: contribui para a investigação."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual a importância da sinalização do local do acidente?",
+      "options": [
+        {
+          "text": "Apenas satisfazer exigência burocrática",
+          "explanation": "Errada: tem função real de segurança."
+        },
+        {
+          "text": "Impedir que as pessoas filmem",
+          "explanation": "Errada: não é objetivo."
+        },
+        {
+          "text": "Aumentar o tráfego no local",
+          "explanation": "Errada: busca o contrário."
+        },
+        {
+          "text": "Evitar que a perícia chegue",
+          "explanation": "Errada: a sinalização protege a todos."
+        },
+        {
+          "text": "Alertar os demais condutores para evitar novos acidentes e proteger vítimas e equipes",
+          "explanation": "Certa: reduz o risco de acidentes secundários."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Um dos objetivos do levantamento de local de acidente é:",
+      "options": [
+        {
+          "text": "encontrar culpados antes do exame dos fatos",
+          "explanation": "Errada: a análise deve ser técnica."
+        },
+        {
+          "text": "reunir elementos técnicos para esclarecer causas e dinâmica do evento",
+          "explanation": "Certa: fundamenta a análise e eventuais responsabilizações."
+        },
+        {
+          "text": "liberar o trânsito sem registros",
+          "explanation": "Errada: o registro é necessário."
+        },
+        {
+          "text": "produzir fotos para redes sociais",
+          "explanation": "Errada: não é a finalidade."
+        },
+        {
+          "text": "evitar a presença de testemunhas",
+          "explanation": "Errada: testemunhas contribuem."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "No atendimento de acidente em rodovia federal sem vítimas, as atribuições da PRF incluem:",
+      "options": [
+        {
+          "text": "somente acidentes com mortes",
+          "explanation": "Errada: acidentes sem vítima também são atendidos."
+        },
+        {
+          "text": "apenas acidentes em áreas urbanas",
+          "explanation": "Errada: sua atuação é nas rodovias federais."
+        },
+        {
+          "text": "nenhuma, pois cabe só à polícia civil",
+          "explanation": "Errada: a PRF atua em rodovias federais."
+        },
+        {
+          "text": "o levantamento de local e o registro da ocorrência, além de outros procedimentos estabelecidos",
+          "explanation": "Certa: a PRF atua em acidentes nas rodovias federais, com ou sem vítimas."
+        },
+        {
+          "text": "somente a retirada de veículos",
+          "explanation": "Errada: inclui levantamento e registro."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Além do fator humano, quais outros fatores costumam ser analisados como condicionantes de um acidente?",
+      "options": [
+        {
+          "text": "A via (conservação, sinalização, traçado), o veículo (manutenção) e o ambiente (clima, visibilidade)",
+          "explanation": "Certa: a análise considera o conjunto de fatores que contribuíram para o evento."
+        },
+        {
+          "text": "Somente a cor e o modelo do veículo",
+          "explanation": "Errada: não são fatores relevantes."
+        },
+        {
+          "text": "Apenas o horário do dia, isoladamente",
+          "explanation": "Errada: é um dos elementos do ambiente, mas não o único."
+        },
+        {
+          "text": "A profissão da vítima",
+          "explanation": "Errada: não é um fator condicionante."
+        },
+        {
+          "text": "O preço do combustível",
+          "explanation": "Errada: não é um fator condicionante."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Em um acidente com caminhão transportando produto perigoso, qual é a conduta adequada ao chegar ao local?",
+      "options": [
+        {
+          "text": "Aproximar-se para cheirar e identificar o produto",
+          "explanation": "Errada: o contato direto pode causar intoxicação."
+        },
+        {
+          "text": "Lavar o produto com água imediatamente, sem identificá-lo",
+          "explanation": "Errada: alguns produtos reagem com a água."
+        },
+        {
+          "text": "Isolar e sinalizar a área, afastar curiosos e identificar o produto pelo painel de segurança e número ONU, acionando os órgãos competentes",
+          "explanation": "Certa: o painel laranja traz os números de risco e ONU que permitem identificar o produto sem contato."
+        },
+        {
+          "text": "Liberar o trânsito rapidamente, ignorando o produto",
+          "explanation": "Errada: coloca pessoas em risco."
+        },
+        {
+          "text": "Remover a carga manualmente para agilizar",
+          "explanation": "Errada: a remoção exige equipe especializada."
+        }
+      ],
+      "correct": "C"
+    }
+  ],
+  "id": "1aed3b5f-91ec-404f-9125-d574618f5be8"
+}

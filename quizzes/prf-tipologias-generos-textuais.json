@@ -1,0 +1,1059 @@
+{
+  "title": "Tipologias e Gêneros Textuais",
+  "topic": "Língua Portuguesa",
+  "description": "Diferença entre tipo e gênero, os quatro tipos, sequências de Adam e gêneros jornalísticos e institucionais.",
+  "source": "Baseado no slide sobre Tipologias e Gêneros Textuais e na ficha de estudo correspondente",
+  "color": "#5E8C3A",
+  "questions": [
+    {
+      "prompt": "A tipologia textual é melhor definida como:",
+      "options": [
+        {
+          "text": "conjunto ilimitado de formas sociais de texto",
+          "explanation": "Errada: descreve os gêneros."
+        },
+        {
+          "text": "classificação dos textos por suporte de publicação",
+          "explanation": "Errada: suporte não define o tipo."
+        },
+        {
+          "text": "lista de formas que mudam com a tecnologia",
+          "explanation": "Errada: refere-se aos gêneros."
+        },
+        {
+          "text": "conjunto limitado e estável de estruturas, definidas por traços linguísticos",
+          "explanation": "Certa: narração, descrição, dissertação e injunção são poucas categorias estáveis."
+        },
+        {
+          "text": "conjunto de regras de ortografia do texto formal",
+          "explanation": "Errada: não tem relação com tipologia."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "O gênero textual caracteriza-se por ser:",
+      "options": [
+        {
+          "text": "forma comunicativa concreta, histórica e flexível, ligada a um propósito social",
+          "explanation": "Certa: o gênero materializa estruturas em um suporte e para uma finalidade."
+        },
+        {
+          "text": "categoria teórica fixa e finita",
+          "explanation": "Errada: descreve o tipo."
+        },
+        {
+          "text": "sinônimo de sequência narrativa",
+          "explanation": "Errada: a narrativa é um tipo."
+        },
+        {
+          "text": "estrutura abstrata independente de finalidade",
+          "explanation": "Errada: o gênero depende da finalidade."
+        },
+        {
+          "text": "conjunto de quatro categorias invariáveis",
+          "explanation": "Errada: os gêneros são ilimitados."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Qual alternativa traz apenas gêneros textuais?",
+      "options": [
+        {
+          "text": "narração, descrição, injunção, dissertação",
+          "explanation": "Errada: são tipos."
+        },
+        {
+          "text": "notícia, narração, edital, injunção",
+          "explanation": "Errada: mistura gêneros e tipos."
+        },
+        {
+          "text": "notícia, bula, edital, crônica",
+          "explanation": "Certa: são formas sociais concretas."
+        },
+        {
+          "text": "descrição, bula, crônica, dissertação",
+          "explanation": "Errada: descrição e dissertação são tipos."
+        },
+        {
+          "text": "editorial, argumentação, e-mail, narração",
+          "explanation": "Errada: argumentação e narração são tipos."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual alternativa traz apenas tipos textuais?",
+      "options": [
+        {
+          "text": "notícia, descrição, dissertação, injunção",
+          "explanation": "Errada: notícia é gênero."
+        },
+        {
+          "text": "narração, editorial, dissertação, injunção",
+          "explanation": "Errada: editorial é gênero."
+        },
+        {
+          "text": "narração, descrição, charge, injunção",
+          "explanation": "Errada: charge é gênero."
+        },
+        {
+          "text": "receita, descrição, dissertação, narração",
+          "explanation": "Errada: receita é gênero."
+        },
+        {
+          "text": "narração, descrição, dissertação, injunção",
+          "explanation": "Certa: são estruturas linguísticas predominantes."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "A frase “A receita é um tipo textual injuntivo” é:",
+      "options": [
+        {
+          "text": "correta: receita e injunção são sinônimos",
+          "explanation": "Errada: um é gênero e o outro é tipo."
+        },
+        {
+          "text": "incorreta: receita é gênero, e a injunção é o tipo predominante",
+          "explanation": "Certa: tipo e gênero são conceitos distintos."
+        },
+        {
+          "text": "incorreta: a receita é narrativa por natureza",
+          "explanation": "Errada: predomina a injunção."
+        },
+        {
+          "text": "correta: todo gênero é também um tipo",
+          "explanation": "Errada: são categorias diferentes."
+        },
+        {
+          "text": "incorreta: a receita não tem tipo predominante",
+          "explanation": "Errada: o tipo predominante é o injuntivo."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Para Marcuschi, tipo e gênero são:",
+      "options": [
+        {
+          "text": "opostos: o texto é tipo ou é gênero",
+          "explanation": "Errada: coexistem."
+        },
+        {
+          "text": "idênticos: só mudam de nome",
+          "explanation": "Errada: têm natureza diferente."
+        },
+        {
+          "text": "independentes: gêneros dispensam tipos",
+          "explanation": "Errada: os gêneros se valem dos tipos."
+        },
+        {
+          "text": "complementares: todo texto pertence a um gênero e se organiza com tipos",
+          "explanation": "Certa: não há dicotomia entre eles."
+        },
+        {
+          "text": "excludentes: tipo só aparece em textos sem gênero",
+          "explanation": "Errada: todo texto tem gênero."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual pergunta ajuda a identificar o tipo de um texto?",
+      "options": [
+        {
+          "text": "Como o texto se organiza: narra, descreve, expõe, argumenta ou instrui?",
+          "explanation": "Certa: o tipo é a estrutura."
+        },
+        {
+          "text": "Em que site o texto foi publicado?",
+          "explanation": "Errada: suporte ajuda no gênero."
+        },
+        {
+          "text": "Quem é o destinatário principal?",
+          "explanation": "Errada: também ajuda no gênero."
+        },
+        {
+          "text": "Qual é o nome do documento no dia a dia?",
+          "explanation": "Errada: indica o gênero."
+        },
+        {
+          "text": "A que esfera de atividade o texto pertence?",
+          "explanation": "Errada: refere-se ao domínio do gênero."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Por que a lista de gêneros é aberta e a de tipos é fechada?",
+      "options": [
+        {
+          "text": "Os tipos são inventados todo ano",
+          "explanation": "Errada: são poucos e estáveis."
+        },
+        {
+          "text": "Os gêneros não dependem de finalidade",
+          "explanation": "Errada: dependem."
+        },
+        {
+          "text": "Os gêneros são históricos e surgem com novas práticas e tecnologias",
+          "explanation": "Certa: e-mail, blog e meme surgiram depois."
+        },
+        {
+          "text": "Os tipos mudam conforme o suporte",
+          "explanation": "Errada: não dependem do suporte."
+        },
+        {
+          "text": "Toda novidade textual vira um novo tipo",
+          "explanation": "Errada: surgem gêneros, não tipos."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "São elementos centrais do texto narrativo:",
+      "options": [
+        {
+          "text": "tese, argumentos e contra-argumentos",
+          "explanation": "Errada: argumentação."
+        },
+        {
+          "text": "ingredientes, passos e imperativos",
+          "explanation": "Errada: injunção."
+        },
+        {
+          "text": "definição, exemplo e síntese",
+          "explanation": "Errada: exposição."
+        },
+        {
+          "text": "perguntas e respostas alternadas",
+          "explanation": "Errada: diálogo."
+        },
+        {
+          "text": "personagens, tempo, espaço e conflito",
+          "explanation": "Certa: sem eles, não há narração."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual conjunto de marcas é típico da narração?",
+      "options": [
+        {
+          "text": "verbos no imperativo e numeração de passos",
+          "explanation": "Errada: injunção."
+        },
+        {
+          "text": "verbos de ação no pretérito e marcadores temporais",
+          "explanation": "Certa: a narração avança no tempo."
+        },
+        {
+          "text": "adjetivos e indicadores de lugar",
+          "explanation": "Errada: descrição."
+        },
+        {
+          "text": "conectivos de oposição e de conclusão em série",
+          "explanation": "Errada: argumentação."
+        },
+        {
+          "text": "“ou seja” e “por exemplo” em série",
+          "explanation": "Errada: exposição."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O tipo descritivo tem como finalidade principal:",
+      "options": [
+        {
+          "text": "contar fatos em sequência",
+          "explanation": "Errada: narração."
+        },
+        {
+          "text": "defender uma tese",
+          "explanation": "Errada: argumentação."
+        },
+        {
+          "text": "instruir o leitor",
+          "explanation": "Errada: injunção."
+        },
+        {
+          "text": "apresentar características de seres, objetos, lugares ou situações",
+          "explanation": "Certa: retrata propriedades e aspectos."
+        },
+        {
+          "text": "reproduzir turnos de fala",
+          "explanation": "Errada: diálogo."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A descrição aparece, com mais frequência:",
+      "options": [
+        {
+          "text": "inserida em outros tipos, como a narração",
+          "explanation": "Certa: costuma ser sequência encaixada."
+        },
+        {
+          "text": "sempre sozinha em um texto",
+          "explanation": "Errada: raramente aparece isolada."
+        },
+        {
+          "text": "só em textos jurídicos",
+          "explanation": "Errada: aparece em muitos gêneros."
+        },
+        {
+          "text": "apenas em manuais",
+          "explanation": "Errada: não é exclusiva de manuais."
+        },
+        {
+          "text": "só em textos dialogais",
+          "explanation": "Errada: não é exclusiva do diálogo."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Na dissertação expositiva, o autor:",
+      "options": [
+        {
+          "text": "defende uma tese para convencer",
+          "explanation": "Errada: argumentação."
+        },
+        {
+          "text": "narra fatos com personagens",
+          "explanation": "Errada: narração."
+        },
+        {
+          "text": "explica um assunto de modo neutro e impessoal",
+          "explanation": "Certa: o objetivo é informar e explicar."
+        },
+        {
+          "text": "dá ordens ao leitor",
+          "explanation": "Errada: injunção."
+        },
+        {
+          "text": "retrata aspectos físicos de um lugar",
+          "explanation": "Errada: descrição."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Na dissertação argumentativa, o autor:",
+      "options": [
+        {
+          "text": "relata fatos recentes sem opinião",
+          "explanation": "Errada: gênero informativo."
+        },
+        {
+          "text": "enumera ingredientes e passos",
+          "explanation": "Errada: injunção."
+        },
+        {
+          "text": "descreve um cenário sem tese",
+          "explanation": "Errada: descrição."
+        },
+        {
+          "text": "reproduz um diálogo",
+          "explanation": "Errada: sequência dialogal."
+        },
+        {
+          "text": "assume uma tese e a sustenta com argumentos",
+          "explanation": "Certa: a finalidade é persuadir."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual gênero tem predomínio do tipo dissertativo-argumentativo?",
+      "options": [
+        {
+          "text": "receita",
+          "explanation": "Errada: injuntivo."
+        },
+        {
+          "text": "editorial",
+          "explanation": "Certa: expressa a posição do veículo."
+        },
+        {
+          "text": "conto de fadas",
+          "explanation": "Errada: narrativo."
+        },
+        {
+          "text": "anúncio de imóvel",
+          "explanation": "Errada: descritivo."
+        },
+        {
+          "text": "manual de instruções",
+          "explanation": "Errada: injuntivo."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O tipo injuntivo é aquele em que o texto:",
+      "options": [
+        {
+          "text": "conta fatos que se transformam",
+          "explanation": "Errada: narrativo."
+        },
+        {
+          "text": "descreve características",
+          "explanation": "Errada: descritivo."
+        },
+        {
+          "text": "defende uma tese",
+          "explanation": "Errada: argumentativo."
+        },
+        {
+          "text": "orienta ou instrui o leitor sobre o que fazer",
+          "explanation": "Certa: o foco é a ação do interlocutor."
+        },
+        {
+          "text": "explica um conceito neutro",
+          "explanation": "Errada: expositivo."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual marca linguística é típica do texto injuntivo?",
+      "options": [
+        {
+          "text": "verbos no imperativo ou infinitivo e passos organizados",
+          "explanation": "Certa: “misture”, “aperte”, “pressione”."
+        },
+        {
+          "text": "verbos no pretérito e marcadores de tempo",
+          "explanation": "Errada: narração."
+        },
+        {
+          "text": "adjetivos de aspecto e indicadores de lugar",
+          "explanation": "Errada: descrição."
+        },
+        {
+          "text": "conectivos de oposição em série",
+          "explanation": "Errada: argumentação."
+        },
+        {
+          "text": "perguntas e respostas em turnos",
+          "explanation": "Errada: diálogo."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Segundo parte das fontes, o texto prescritivo difere do injuntivo por:",
+      "options": [
+        {
+          "text": "narrar fatos sem comandos",
+          "explanation": "Errada: não há esse critério."
+        },
+        {
+          "text": "descrever objetos",
+          "explanation": "Errada: não é critério."
+        },
+        {
+          "text": "impor condutas com maior obrigatoriedade, como em editais",
+          "explanation": "Certa: o injuntivo orienta; o prescritivo impõe. Há autores que usam os termos como sinônimos."
+        },
+        {
+          "text": "defender uma tese política",
+          "explanation": "Errada: é argumentação."
+        },
+        {
+          "text": "reproduzir diálogos informais",
+          "explanation": "Errada: é diálogo."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Segundo Adam, as sequências textuais básicas são:",
+      "options": [
+        {
+          "text": "notícia, editorial, bula, receita e crônica",
+          "explanation": "Errada: são gêneros."
+        },
+        {
+          "text": "jornalística, jurídica, científica, religiosa e literária",
+          "explanation": "Errada: são domínios discursivos."
+        },
+        {
+          "text": "oral, escrita, digital, impressa e audiovisual",
+          "explanation": "Errada: são modalidades e suportes."
+        },
+        {
+          "text": "formal, informal, técnica, literária e publicitária",
+          "explanation": "Errada: são registros e estilos."
+        },
+        {
+          "text": "narrativa, descritiva, argumentativa, explicativa e dialogal",
+          "explanation": "Certa: são as cinco sequências elementares."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Heterogeneidade tipológica é:",
+      "options": [
+        {
+          "text": "a existência de um único tipo em todos os gêneros",
+          "explanation": "Errada: o contrário."
+        },
+        {
+          "text": "a mistura de vários tipos em um mesmo gênero",
+          "explanation": "Certa: a reportagem mistura narração, descrição e exposição."
+        },
+        {
+          "text": "a troca de suporte de um mesmo texto",
+          "explanation": "Errada: não é troca de suporte."
+        },
+        {
+          "text": "o desaparecimento de gêneros antigos",
+          "explanation": "Errada: não se refere a isso."
+        },
+        {
+          "text": "a divisão dos gêneros em informativos e opinativos",
+          "explanation": "Errada: essa divisão é jornalística."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Ao classificar um texto que mistura narração e descrição, o ideal é:",
+      "options": [
+        {
+          "text": "considerar só o primeiro parágrafo",
+          "explanation": "Errada: o texto todo importa."
+        },
+        {
+          "text": "dizer que o texto não tem tipo",
+          "explanation": "Errada: sempre há um predominante."
+        },
+        {
+          "text": "escolher sempre a descrição",
+          "explanation": "Errada: depende do texto."
+        },
+        {
+          "text": "identificar o tipo predominante",
+          "explanation": "Certa: a banca pergunta pelo predominante."
+        },
+        {
+          "text": "chamar o primeiro tipo de gênero",
+          "explanation": "Errada: tipo e gênero são distintos."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Para Bakhtin, os gêneros do discurso relacionam-se com:",
+      "options": [
+        {
+          "text": "as esferas da atividade humana, como imprensa, ciência e direito",
+          "explanation": "Certa: cada esfera gera gêneros relativamente estáveis."
+        },
+        {
+          "text": "só a ortografia",
+          "explanation": "Errada: não é o foco."
+        },
+        {
+          "text": "só o número de parágrafos",
+          "explanation": "Errada: forma não define."
+        },
+        {
+          "text": "só o suporte físico",
+          "explanation": "Errada: o suporte é apenas um aspecto."
+        },
+        {
+          "text": "a divisão entre oral e escrito",
+          "explanation": "Errada: não é o critério central."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Para Marcuschi, dominar um gênero é dominar:",
+      "options": [
+        {
+          "text": "regras gramaticais fixas",
+          "explanation": "Errada: não é só gramática."
+        },
+        {
+          "text": "apenas a estrutura tipológica",
+          "explanation": "Errada: vai além do tipo."
+        },
+        {
+          "text": "uma forma de realizar objetivos pela linguagem",
+          "explanation": "Certa: o gênero é prática social."
+        },
+        {
+          "text": "o suporte físico impresso",
+          "explanation": "Errada: não é o suporte."
+        },
+        {
+          "text": "os nomes dos tipos de memória",
+          "explanation": "Errada: não é nomenclatura."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "O suporte textual é:",
+      "options": [
+        {
+          "text": "a estrutura que organiza o texto",
+          "explanation": "Errada: é o tipo."
+        },
+        {
+          "text": "o conjunto de gêneros de uma esfera",
+          "explanation": "Errada: é o domínio discursivo."
+        },
+        {
+          "text": "a finalidade do autor",
+          "explanation": "Errada: é o propósito comunicativo."
+        },
+        {
+          "text": "a lista de conectivos do texto",
+          "explanation": "Errada: não tem relação."
+        },
+        {
+          "text": "o lugar, físico ou virtual, em que o texto se materializa",
+          "explanation": "Certa: jornal, site, outdoor e rede social."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Qual alternativa traz apenas gêneros do jornalismo informativo?",
+      "options": [
+        {
+          "text": "editorial, artigo, resenha, coluna",
+          "explanation": "Errada: são opinativos."
+        },
+        {
+          "text": "nota, notícia, reportagem, entrevista",
+          "explanation": "Certa: formam o grupo informativo."
+        },
+        {
+          "text": "notícia, editorial, charge, carta",
+          "explanation": "Errada: editorial, charge e carta são opinativos."
+        },
+        {
+          "text": "reportagem, crônica, artigo, resenha",
+          "explanation": "Errada: crônica, artigo e resenha não são informativos."
+        },
+        {
+          "text": "entrevista, editorial, nota, charge",
+          "explanation": "Errada: editorial e charge são opinativos."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "O editorial difere do artigo de opinião porque:",
+      "options": [
+        {
+          "text": "é escrito por um leitor",
+          "explanation": "Errada: é do veículo."
+        },
+        {
+          "text": "tem predomínio narrativo",
+          "explanation": "Errada: é argumentativo."
+        },
+        {
+          "text": "dá instruções ao leitor",
+          "explanation": "Errada: não é injuntivo."
+        },
+        {
+          "text": "expressa a posição do veículo, em geral sem assinatura individual",
+          "explanation": "Certa: o artigo é assinado."
+        },
+        {
+          "text": "apresenta só dados sem tese",
+          "explanation": "Errada: defende uma tese."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "A notícia tem como finalidade principal:",
+      "options": [
+        {
+          "text": "informar sobre um fato recente e relevante",
+          "explanation": "Certa: é gênero informativo."
+        },
+        {
+          "text": "convencer sobre uma tese política",
+          "explanation": "Errada: seria argumentação."
+        },
+        {
+          "text": "orientar passos de uma tarefa",
+          "explanation": "Errada: injunção."
+        },
+        {
+          "text": "retratar um cenário esteticamente",
+          "explanation": "Errada: descrição."
+        },
+        {
+          "text": "ironizar uma personagem",
+          "explanation": "Errada: não é o objetivo da notícia."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A crônica é um gênero que:",
+      "options": [
+        {
+          "text": "registra normas em itens numerados",
+          "explanation": "Errada: edital."
+        },
+        {
+          "text": "apresenta apenas dados neutros",
+          "explanation": "Errada: não é só exposição."
+        },
+        {
+          "text": "parte de fatos do cotidiano, com tom pessoal, humor ou reflexão",
+          "explanation": "Certa: costuma misturar tipos."
+        },
+        {
+          "text": "ordena passos em imperativo",
+          "explanation": "Errada: manual ou receita."
+        },
+        {
+          "text": "reproduz perguntas e respostas",
+          "explanation": "Errada: entrevista."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "A reportagem difere da notícia por:",
+      "options": [
+        {
+          "text": "ter um único parágrafo",
+          "explanation": "Errada: costuma ser longa."
+        },
+        {
+          "text": "usar só imperativo",
+          "explanation": "Errada: não é injuntiva."
+        },
+        {
+          "text": "defender tese sem dados",
+          "explanation": "Errada: apresenta dados."
+        },
+        {
+          "text": "ser escrita por leitores",
+          "explanation": "Errada: é do veículo."
+        },
+        {
+          "text": "aprofundar o tema e combinar narração, descrição, exposição e falas",
+          "explanation": "Certa: é mais longa e plural."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "O edital é um gênero que:",
+      "options": [
+        {
+          "text": "conta uma história com conflito",
+          "explanation": "Errada: conto."
+        },
+        {
+          "text": "torna públicas regras e condições, com linguagem formal e itens numerados",
+          "explanation": "Certa: é injuntivo/prescritivo."
+        },
+        {
+          "text": "defende a opinião do jornal",
+          "explanation": "Errada: editorial."
+        },
+        {
+          "text": "descreve um cenário poético",
+          "explanation": "Errada: não é a função."
+        },
+        {
+          "text": "reproduz uma conversa informal",
+          "explanation": "Errada: não é o gênero."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual expressão é típica do tipo prescritivo de um edital?",
+      "options": [
+        {
+          "text": "“de repente, o dia amanheceu”",
+          "explanation": "Errada: narrativa."
+        },
+        {
+          "text": "“ao fundo, o céu azul”",
+          "explanation": "Errada: descritiva."
+        },
+        {
+          "text": "“talvez a cidade mude”",
+          "explanation": "Errada: não prescreve."
+        },
+        {
+          "text": "“é vedada a inscrição fora do prazo”",
+          "explanation": "Certa: impõe uma proibição."
+        },
+        {
+          "text": "“como disse o entrevistado”",
+          "explanation": "Errada: remete a uma fonte."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Na bula de remédio predominam:",
+      "options": [
+        {
+          "text": "exposição das informações e injunção sobre o modo de usar",
+          "explanation": "Certa: informa e orienta."
+        },
+        {
+          "text": "narração e descrição estética",
+          "explanation": "Errada: não são centrais."
+        },
+        {
+          "text": "argumentação política",
+          "explanation": "Errada: não argumenta."
+        },
+        {
+          "text": "diálogos entre médico e paciente",
+          "explanation": "Errada: não há diálogo."
+        },
+        {
+          "text": "apenas descrição do frasco",
+          "explanation": "Errada: não é o foco."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "Em uma receita, os ingredientes e o modo de preparo são, respectivamente:",
+      "options": [
+        {
+          "text": "mais narrativo e mais argumentativo",
+          "explanation": "Errada: não correspondem."
+        },
+        {
+          "text": "mais dialogal e mais explicativo",
+          "explanation": "Errada: não correspondem."
+        },
+        {
+          "text": "mais descritivo e mais injuntivo",
+          "explanation": "Certa: lista de elementos e ordens de ação."
+        },
+        {
+          "text": "mais argumentativo e mais descritivo",
+          "explanation": "Errada: invertido e incorreto."
+        },
+        {
+          "text": "mais injuntivo e mais narrativo",
+          "explanation": "Errada: invertido."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "Qual alternativa cai na armadilha de confundir tipo com gênero?",
+      "options": [
+        {
+          "text": "“Charge é um gênero que usa humor e imagem.”",
+          "explanation": "Errada: está correta."
+        },
+        {
+          "text": "“O editorial é gênero com predomínio argumentativo.”",
+          "explanation": "Errada: está correta."
+        },
+        {
+          "text": "“A receita é gênero com predomínio injuntivo.”",
+          "explanation": "Errada: está correta."
+        },
+        {
+          "text": "“A notícia é gênero informativo.”",
+          "explanation": "Errada: está correta."
+        },
+        {
+          "text": "“Charge é um tipo textual humorístico.”",
+          "explanation": "Certa: charge é gênero."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Por que “um texto só pode ter um tipo” é afirmação falsa?",
+      "options": [
+        {
+          "text": "Porque todo texto tem cinco tipos iguais",
+          "explanation": "Errada: não há partes iguais."
+        },
+        {
+          "text": "Porque os gêneros misturam tipos, embora só um seja predominante",
+          "explanation": "Certa: há heterogeneidade tipológica."
+        },
+        {
+          "text": "Porque tipos não existem em textos reais",
+          "explanation": "Errada: existem."
+        },
+        {
+          "text": "Porque o tipo depende só do suporte",
+          "explanation": "Errada: depende da estrutura."
+        },
+        {
+          "text": "Porque só gêneros orais têm tipo",
+          "explanation": "Errada: textos escritos também têm."
+        }
+      ],
+      "correct": "B"
+    },
+    {
+      "prompt": "Qual é o tipo predominante deste texto?",
+      "context": {
+        "text": "Marta ouviu o miado na escada. Desceu de pijama, pegou o gato no colo e, no dia seguinte, ele já dormia no sofá."
+      },
+      "options": [
+        {
+          "text": "injuntivo",
+          "explanation": "Errada: não instrui."
+        },
+        {
+          "text": "argumentativo",
+          "explanation": "Errada: não defende tese."
+        },
+        {
+          "text": "expositivo",
+          "explanation": "Errada: não explica um conceito."
+        },
+        {
+          "text": "narrativo",
+          "explanation": "Certa: tem personagem, tempo e fatos em sequência."
+        },
+        {
+          "text": "dialogal",
+          "explanation": "Errada: não há turnos de fala."
+        }
+      ],
+      "correct": "D"
+    },
+    {
+      "prompt": "Qual é o tipo predominante deste texto?",
+      "context": {
+        "text": "Conecte o cabo à tomada. Encha o reservatório com água fria. Coloque o filtro e feche a tampa. Pressione o botão vermelho."
+      },
+      "options": [
+        {
+          "text": "injuntivo",
+          "explanation": "Certa: imperativo e passos em sequência."
+        },
+        {
+          "text": "narrativo",
+          "explanation": "Errada: não conta fatos."
+        },
+        {
+          "text": "argumentativo",
+          "explanation": "Errada: não defende tese."
+        },
+        {
+          "text": "descritivo",
+          "explanation": "Errada: não retrata."
+        },
+        {
+          "text": "dialogal",
+          "explanation": "Errada: não há diálogo."
+        }
+      ],
+      "correct": "A"
+    },
+    {
+      "prompt": "A fala “Sem política de apoio, a feira vira lembrança” em uma reportagem tem função de:",
+      "context": {
+        "text": "Para o economista Paulo Neves, a queda reflete a concorrência dos mercados de bairro. “Sem política de apoio, a feira vira lembrança”, afirma."
+      },
+      "options": [
+        {
+          "text": "ordenar uma ação ao leitor",
+          "explanation": "Errada: não é injunção."
+        },
+        {
+          "text": "descrever o cenário da feira",
+          "explanation": "Errada: não descreve."
+        },
+        {
+          "text": "dar voz a uma fonte, trazendo opinião de especialista",
+          "explanation": "Certa: recurso comum no jornalismo."
+        },
+        {
+          "text": "narrar a trajetória de uma feirante",
+          "explanation": "Errada: não narra."
+        },
+        {
+          "text": "definir um conceito técnico",
+          "explanation": "Errada: não define."
+        }
+      ],
+      "correct": "C"
+    },
+    {
+      "prompt": "A charge, como gênero textual, caracteriza-se por:",
+      "options": [
+        {
+          "text": "instruir o leitor em passos numerados",
+          "explanation": "Errada: seria um manual."
+        },
+        {
+          "text": "narrar um fato ficcional extenso",
+          "explanation": "Errada: seria um conto ou romance."
+        },
+        {
+          "text": "explicar um conceito de modo neutro",
+          "explanation": "Errada: seria um verbete."
+        },
+        {
+          "text": "tornar públicas regras de um concurso",
+          "explanation": "Errada: seria um edital."
+        },
+        {
+          "text": "combinar imagem e texto, com humor e ironia, para criticar um fato atual",
+          "explanation": "Certa: é gênero multimodal, em geral argumentativo."
+        }
+      ],
+      "correct": "E"
+    },
+    {
+      "prompt": "Uma propaganda que diz “Compre agora e garanta o desconto” mistura:",
+      "options": [
+        {
+          "text": "narração e descrição apenas",
+          "explanation": "Errada: há comando e persuasão."
+        },
+        {
+          "text": "argumentação (persuasão) e injunção (comando ao leitor)",
+          "explanation": "Certa: convence e ordena ao mesmo tempo."
+        },
+        {
+          "text": "exposição e diálogo apenas",
+          "explanation": "Errada: não é o caso."
+        },
+        {
+          "text": "narração e exposição apenas",
+          "explanation": "Errada: não são as marcas do texto."
+        },
+        {
+          "text": "descrição e diálogo apenas",
+          "explanation": "Errada: não são as marcas do texto."
+        }
+      ],
+      "correct": "B"
+    }
+  ],
+  "id": "4e2f255a-02a8-4e63-a12d-567299cb411a"
+}

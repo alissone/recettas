@@ -69,6 +69,12 @@ class _BotComposerState extends State<BotComposer>
   _RecState _rec = _RecState.idle;
   Offset _drag = Offset.zero;
   bool _starting = false;
+
+  /// Finger on the mic, and where it went down. Raw pointer events rather
+  /// than a long-press gesture: recording starts on touch (like WhatsApp)
+  /// and nothing else (tooltips, scroll views) can win the gesture.
+  bool _pointerDown = false;
+  Offset _origin = Offset.zero;
   bool _sendingVoice = false;
 
   bool get _canRecord => !kIsWeb;
@@ -100,17 +106,34 @@ class _BotComposerState extends State<BotComposer>
   // --- Recording ---
 
   Future<void> _start() async {
-    if (_starting || _rec != _RecState.idle || widget.busy) return;
+    if (_starting || _rec != _RecState.idle || widget.busy || _sendingVoice) {
+      return;
+    }
     _starting = true;
     try {
+      // The first time, iOS asks for the mic here; the finger is usually
+      // lifted by the time the answer comes, so nothing is recorded yet.
       if (!await _recorder.hasPermission()) {
-        _snack('Permissão de microfone negada');
+        _snack(
+          'Sem permissão para o microfone: libere em Ajustes > '
+          'Recettas > Microfone',
+        );
+        return;
+      }
+      if (!_pointerDown) {
+        _snack('Segure o microfone enquanto fala');
         return;
       }
       final dir = await getTemporaryDirectory();
       final path =
           '${dir.path}/bot_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _recorder.start(_config, path: path);
+      if (!_pointerDown) {
+        // A tap, not a hold: let go before the recorder was even up.
+        await _recorder.cancel();
+        _snack('Segure o microfone enquanto fala');
+        return;
+      }
       HapticFeedback.mediumImpact();
       WakelockPlus.enable();
       _stopwatch
@@ -185,9 +208,15 @@ class _BotComposerState extends State<BotComposer>
     await _stop(keep: false);
   }
 
-  void _onMove(LongPressMoveUpdateDetails d) {
+  void _onDown(PointerDownEvent e) {
+    _pointerDown = true;
+    _origin = e.position;
+    _start();
+  }
+
+  void _onMove(PointerMoveEvent e) {
     if (_rec != _RecState.holding) return;
-    final o = d.offsetFromOrigin;
+    final o = e.position - _origin;
     if (o.dx < _cancelDx) {
       _cancel();
       return;
@@ -203,9 +232,15 @@ class _BotComposerState extends State<BotComposer>
     setState(() => _drag = Offset(o.dx.clamp(-200, 0), o.dy.clamp(-120, 0)));
   }
 
-  void _onRelease() {
+  void _onUp(PointerUpEvent e) {
+    _pointerDown = false;
     // Locked keeps recording until delete/send; cancelled already stopped.
     if (_rec == _RecState.holding) _finish();
+  }
+
+  void _onCancel(PointerCancelEvent e) {
+    _pointerDown = false;
+    if (_rec == _RecState.holding) _cancel();
   }
 
   void _snack(String message) {
@@ -371,15 +406,12 @@ class _BotComposerState extends State<BotComposer>
       );
     }
     final holding = _rec == _RecState.holding;
-    return GestureDetector(
-      onTap: () => _snack(
-        'Segure para gravar. Deslize para cima para travar, '
-        'para a esquerda para cancelar.',
-      ),
-      onLongPressStart: (_) => _start(),
-      onLongPressMoveUpdate: _onMove,
-      onLongPressEnd: (_) => _onRelease(),
-      onLongPressCancel: _onRelease,
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: _onDown,
+      onPointerMove: _onMove,
+      onPointerUp: _onUp,
+      onPointerCancel: _onCancel,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
@@ -463,13 +495,10 @@ class _BotComposerState extends State<BotComposer>
         shape: BoxShape.circle,
         boxShadow: AppTheme.accentShadow,
       ),
-      // The mic is driven by the GestureDetector around it, so it is a
-      // plain icon rather than an IconButton that would eat the press.
+      // The mic is driven by the Listener around it, so it is a plain
+      // icon: an IconButton or a Tooltip would take the long press.
       child: active
-          ? Tooltip(
-              message: tooltip,
-              child: Center(child: child),
-            )
+          ? Center(child: child)
           : IconButton(tooltip: tooltip, onPressed: onPressed, icon: child),
     );
   }
@@ -565,6 +594,13 @@ class _VoicePlayerState extends State<VoicePlayer> {
     });
     try {
       final player = await _ensurePlayer();
+      // After a recording iOS is left in playAndRecord; play as media so
+      // it comes out of the loudspeaker at full volume.
+      await player.setAudioContext(
+        AudioContext(
+          iOS: AudioContextIOS(category: AVAudioSessionCategory.playback),
+        ),
+      );
       await player.resume();
     } catch (e) {
       debugPrint('Voice playback failed: $e');

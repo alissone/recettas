@@ -404,9 +404,10 @@ class ModelServer:
     never sits in VRAM next to WhisperX. If a server is already running
     (started by hand), it is used and left alone."""
 
-    def __init__(self, name: str = AGENT_MODEL):
+    def __init__(self, name: str = AGENT_MODEL, ctx: int = AGENT_CTX, timeout: float = 180):
         self.name = name
-        self.llm = LocalLLM(name, timeout=180)
+        self.ctx = ctx
+        self.llm = LocalLLM(name, timeout=timeout)
         self.proc: subprocess.Popen | None = None
 
     def start(self) -> LocalLLM:
@@ -417,7 +418,7 @@ class ModelServer:
             raise LocalLLMError(f"{script} não existe")
         self.proc = subprocess.Popen(
             ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script),
-             "-Ctx", str(AGENT_CTX)],
+             "-Ctx", str(self.ctx)],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_theme.dart';
 import 'screens/home_shell.dart' show HomeShell, homeShellKey;
+import 'services/bot_chat_repository.dart';
 import 'services/chat_notifier.dart';
 import 'services/incoming_files_service.dart';
 import 'services/local_db.dart';
@@ -24,6 +25,13 @@ void main() async {
   );
 
   await TodoRepository.instance.init();
+
+  // "Resumir meus afazeres" in the assistant chat reads the same local
+  // cache (and order) as the Afazeres tab.
+  BotChatRepository.loadTodos = () async => (
+        await TodoRepository.instance.getTodos(),
+        await TodoRepository.instance.getCategories(),
+      );
 
   // Recordings live on disk, which the web build doesn't have.
   if (!kIsWeb) unawaited(VoiceNoteRepository.instance.init());

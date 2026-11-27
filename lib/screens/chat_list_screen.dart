@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_theme.dart';
+import '../models/bot_chat.dart';
 import '../models/chat.dart';
+import '../services/bot_chat_repository.dart';
 import '../services/chat_notifier.dart';
 import '../services/supabase_service.dart';
 import '../utils/dates.dart';
+import 'bot_chat_screen.dart';
 import 'chat_room_screen.dart';
 import 'files_screen.dart';
 import 'quiz_list_screen.dart';
@@ -37,6 +40,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
   bool _opening = false;
   StreamSubscription<AuthState>? _authSubscription;
 
+  /// Chats with the local assistant (migration 047), listed among the
+  /// person-to-person rooms.
+  StreamSubscription<List<BotChat>>? _botSubscription;
+  List<BotChat> _bots = [];
+  String? _botUserId;
+
   bool get _isAuthenticated => SupabaseService.currentUser != null;
 
   @override
@@ -45,14 +54,64 @@ class _ChatListScreenState extends State<ChatListScreen> {
     // The IndexedStack builds this tab at app start, so signing in
     // later has to swap the placeholder for the inbox from here.
     _authSubscription = SupabaseService.authDataChanges.listen((_) {
+      _syncBots();
       if (mounted) setState(() {});
     }, onError: (_) {});
+    _syncBots();
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _botSubscription?.cancel();
     super.dispose();
+  }
+
+  void _syncBots() {
+    final uid = SupabaseService.currentUser?.id;
+    if (uid == _botUserId) return;
+    _botUserId = uid;
+    _botSubscription?.cancel();
+    _botSubscription = null;
+    _bots = [];
+    if (uid == null) return;
+    _botSubscription = BotChatRepository.instance.streamChats().listen(
+      (bots) {
+        if (mounted) setState(() => _bots = bots);
+      },
+      // e.g. migration 047 not run yet: the inbox just has no bot chats.
+      onError: (Object e) => debugPrint('Bot chats stream error: $e'),
+    );
+  }
+
+  Future<void> _newBotChat() async {
+    if (_opening) return;
+    setState(() => _opening = true);
+    try {
+      final chat = await BotChatRepository.instance.createChat();
+      if (!mounted) return;
+      _pushBot(chat);
+    } catch (e) {
+      _snack('Não foi possível criar a conversa: $e');
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
+
+  void _pushBot(BotChat chat) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => BotChatScreen(chat: chat)),
+    );
+  }
+
+  Future<void> _deleteBot(BotChat chat) async {
+    if (!await confirmDeleteBotChat(context, chat.title)) return;
+    try {
+      await BotChatRepository.instance.deleteChat(chat.id);
+    } catch (e) {
+      _snack('Não foi possível apagar: $e');
+    }
   }
 
   Future<void> _newChat() async {
@@ -126,6 +185,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   tooltip: 'Quizzes',
                   onPressed: _openQuizzes,
                   child: const Icon(Icons.quiz_outlined),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton.small(
+                  heroTag: 'chat_bot_fab',
+                  tooltip: 'Conversar com o assistente',
+                  onPressed: _opening ? null : _newBotChat,
+                  child: const Icon(Icons.smart_toy_outlined),
                 ),
                 const SizedBox(height: 12),
                 FloatingActionButton(
@@ -202,22 +268,99 @@ class _ChatListScreenState extends State<ChatListScreen> {
       ]),
       builder: (context, _) {
         final rooms = ChatNotifier.instance.rooms.value;
-        if (rooms.isEmpty) {
+        // People and assistant chats in one list, newest activity first.
+        final entries = <Object>[...rooms, ..._bots]..sort((a, b) =>
+            _sortTime(b).compareTo(_sortTime(a)));
+        if (entries.isEmpty) {
           return _buildPlaceholder(
             icon: Icons.forum_outlined,
             title: 'Nenhuma conversa ainda',
             body:
                 'Toque em + e informe o e-mail de quem você quer '
-                'conversar. Depois disso a conversa fica aqui para '
-                'sempre.',
+                'conversar, ou no robô para falar com o assistente. '
+                'As conversas ficam salvas aqui.',
           );
         }
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 96),
-          itemCount: rooms.length,
-          itemBuilder: (context, index) => _buildRoomTile(rooms[index]),
+          itemCount: entries.length,
+          itemBuilder: (context, index) {
+            final entry = entries[index];
+            return entry is BotChat
+                ? _buildBotTile(entry)
+                : _buildRoomTile(entry as ChatRoom);
+          },
         );
       },
+    );
+  }
+
+  static DateTime _sortTime(Object entry) =>
+      entry is BotChat ? entry.sortTime : (entry as ChatRoom).sortTime;
+
+  Widget _buildBotTile(BotChat chat) {
+    final preview = chat.lastMessage?.trim().replaceAll('\n', ' ');
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          onTap: () => _pushBot(chat),
+          onLongPress: () => _deleteBot(chat),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const BotAvatar(size: 44),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(chat.title,
+                          style: AppTheme.valueBold,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 2),
+                      Text(
+                        preview == null || preview.isEmpty
+                            ? 'Nenhuma mensagem ainda'
+                            : chat.lastRole == 'user'
+                                ? 'Você: $preview'
+                                : preview,
+                        style: AppTheme.caption
+                            .copyWith(fontWeight: FontWeight.w400),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatChatStamp(chat.lastMessageAt),
+                      style: AppTheme.caption
+                          .copyWith(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 6),
+                    const Icon(Icons.chevron_right,
+                        size: 18, color: AppTheme.mediumBrown),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

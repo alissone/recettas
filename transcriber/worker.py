@@ -21,7 +21,13 @@ LLM from C:\\dev\\locallama) may act on the note by itself: Gastos, Compras,
 Afazeres, events, Sono. agent_status: 'requested' runs it, 'apply' carries
 out what the app confirmed or asked to undo. If the local model is down the
 note just keeps its transcript (agent_status = 'error').
+
+Bot chats (Chat tab -> robot button, migrations/047): user messages in
+bot_messages with status 'requested' are answered by the same local model
+(bot_chat.py), which then stays loaded for BOT_IDLE_SECONDS so a
+conversation flows; it is unloaded before any transcription.
 """
+import time
 import asyncio
 import json
 import os
@@ -55,6 +61,13 @@ except Exception as _e:  # noqa: BLE001 - the worker still transcribes without i
     agent = None
     AGENT_ENABLED = False
 
+try:
+    import bot_chat
+except Exception as _e:  # noqa: BLE001
+    print(f"Chat com o assistente indisponível: {_e}", flush=True)
+    bot_chat = None
+
+BOT_TABLE = "bot_messages"
 BUCKET = "voice-notes"
 TABLE = "voice_notes"
 TRANSCRIBE_BAT = SCRIPT_DIR / "transcribe_one.bat"
@@ -560,6 +573,110 @@ async def run_task(sb: AsyncClient, client: anthropic.Anthropic, status_column: 
     }).eq("id", note_id).eq(status_column, "processing").execute()
 
 
+# --- Bot chats (bot_chat.py) ---
+
+_bot_server = None
+_bot_last_used = 0.0
+_bot_table_warned = False
+
+
+async def stop_bot_server() -> None:
+    global _bot_server
+    if _bot_server is not None:
+        srv, _bot_server = _bot_server, None
+        await asyncio.to_thread(srv.stop)
+        log("Modelo do chat descarregado")
+
+
+def bot_idle_left() -> float | None:
+    """Seconds until the chat model should be unloaded; None if not loaded."""
+    if _bot_server is None:
+        return None
+    return bot_chat.BOT_IDLE_SECONDS - (time.monotonic() - _bot_last_used)
+
+
+async def process_bot_messages(sb: AsyncClient) -> None:
+    global _bot_server, _bot_last_used, _bot_table_warned
+    if bot_chat is None:
+        return
+    try:
+        pending = await (
+            sb.table(BOT_TABLE).select("id, chat_id, created_at")
+            .eq("role", "user").eq("status", "requested").order("created_at").execute()
+        )
+    except Exception as e:  # noqa: BLE001
+        if not table_missing(e):
+            raise
+        if not _bot_table_warned:
+            _bot_table_warned = True
+            log(f"Tabela {BOT_TABLE} não existe: chat com o assistente desligado "
+                "(rode migrations/047_bot_chats.sql; não precisa reiniciar)")
+        return
+    if not pending.data:
+        return
+    load_error = None
+    if _bot_server is None:
+        srv = bot_chat.server()
+        log(f"Carregando modelo do chat ({bot_chat.BOT_MODEL})...")
+        try:
+            await asyncio.to_thread(srv.start)
+            _bot_server = srv
+        except LocalLLMError as e:
+            load_error = f"Modelo local ({bot_chat.BOT_MODEL}) não subiu: {e}"
+            log(load_error)
+    llm = _bot_server.llm if _bot_server is not None else None
+    for msg in pending.data:
+        await answer_bot_message(sb, llm, msg, load_error)
+    _bot_last_used = time.monotonic()
+
+
+async def answer_bot_message(sb: AsyncClient, llm, msg: dict, load_error: str | None) -> None:
+    msg_id = msg["id"]
+    claimed = await (
+        sb.table(BOT_TABLE).update({"status": "processing", "updated_at": now_iso()})
+        .eq("id", msg_id).eq("status", "requested").execute()
+    )
+    if not claimed.data:
+        return
+    log(f"Chat: respondendo {msg_id}...")
+    try:
+        if llm is None:
+            raise RuntimeError(load_error or "modelo local indisponível")
+        history = await (
+            sb.table(BOT_TABLE).select("role, content, context, status")
+            .eq("chat_id", msg["chat_id"]).lte("created_at", msg["created_at"])
+            .order("created_at").execute()
+        )
+        try:
+            text = await asyncio.to_thread(bot_chat.answer, llm, history.data)
+        except LocalLLMError as e:
+            raise RuntimeError(f"Modelo local não respondeu: {e}") from e
+        # Cancelled in the app (status moved off 'processing'): drop it.
+        still = await (sb.table(BOT_TABLE).select("id").eq("id", msg_id)
+                       .eq("status", "processing").execute())
+        if not still.data:
+            log(f"Chat: cancelado no app {msg_id}")
+            return
+        chat = await sb.table("bot_chats").select("user_id").eq("id", msg["chat_id"]).execute()
+        await sb.table(BOT_TABLE).insert({
+            "chat_id": msg["chat_id"],
+            "user_id": chat.data[0]["user_id"],
+            "role": "assistant",
+            "content": text,
+        }).execute()
+        await sb.table(BOT_TABLE).update({
+            "status": "done", "error_message": None, "updated_at": now_iso(),
+        }).eq("id", msg_id).execute()
+        log(f"Chat: pronto {msg_id} ({len(text)} caracteres)")
+    except Exception as e:  # noqa: BLE001 - reported on the message
+        log(f"Erro (chat) {msg_id}: {e}")
+        await sb.table(BOT_TABLE).update({
+            "status": "error",
+            "error_message": str(e)[:ERROR_TAIL_CHARS],
+            "updated_at": now_iso(),
+        }).eq("id", msg_id).eq("status", "processing").execute()
+
+
 # --- Main loop ---
 
 
@@ -569,6 +686,9 @@ async def process_pending(sb: AsyncClient, client: anthropic.Anthropic) -> None:
                                + (", language" if HAS_046 else ""))
         .eq("status", "queued").order("recorded_at").execute()
     )
+    if queued.data:
+        # WhisperX needs the GPU: drop a model kept warm for the chat.
+        await stop_bot_server()
     for note in queued.data:
         await transcribe_note(sb, note)
 
@@ -580,6 +700,8 @@ async def process_pending(sb: AsyncClient, client: anthropic.Anthropic) -> None:
         )
         if pending.data:
             await run_agents(sb, pending.data)
+
+    await process_bot_messages(sb)
 
     for status_column in TASKS:
         requested = await (
@@ -639,6 +761,12 @@ async def reset_interrupted(sb: AsyncClient) -> None:
         if not table_missing(e):
             raise
         warn_job_table_missing()
+    try:
+        await sb.table(BOT_TABLE).update({"status": "requested"}).eq(
+            "status", "processing").execute()
+    except Exception as e:  # noqa: BLE001
+        if not table_missing(e):
+            raise
 
 
 # Columns from migrations/046 (language, agent_*). Until it is run the worker
@@ -676,6 +804,12 @@ async def main() -> None:
         ).on_postgres_changes(
             RealtimePostgresChangesListenEvent.All, on_change,
             table=JOB_TABLE, schema="public",
+        ).on_postgres_changes(
+            RealtimePostgresChangesListenEvent.Insert, on_change,
+            table=BOT_TABLE, schema="public",
+        ).on_postgres_changes(
+            RealtimePostgresChangesListenEvent.Update, on_change,
+            table=BOT_TABLE, schema="public",
         )
         await channel.subscribe()
         log("Realtime conectado")
@@ -695,8 +829,13 @@ async def main() -> None:
             await process_pending(sb, client)
         except Exception as e:  # noqa: BLE001 - offline etc.; retry next round
             log(f"Erro consultando a fila: {e}")
+        left = bot_idle_left()
+        if left is not None and left <= 0:
+            await stop_bot_server()
+            left = None
         try:
-            await asyncio.wait_for(wake.wait(), POLL_SECONDS)
+            await asyncio.wait_for(
+                wake.wait(), POLL_SECONDS if left is None else min(POLL_SECONDS, left + 1))
         except asyncio.TimeoutError:
             pass
 

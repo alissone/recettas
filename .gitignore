@@ -49,3 +49,6 @@ firmware/**/secrets.h
 
 # /receitas output (scripts/receitas)
 /receitas_impressas/
+
+# Kokoro TTS model files (downloaded by transcriber/setup.bat)
+/transcriber/models/

@@ -2,3 +2,6 @@ supabase
 anthropic
 python-dotenv
 requests
+onnx-asr[hub]
+kokoro-onnx
+soundfile

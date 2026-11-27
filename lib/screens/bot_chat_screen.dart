@@ -8,6 +8,7 @@ import '../app_theme.dart';
 import '../models/bot_chat.dart';
 import '../services/bot_chat_repository.dart';
 import '../utils/dates.dart';
+import '../widgets/bot_voice.dart';
 import 'chat_list_screen.dart' show formatChatTime;
 
 /// A one-tap question that attaches the todo list for the model.
@@ -47,8 +48,6 @@ class BotChatScreen extends StatefulWidget {
 
 class _BotChatScreenState extends State<BotChatScreen> {
   final _repo = BotChatRepository.instance;
-  final _controller = TextEditingController();
-  final _focusNode = FocusNode();
 
   StreamSubscription<List<BotMessage>>? _subscription;
   List<BotMessage> _messages = [];
@@ -56,43 +55,157 @@ class _BotChatScreenState extends State<BotChatScreen> {
   String? _error;
   bool _sending = false;
   late String _title = widget.chat.title;
+  late SttEngine _stt = widget.chat.stt;
+  late String _voice = widget.chat.ttsVoice;
 
   @override
   void initState() {
     super.initState();
-    _subscription = _repo.streamMessages(widget.chat.id).listen(
-      (messages) {
-        if (!mounted) return;
-        setState(() {
-          _messages = messages;
-          _loading = false;
-          _error = null;
-        });
-      },
-      onError: (Object e) {
-        if (!mounted) return;
-        setState(() {
-          _loading = false;
-          _error = '$e';
-        });
-      },
-    );
+    _subscription = _repo
+        .streamMessages(widget.chat.id)
+        .listen(
+          (messages) {
+            if (!mounted) return;
+            setState(() {
+              _messages = messages;
+              _loading = false;
+              _error = null;
+            });
+          },
+          onError: (Object e) {
+            if (!mounted) return;
+            setState(() {
+              _loading = false;
+              _error = '$e';
+            });
+          },
+        );
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
-    _controller.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
   // --- Actions ---
 
-  Future<void> _send() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    if (await _post(text)) _controller.clear();
+  Future<void> _sendVoice(Uint8List bytes, double seconds) async {
+    await _repo.sendVoice(widget.chat.id, bytes, seconds);
+  }
+
+  Future<void> _pickStt() async {
+    final picked = await showModalBottomSheet<SttEngine>(
+      context: context,
+      backgroundColor: AppTheme.creamBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusLarge),
+        ),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
+              child: Text(
+                'Transcrição dos seus áudios',
+                style: AppTheme.sectionTitle,
+              ),
+            ),
+            for (final e in SttEngine.values)
+              ListTile(
+                leading: Icon(
+                  e == _stt
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: e == _stt
+                      ? AppTheme.primaryOrange
+                      : AppTheme.mediumBrown,
+                ),
+                title: Text(e.label),
+                subtitle: Text(e.hint),
+                onTap: () => Navigator.pop(context, e),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || picked == _stt) return;
+    final before = _stt;
+    setState(() => _stt = picked);
+    try {
+      await _repo.setStt(widget.chat.id, picked);
+    } catch (e) {
+      if (mounted) setState(() => _stt = before);
+      _snack('Não foi possível mudar (rodou a migração 048?): $e');
+    }
+  }
+
+  Future<void> _pickVoice() async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppTheme.creamBackground,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusLarge),
+        ),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        builder: (context, scroll) => ListView(
+          controller: scroll,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
+              child: Text(
+                'Voz do assistente (Kokoro)',
+                style: AppTheme.sectionTitle,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                'Usada quando você manda um áudio: a resposta volta falada. '
+                'Escolha uma voz do idioma em que você conversa.',
+                style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+              ),
+            ),
+            for (final v in KokoroVoice.all)
+              ListTile(
+                leading: Icon(
+                  v.id == _voice
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: v.id == _voice
+                      ? AppTheme.primaryOrange
+                      : AppTheme.mediumBrown,
+                ),
+                title: Text(v.name),
+                subtitle: Text(
+                  '${v.language} · ${v.female ? 'feminina' : 'masculina'}',
+                ),
+                onTap: () => Navigator.pop(context, v.id),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || picked == _voice) return;
+    final before = _voice;
+    setState(() => _voice = picked);
+    try {
+      await _repo.setVoice(widget.chat.id, picked);
+    } catch (e) {
+      if (mounted) setState(() => _voice = before);
+      _snack('Não foi possível mudar (rodou a migração 048?): $e');
+    }
   }
 
   Future<void> _quick(_QuickAction action) async {
@@ -182,8 +295,9 @@ class _BotChatScreenState extends State<BotChatScreen> {
       backgroundColor: AppTheme.creamBackground,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusLarge),
+        ),
       ),
       builder: (context) => DraggableScrollableSheet(
         expand: false,
@@ -193,8 +307,10 @@ class _BotChatScreenState extends State<BotChatScreen> {
           controller: scroll,
           padding: const EdgeInsets.all(20),
           children: [
-            const Text('Enviado junto para o assistente',
-                style: AppTheme.sectionTitle),
+            const Text(
+              'Enviado junto para o assistente',
+              style: AppTheme.sectionTitle,
+            ),
             const SizedBox(height: 12),
             SelectableText(
               message.context ?? '',
@@ -219,20 +335,49 @@ class _BotChatScreenState extends State<BotChatScreen> {
             const BotAvatar(size: 34),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(_title,
-                  style: AppTheme.sectionTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
+              child: Text(
+                _title,
+                style: AppTheme.sectionTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
         actions: [
           PopupMenuButton<String>(
             color: AppTheme.white,
-            onSelected: (v) => v == 'rename' ? _rename() : _delete(),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'rename', child: Text('Renomear')),
-              PopupMenuItem(value: 'delete', child: Text('Apagar conversa')),
+            onSelected: (v) => switch (v) {
+              'stt' => _pickStt(),
+              'voice' => _pickVoice(),
+              'rename' => _rename(),
+              _ => _delete(),
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'stt',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.hearing_outlined),
+                  title: const Text('Transcrição'),
+                  subtitle: Text(_stt.label),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'voice',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.record_voice_over_outlined),
+                  title: const Text('Voz do assistente'),
+                  subtitle: Text(KokoroVoice.byId(_voice).name),
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(value: 'rename', child: Text('Renomear')),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text('Apagar conversa'),
+              ),
             ],
           ),
         ],
@@ -256,8 +401,11 @@ class _BotChatScreenState extends State<BotChatScreen> {
       );
     }
     if (_error != null) {
-      return _placeholder(Icons.cloud_off_outlined, 'Não foi possível carregar',
-          _error!);
+      return _placeholder(
+        Icons.cloud_off_outlined,
+        'Não foi possível carregar',
+        _error!,
+      );
     }
     if (_messages.isEmpty) {
       return _placeholder(
@@ -280,7 +428,14 @@ class _BotChatScreenState extends State<BotChatScreen> {
     }
     // The newest question still waiting gets a "typing" bubble.
     final waiting = _messages.where((m) => m.isMine && m.isWaiting);
-    if (waiting.isNotEmpty) items.add(waiting.last.status!);
+    if (waiting.isNotEmpty) {
+      final last = waiting.last;
+      items.add(
+        last.isTranscribing && last.status == 'processing'
+            ? 'transcribing'
+            : last.status!,
+      );
+    }
 
     final reversed = items.reversed.toList();
     return ListView.builder(
@@ -295,11 +450,18 @@ class _BotChatScreenState extends State<BotChatScreen> {
         return _BotBubble(
           key: ValueKey(m.id),
           message: m,
+          resolveUrl: _repo.audioUrl,
           onShowContext: () => _showContext(m),
-          onRetry: () => _repo.retry(m.id).catchError(
-              (Object e) => _snack('Não foi possível tentar de novo: $e')),
-          onCancel: () => _repo.cancel(m.id).catchError(
-              (Object e) => _snack('Não foi possível cancelar: $e')),
+          onRetry: () => _repo
+              .retry(m.id)
+              .catchError(
+                (Object e) => _snack('Não foi possível tentar de novo: $e'),
+              ),
+          onCancel: () => _repo
+              .cancel(m.id)
+              .catchError(
+                (Object e) => _snack('Não foi possível cancelar: $e'),
+              ),
         );
       },
     );
@@ -319,7 +481,9 @@ class _BotChatScreenState extends State<BotChatScreen> {
                 avatar: Icon(a.icon, size: 18, color: AppTheme.primaryOrange),
                 label: Text(a.label),
                 labelStyle: AppTheme.caption.copyWith(
-                    color: AppTheme.darkBrown, fontWeight: FontWeight.w600),
+                  color: AppTheme.darkBrown,
+                  fontWeight: FontWeight.w600,
+                ),
                 backgroundColor: AppTheme.white,
                 side: const BorderSide(color: AppTheme.lightPeach),
                 shape: const StadiumBorder(),
@@ -332,77 +496,10 @@ class _BotChatScreenState extends State<BotChatScreen> {
   }
 
   Widget _buildComposer() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      decoration: BoxDecoration(
-        color: AppTheme.white,
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryOrange.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              minLines: 1,
-              maxLines: 5,
-              textCapitalization: TextCapitalization.sentences,
-              style: AppTheme.bodyText.copyWith(fontSize: 15),
-              decoration: InputDecoration(
-                hintText: 'Pergunte ao assistente...',
-                hintStyle:
-                    AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
-                filled: true,
-                fillColor: AppTheme.creamBackground,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: AppTheme.lightPeach),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(
-                      color: AppTheme.primaryOrange, width: 1.5),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              shape: BoxShape.circle,
-              boxShadow: AppTheme.accentShadow,
-            ),
-            child: IconButton(
-              tooltip: 'Enviar',
-              onPressed: _sending ? null : _send,
-              icon: _sending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.send, color: Colors.white, size: 20),
-            ),
-          ),
-        ],
-      ),
+    return BotComposer(
+      busy: _sending,
+      onSendText: (text) => _post(text),
+      onSendVoice: _sendVoice,
     );
   }
 
@@ -413,15 +510,19 @@ class _BotChatScreenState extends State<BotChatScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 64,
-                color: AppTheme.primaryOrange.withValues(alpha: 0.4)),
+            Icon(
+              icon,
+              size: 64,
+              color: AppTheme.primaryOrange.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 16),
             Text(title, style: AppTheme.sectionTitle),
             const SizedBox(height: 8),
-            Text(body,
-                textAlign: TextAlign.center,
-                style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400)),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w400),
+            ),
           ],
         ),
       ),
@@ -467,8 +568,11 @@ class BotAvatar extends StatelessWidget {
         gradient: AppTheme.primaryGradient,
         shape: BoxShape.circle,
       ),
-      child: Icon(Icons.smart_toy_outlined,
-          color: Colors.white, size: size * 0.55),
+      child: Icon(
+        Icons.smart_toy_outlined,
+        color: Colors.white,
+        size: size * 0.55,
+      ),
     );
   }
 }
@@ -484,10 +588,10 @@ class _DayPill extends StatelessWidget {
     final label = date == t
         ? 'Hoje'
         : date == t.subtract(const Duration(days: 1))
-            ? 'Ontem'
-            : date.year == t.year
-                ? formatDayMonth(date)
-                : '${formatDayMonth(date)}/${date.year}';
+        ? 'Ontem'
+        : date.year == t.year
+        ? formatDayMonth(date)
+        : '${formatDayMonth(date)}/${date.year}';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
@@ -529,15 +633,16 @@ class _Typing extends StatelessWidget {
               width: 14,
               height: 14,
               child: CircularProgressIndicator(
-                  strokeWidth: 2, color: AppTheme.primaryOrange),
+                strokeWidth: 2,
+                color: AppTheme.primaryOrange,
+              ),
             ),
             const SizedBox(width: 10),
-            Text(
-              status == 'processing'
-                  ? 'Pensando...'
-                  : 'Aguardando o PC responder...',
-              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w500),
-            ),
+            Text(switch (status) {
+              'transcribing' => 'Transcrevendo seu áudio...',
+              'processing' => 'Pensando...',
+              _ => 'Aguardando o PC responder...',
+            }, style: AppTheme.caption.copyWith(fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -550,10 +655,12 @@ class _BotBubble extends StatelessWidget {
   final VoidCallback onShowContext;
   final VoidCallback onRetry;
   final VoidCallback onCancel;
+  final Future<String> Function(String path) resolveUrl;
 
   const _BotBubble({
     super.key,
     required this.message,
+    required this.resolveUrl,
     required this.onShowContext,
     required this.onRetry,
     required this.onCancel,
@@ -583,8 +690,9 @@ class _BotBubble extends StatelessWidget {
         boxShadow: AppTheme.softShadow,
       ),
       child: Column(
-        crossAxisAlignment:
-            mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: mine
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           if (message.hasContext)
@@ -595,9 +703,11 @@ class _BotBubble extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.checklist_rounded,
-                        size: 15,
-                        color: textColor.withValues(alpha: 0.85)),
+                    Icon(
+                      Icons.checklist_rounded,
+                      size: 15,
+                      color: textColor.withValues(alpha: 0.85),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Afazeres anexados',
@@ -613,7 +723,30 @@ class _BotBubble extends StatelessWidget {
                 ),
               ),
             ),
-          if (mine)
+          if (message.hasAudio) ...[
+            VoicePlayer(
+              path: message.audioPath!,
+              seconds: message.audioSeconds,
+              mine: mine,
+              resolveUrl: resolveUrl,
+            ),
+            const SizedBox(height: 4),
+          ],
+          if (mine && message.hasAudio)
+            // The transcript under the audio, as soon as the PC has it.
+            Text(
+              message.isTranscribing
+                  ? (message.status == 'error' ? '' : 'Transcrevendo...')
+                  : message.content,
+              style: style.copyWith(
+                fontSize: 13,
+                fontStyle: message.isTranscribing
+                    ? FontStyle.italic
+                    : FontStyle.normal,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            )
+          else if (mine)
             Text(message.content, style: style)
           else
             MarkdownBody(
@@ -622,14 +755,15 @@ class _BotBubble extends StatelessWidget {
               softLineBreak: true,
               styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
                   .copyWith(
-                p: style,
-                listBullet: style,
-                strong: style.copyWith(fontWeight: FontWeight.w700),
-                code: style.copyWith(
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    backgroundColor: AppTheme.creamBackground),
-              ),
+                    p: style,
+                    listBullet: style,
+                    strong: style.copyWith(fontWeight: FontWeight.w700),
+                    code: style.copyWith(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      backgroundColor: AppTheme.creamBackground,
+                    ),
+                  ),
             ),
           const SizedBox(height: 3),
           Row(
@@ -642,8 +776,11 @@ class _BotBubble extends StatelessWidget {
                       Clipboard.setData(ClipboardData(text: message.content)),
                   child: const Padding(
                     padding: EdgeInsets.only(right: 8),
-                    child: Icon(Icons.copy_rounded,
-                        size: 14, color: AppTheme.mediumBrown),
+                    child: Icon(
+                      Icons.copy_rounded,
+                      size: 14,
+                      color: AppTheme.mediumBrown,
+                    ),
                   ),
                 ),
               Text(
@@ -665,8 +802,9 @@ class _BotBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Column(
-        crossAxisAlignment:
-            mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: mine
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           bubble,
           if (mine && message.status == 'error') _errorLine(),
@@ -689,8 +827,9 @@ class _BotBubble extends StatelessWidget {
                   ? 'Cancelado'
                   : 'Sem resposta: ${message.errorMessage ?? 'erro'}',
               style: AppTheme.caption.copyWith(
-                  fontSize: 11,
-                  color: cancelled ? AppTheme.mediumBrown : Colors.red.shade700),
+                fontSize: 11,
+                color: cancelled ? AppTheme.mediumBrown : Colors.red.shade700,
+              ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -698,8 +837,9 @@ class _BotBubble extends StatelessWidget {
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                foregroundColor: AppTheme.primaryOrange),
+              visualDensity: VisualDensity.compact,
+              foregroundColor: AppTheme.primaryOrange,
+            ),
             child: const Text('Tentar de novo'),
           ),
         ],
@@ -711,8 +851,9 @@ class _BotBubble extends StatelessWidget {
     return TextButton(
       onPressed: onCancel,
       style: TextButton.styleFrom(
-          visualDensity: VisualDensity.compact,
-          foregroundColor: AppTheme.mediumBrown),
+        visualDensity: VisualDensity.compact,
+        foregroundColor: AppTheme.mediumBrown,
+      ),
       child: const Text('Cancelar', style: TextStyle(fontSize: 12)),
     );
   }

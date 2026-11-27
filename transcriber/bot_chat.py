@@ -66,7 +66,12 @@ def user_text(msg: dict) -> str:
     return f"<dados>\n{context}\n</dados>\n\n{content}" if context else content
 
 
-def build_messages(history: list[dict], now: datetime) -> list[dict]:
+VOICE_NOTE = """
+
+Esta mensagem foi falada (transcrição automática, pode ter erros) e a sua resposta será lida em voz alta por um sintetizador: responda em frases curtas e naturais, como numa conversa, sem markdown, listas, emojis ou links. Use o mesmo idioma em que ele falou."""
+
+
+def build_messages(history: list[dict], now: datetime, spoken: bool = False) -> list[dict]:
     """history: the chat's messages, oldest first, ending with the one to
     answer. Older turns are dropped (and their attached data first) to fit
     the context."""
@@ -96,12 +101,14 @@ def build_messages(history: list[dict], now: datetime) -> list[dict]:
     kept.reverse()
     while kept and kept[0]["role"] != "user":
         kept.pop(0)
-    return [{"role": "system", "content": system_prompt(now)}, *kept]
+    system = system_prompt(now) + (VOICE_NOTE if spoken else "")
+    return [{"role": "system", "content": system}, *kept]
 
 
-def answer(llm: LocalLLM, history: list[dict], now: datetime | None = None) -> str:
+def answer(llm: LocalLLM, history: list[dict], now: datetime | None = None,
+           spoken: bool = False) -> str:
     reply = llm.complete(
-        build_messages(history, now or datetime.now().astimezone()),
+        build_messages(history, now or datetime.now().astimezone(), spoken),
         think=BOT_THINK or False,
         max_tokens=BOT_MAX_TOKENS,
     )

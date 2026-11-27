@@ -34,6 +34,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -66,6 +67,12 @@ try:
 except Exception as _e:  # noqa: BLE001
     print(f"Chat com o assistente indisponível: {_e}", flush=True)
     bot_chat = None
+
+try:
+    import speech  # Parakeet + Kokoro for voice messages in the chat
+except Exception as _e:  # noqa: BLE001 - text chat still works
+    print(f"Voz no chat indisponível: {_e}", flush=True)
+    speech = None
 
 BOT_TABLE = "bot_messages"
 BUCKET = "voice-notes"
@@ -573,7 +580,9 @@ async def run_task(sb: AsyncClient, client: anthropic.Anthropic, status_column: 
     }).eq("id", note_id).eq(status_column, "processing").execute()
 
 
-# --- Bot chats (bot_chat.py) ---
+# --- Bot chats (bot_chat.py, speech.py) ---
+
+BOT_AUDIO_BUCKET = "bot-audio"
 
 _bot_server = None
 _bot_last_used = 0.0
@@ -595,13 +604,27 @@ def bot_idle_left() -> float | None:
     return bot_chat.BOT_IDLE_SECONDS - (time.monotonic() - _bot_last_used)
 
 
+async def bot_llm():
+    """The chat model, loading it if needed (raises if it won't start)."""
+    global _bot_server
+    if _bot_server is None:
+        srv = bot_chat.server()
+        log(f"Carregando modelo do chat ({bot_chat.BOT_MODEL})...")
+        try:
+            await asyncio.to_thread(srv.start)
+        except LocalLLMError as e:
+            raise RuntimeError(f"Modelo local ({bot_chat.BOT_MODEL}) não subiu: {e}") from e
+        _bot_server = srv
+    return _bot_server.llm
+
+
 async def process_bot_messages(sb: AsyncClient) -> None:
-    global _bot_server, _bot_last_used, _bot_table_warned
+    global _bot_last_used, _bot_table_warned
     if bot_chat is None:
         return
     try:
         pending = await (
-            sb.table(BOT_TABLE).select("id, chat_id, created_at")
+            sb.table(BOT_TABLE).select("id, chat_id, created_at, content, audio_path")
             .eq("role", "user").eq("status", "requested").order("created_at").execute()
         )
     except Exception as e:  # noqa: BLE001
@@ -612,25 +635,63 @@ async def process_bot_messages(sb: AsyncClient) -> None:
             log(f"Tabela {BOT_TABLE} não existe: chat com o assistente desligado "
                 "(rode migrations/047_bot_chats.sql; não precisa reiniciar)")
         return
-    if not pending.data:
-        return
-    load_error = None
-    if _bot_server is None:
-        srv = bot_chat.server()
-        log(f"Carregando modelo do chat ({bot_chat.BOT_MODEL})...")
-        try:
-            await asyncio.to_thread(srv.start)
-            _bot_server = srv
-        except LocalLLMError as e:
-            load_error = f"Modelo local ({bot_chat.BOT_MODEL}) não subiu: {e}"
-            log(load_error)
-    llm = _bot_server.llm if _bot_server is not None else None
     for msg in pending.data:
-        await answer_bot_message(sb, llm, msg, load_error)
-    _bot_last_used = time.monotonic()
+        await answer_bot_message(sb, msg)
+        _bot_last_used = time.monotonic()
 
 
-async def answer_bot_message(sb: AsyncClient, llm, msg: dict, load_error: str | None) -> None:
+async def bot_chat_settings(sb: AsyncClient, chat_id: str) -> dict:
+    try:
+        res = await sb.table("bot_chats").select(
+            "user_id, stt_engine, stt_language, tts_voice").eq("id", chat_id).execute()
+    except Exception as e:  # noqa: BLE001 - migration 048 not run: text only
+        if "does not exist" not in str(e) and "42703" not in str(e):
+            raise
+        res = await sb.table("bot_chats").select("user_id").eq("id", chat_id).execute()
+    if not res.data:
+        raise RuntimeError("conversa apagada")
+    return res.data[0]
+
+
+async def transcribe_bot_audio(sb: AsyncClient, msg: dict, chat: dict) -> str:
+    audio = await sb.storage.from_(BOT_AUDIO_BUCKET).download(msg["audio_path"])
+    if len(audio) < MIN_AUDIO_BYTES:
+        raise RuntimeError("Áudio vazio - a gravação falhou no celular")
+    with tempfile.TemporaryDirectory(prefix="bot_audio_") as tmp:
+        local = Path(tmp) / f"{msg['id']}{Path(msg['audio_path']).suffix or '.m4a'}"
+        local.write_bytes(audio)
+        if chat.get("stt_engine") == "whisper":
+            # WhisperX needs the GPU: the chat model goes first.
+            await stop_bot_server()
+            log(f"Chat: transcrevendo {msg['id']} (WhisperX)...")
+            return await asyncio.to_thread(
+                run_whisperx, local, Path(tmp), chat.get("stt_language") or WHISPER_LANGUAGE)
+        log(f"Chat: transcrevendo {msg['id']} (Parakeet)...")
+        return await asyncio.to_thread(speech.transcribe_parakeet, local)
+
+
+async def speak_reply(sb: AsyncClient, text: str, chat: dict, chat_id: str,
+                      reply_id: str) -> dict:
+    """Kokoro the reply into the bucket; {} if TTS is unavailable or fails
+    (the text answer still goes out)."""
+    if speech is None:
+        return {}
+    try:
+        with tempfile.TemporaryDirectory(prefix="bot_tts_") as tmp:
+            out = Path(tmp) / "reply.m4a"
+            seconds = await asyncio.to_thread(
+                speech.synthesize, text, chat.get("tts_voice"), out)
+            path = f"{chat['user_id']}/{chat_id}/{reply_id}.m4a"
+            await sb.storage.from_(BOT_AUDIO_BUCKET).upload(
+                path, out.read_bytes(),
+                {"content-type": "audio/mp4", "upsert": "true"})
+        return {"audio_path": path, "audio_seconds": round(seconds, 1)}
+    except Exception as e:  # noqa: BLE001
+        log(f"Chat: TTS falhou ({e}); resposta só em texto")
+        return {}
+
+
+async def answer_bot_message(sb: AsyncClient, msg: dict) -> None:
     msg_id = msg["id"]
     claimed = await (
         sb.table(BOT_TABLE).update({"status": "processing", "updated_at": now_iso()})
@@ -640,34 +701,50 @@ async def answer_bot_message(sb: AsyncClient, llm, msg: dict, load_error: str | 
         return
     log(f"Chat: respondendo {msg_id}...")
     try:
-        if llm is None:
-            raise RuntimeError(load_error or "modelo local indisponível")
+        chat = await bot_chat_settings(sb, msg["chat_id"])
+        spoken = bool(msg.get("audio_path"))
+        if spoken and not (msg.get("content") or "").strip():
+            if speech is None and chat.get("stt_engine") != "whisper":
+                raise RuntimeError("Parakeet indisponível no PC (pip install -r requirements.txt)")
+            transcript = (await transcribe_bot_audio(sb, msg, chat)).strip()
+            if not transcript:
+                raise RuntimeError("Não deu para entender nada no áudio")
+            # Shown under the audio right away, before the answer is ready.
+            await sb.table(BOT_TABLE).update({
+                "content": transcript, "updated_at": now_iso(),
+            }).eq("id", msg_id).execute()
+        llm = await bot_llm()
         history = await (
             sb.table(BOT_TABLE).select("role, content, context, status")
             .eq("chat_id", msg["chat_id"]).lte("created_at", msg["created_at"])
             .order("created_at").execute()
         )
         try:
-            text = await asyncio.to_thread(bot_chat.answer, llm, history.data)
+            text = await asyncio.to_thread(bot_chat.answer, llm, history.data, None, spoken)
         except LocalLLMError as e:
             raise RuntimeError(f"Modelo local não respondeu: {e}") from e
+        reply_id = str(uuid.uuid4())
+        # A spoken question gets a spoken answer.
+        audio = await speak_reply(sb, text, chat, msg["chat_id"], reply_id) if spoken else {}
         # Cancelled in the app (status moved off 'processing'): drop it.
         still = await (sb.table(BOT_TABLE).select("id").eq("id", msg_id)
                        .eq("status", "processing").execute())
         if not still.data:
             log(f"Chat: cancelado no app {msg_id}")
             return
-        chat = await sb.table("bot_chats").select("user_id").eq("id", msg["chat_id"]).execute()
         await sb.table(BOT_TABLE).insert({
+            "id": reply_id,
             "chat_id": msg["chat_id"],
-            "user_id": chat.data[0]["user_id"],
+            "user_id": chat["user_id"],
             "role": "assistant",
             "content": text,
+            **audio,
         }).execute()
         await sb.table(BOT_TABLE).update({
             "status": "done", "error_message": None, "updated_at": now_iso(),
         }).eq("id", msg_id).execute()
-        log(f"Chat: pronto {msg_id} ({len(text)} caracteres)")
+        log(f"Chat: pronto {msg_id} ({len(text)} caracteres"
+            + (f", {audio['audio_seconds']}s de áudio)" if audio else ")"))
     except Exception as e:  # noqa: BLE001 - reported on the message
         log(f"Erro (chat) {msg_id}: {e}")
         await sb.table(BOT_TABLE).update({
